@@ -1,0 +1,378 @@
+/* ReRoute AI 2.0 - Enterprise Dark Command Center Stylesheet */
+:root {
+  --bg-primary: #0B1220;
+  --bg-card: #111827;
+  --bg-card-alt: #1F2937;
+  --border-subtle: #1E293B;
+  --border-active: #334155;
+  --ai-blue: #2563EB;
+  --ai-blue-glow: rgba(37, 99, 235, 0.25);
+  --live-cyan: #06B6D4;
+  --live-cyan-glow: rgba(6, 182, 212, 0.25);
+  --success-green: #10B981;
+  --success-green-glow: rgba(16, 185, 129, 0.2);
+  --warning-amber: #F59E0B;
+  --warning-amber-glow: rgba(245, 158, 11, 0.2);
+  --critical-red: #EF4444;
+  --critical-red-glow: rgba(239, 68, 68, 0.25);
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  overflow-x: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-active);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ai-blue);
+}
+
+/* Subtle enterprise grid background */
+.bg-command-grid {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Glass Card */
+.glass-card {
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.glass-card-interactive {
+  cursor: pointer;
+}
+.glass-card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
+  border-color: var(--ai-blue);
+}
+
+/* AI Glow effects */
+.glow-blue {
+  box-shadow: 0 0 20px -2px var(--ai-blue-glow);
+}
+.glow-cyan {
+  box-shadow: 0 0 20px -2px var(--live-cyan-glow);
+}
+.glow-red {
+  box-shadow: 0 0 25px 2px var(--critical-red-glow);
+}
+.glow-green {
+  box-shadow: 0 0 20px -2px var(--success-green-glow);
+}
+
+/* Pulsing indicators */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.92); }
+}
+
+.animate-pulse-slow {
+  animation: pulseGlow 2.5s infinite ease-in-out;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
+}
+
+.scanline-effect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--live-cyan), transparent);
+  animation: scanline 3s linear infinite;
+  pointer-events: none;
+}
+
+/* Tabular countdown numbers */
+.font-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* Custom buttons */
+.btn-primary {
+  background: linear-gradient(135deg, #2563EB, #1D4ED8);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #3B82F6, #2563EB);
+  box-shadow: 0 0 16px var(--ai-blue-glow);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: rgba(31, 41, 55, 0.6);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-outline:hover {
+  background: var(--bg-card-alt);
+  border-color: var(--live-cyan);
+  color: #FFFFFF;
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #FCA5A5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-danger:hover {
+  background: #EF4444;
+  color: #FFFFFF;
+  box-shadow: 0 0 18px var(--critical-red-glow);
+}
+
+.btn-success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6EE7B7;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-success:hover {
+  background: #10B981;
+  color: #FFFFFF;
+  box-shadow: 0 0 18px var(--success-green-glow);
+}
+
+/* Status badges */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-risk-high {
+  background: rgba(239, 68, 68, 0.18);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.badge-risk-medium {
+  background: rgba(245, 158, 11, 0.18);
+  color: #FBBF24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.badge-risk-low {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34D399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.badge-ai {
+  background: rgba(37, 99, 235, 0.2);
+  color: #60A5FA;
+  border: 1px solid rgba(37, 99, 235, 0.4);
+}
+
+.badge-cyan {
+  background: rgba(6, 182, 212, 0.18);
+  color: #22D3EE;
+  border: 1px solid rgba(6, 182, 212, 0.35);
+}
+
+/* Sidebar navigation */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  text-decoration: none;
+}
+
+.nav-item:hover {
+  background: rgba(31, 41, 55, 0.5);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: rgba(37, 99, 235, 0.16);
+  color: #FFFFFF;
+  border-left: 3px solid var(--live-cyan);
+  padding-left: 11px;
+}
+
+.nav-item.active svg {
+  color: var(--live-cyan);
+}
+
+/* Circular progress gauge */
+.circular-chart {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+}
+.circle-bg {
+  fill: none;
+  stroke: #1F2937;
+  stroke-width: 3.5;
+}
+.circle {
+  fill: none;
+  stroke-width: 3.8;
+  stroke-linecap: round;
+  transition: stroke-dasharray 1s ease-out;
+}
+
+/* Toast container */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  min-width: 320px;
+  max-width: 420px;
+  background: rgba(17, 24, 39, 0.95);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 14px 18px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  animation: slideInToast 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+@keyframes slideInToast {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Stepper Bar */
+.demo-stepper-bar {
+  background: #0E1626;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.step-indicator {
+  transition: all 0.2s ease;
+}
+.step-indicator.active {
+  border-color: var(--live-cyan);
+  background: rgba(6, 182, 212, 0.15);
+  color: #FFFFFF;
+}
+.step-indicator.completed {
+  border-color: var(--success-green);
+  background: rgba(16, 185, 129, 0.1);
+  color: #34D399;
+}
+
+/* Route SVG line animation */
+@keyframes dashTravel {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+.route-dash-animated {
+  stroke-dasharray: 6 4;
+  animation: dashTravel 2.5s linear infinite;
+}

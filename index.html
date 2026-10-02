@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReRoute AI 2.0 — Predictive Backhaul & Empty-Mile Optimization Platform</title>
+  
+  <!-- Tailwind CSS Engine with CDN Fallback -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    if (!window.tailwind) {
+      document.write('<script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"><\/script>');
+    }
+  </script>
+  
+  <!-- Custom Enterprise Command-Center Styles -->
+  <link rel="stylesheet" href="./css/styles.css">
+  
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚛</text></svg>">
+</head>
+<body class="bg-[#0B1220] text-[#F8FAFC] antialiased select-none">
+
+  <!-- Main Layout Shell -->
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- 1. SIDEBAR NAVIGATION -->
+    <aside class="w-64 bg-[#0B1220] border-r border-[#1E293B] flex flex-col justify-between z-20 flex-shrink-0">
+      <div class="p-4 space-y-5">
+        <!-- Brand Header -->
+        <div class="flex items-center gap-3 px-2 pt-1">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="font-extrabold text-white text-base tracking-wider flex items-center gap-1.5">
+              <span>RE ROUTE</span>
+              <span class="text-cyan-400 font-mono text-xs px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-800/60">2.0</span>
+            </div>
+            <div class="text-[10px] text-[#94A3B8] tracking-tight uppercase">Predictive Backhaul Platform</div>
+          </div>
+        </div>
+
+        <!-- Navigation Links (Section 3 specifications) -->
+        <nav class="space-y-1">
+          <!-- 1. Dashboard -->
+          <a href="#dashboard" data-nav-screen="dashboard" class="nav-item active">
+            <svg class="w-4 h-4 text-[#94A3B8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="7" height="9" rx="1"></rect>
+              <rect x="14" y="3" width="7" height="5" rx="1"></rect>
+              <rect x="14" y="12" width="7" height="9" rx="1"></rect>
+              <rect x="3" y="16" width="7" height="5" rx="1"></rect>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+
+          <!-- 2. Fleet -->
+          <a href="#fleet" data-nav-screen="fleet" class="nav-item">
+            <svg class="w-4 h-4 text-[#94A3B8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <rect x="1" y="3" width="15" height="13" rx="2"></rect>
+              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+              <circle cx="5.5" cy="18.5" r="2.5"></circle>
+              <circle cx="18.5" cy="18.5" r="2.5"></circle>
+            </svg>
+            <span>Fleet</span>
+          </a>
+
+          <!-- 3. Shipments -->
+          <a href="#shipments" data-nav-screen="shipments" class="nav-item">
+            <svg class="w-4 h-4 text-[#94A3B8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+            </svg>
+            <span>Shipments</span>
+          </a>
+
+          <!-- 4. AI Analysis -->
+          <a href="#analysis" data-nav-screen="analysis" class="nav-item">
+            <svg class="w-4 h-4 text-[#94A3B8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+            <span>AI Analysis</span>
+            <span class="ml-auto w-2 h-2 rounded-full bg-cyan-400"></span>
+          </a>
+
+          <!-- 5. Matching -->
+          <a href="#matching" data-nav-screen="matching" class="nav-item">
+            <svg class="w-4 h-4 text-[#94A3B8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+            </svg>
+            <span>Matching</span>
+          </a>
+
+          <!-- 6. Recovery -->
+          <a href="#recovery" data-nav-screen="recovery" class="nav-item">
+            <svg class="w-4 h-4 text-[#94A3B8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            <span>Recovery</span>
+            <span class="ml-auto text-[9px] font-bold text-amber-400 bg-amber-950/60 px-1.5 py-0.2 rounded border border-amber-800/40">SIM</span>
+          </a>
+
+          <!-- 7. Routes -->
+          <a href="#routes" data-nav-screen="routes" class="nav-item">
+            <svg class="w-4 h-4 text-[#94A3B8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+              <line x1="8" y1="2" x2="8" y2="18"></line>
+              <line x1="16" y1="6" x2="16" y2="22"></line>
+            </svg>
+            <span>Routes</span>
+          </a>
+
+          <!-- 8. Sustainability -->
+          <a href="#sustainability" data-nav-screen="sustainability" class="nav-item">
+            <svg class="w-4 h-4 text-[#94A3B8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Sustainability</span>
+            <span class="ml-auto text-[10px] font-bold text-emerald-400">ESG</span>
+          </a>
+
+          <!-- 9. Analytics -->
+          <a href="#analytics" data-nav-screen="analytics" class="nav-item">
+            <svg class="w-4 h-4 text-[#94A3B8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            <span>Analytics</span>
+          </a>
+
+          <!-- 10. Data Management -->
+          <a href="#data-management" data-nav-screen="data-management" class="nav-item">
+            <svg class="w-4 h-4 text-[#94A3B8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+            </svg>
+            <span>Data Management</span>
+          </a>
+
+          <!-- 11. Model Settings -->
+          <a href="#settings" data-nav-screen="settings" class="nav-item">
+            <svg class="w-4 h-4 text-[#94A3B8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span>Model Settings</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Bottom Engine Status Indicator -->
+      <div class="p-4 border-t border-[#1E293B] bg-[#070D18]/90">
+        <div class="flex items-center justify-between text-xs mb-1">
+          <span class="text-[#94A3B8]">System Status:</span>
+          <span class="font-bold text-emerald-400 font-mono flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            ONLINE
+          </span>
+        </div>
+        <div class="text-[10px] text-[#64748B] mt-2 font-mono">ReRoute AI 2.0 • Decision-Support</div>
+      </div>
+    </aside>
+
+    <!-- 2. MAIN APPLICATION WORKSPACE -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#0B1220] bg-command-grid">
+
+      <!-- TOP BAR -->
+      <header class="h-14 border-b border-[#1E293B] bg-[#0E1626]/90 backdrop-blur-md px-6 flex items-center justify-between z-10">
+        <!-- Search bar -->
+        <div class="flex items-center gap-3 w-80">
+          <div class="relative w-full">
+            <input 
+              type="text" 
+              id="global-search-input" 
+              placeholder="Search vehicle, shipment, or corridor..." 
+              class="w-full bg-[#111827] border border-[#1E293B] focus:border-cyan-500 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-[#64748B] outline-none transition"
+            >
+            <svg class="w-3.5 h-3.5 text-[#64748B] absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Top Status & Indicators -->
+        <div class="flex items-center gap-4">
+          <!-- System Status: ONLINE -->
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>SYSTEM: ONLINE</span>
+          </div>
+
+          <!-- Cloud Storage Indicator (Supabase) -->
+          <div id="topbar-cloud-status" onclick="window.ReRoute.UI.openCloudStatusModal()" class="cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-semibold hover:border-cyan-400 transition" title="Click to view cloud connection & configuration">
+            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" id="topbar-cloud-dot"></span>
+            <span id="topbar-cloud-text">CLOUD: SYNCING...</span>
+          </div>
+
+          <!-- Data Mode Badge (USER DATA / SAMPLE DATA) -->
+          <div id="topbar-data-mode" class="px-2.5 py-1 rounded-full bg-slate-500/10 border border-slate-500/30 text-slate-300 text-xs font-semibold">
+            USER DATA
+          </div>
+
+          <!-- Live Clock -->
+          <div class="text-xs font-mono text-cyan-300 px-2 py-1 rounded bg-[#111827] border border-[#1E293B]" id="live-clock">
+            --:--:--
+          </div>
+
+          <!-- Notifications Dropdown Trigger -->
+          <div class="relative">
+            <button id="notifications-menu" class="w-8 h-8 rounded-lg bg-[#111827] hover:bg-[#1F2937] border border-[#1E293B] flex items-center justify-center text-[#94A3B8] hover:text-white transition relative">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+              </svg>
+              <span id="notifications-badge" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center">
+                1
+              </span>
+            </button>
+
+            <!-- Notifications Dropdown Feed -->
+            <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 glass-card rounded-xl border border-[#1E293B] shadow-2xl z-50 overflow-hidden">
+              <div class="p-3 border-b border-[#1E293B] flex items-center justify-between text-xs font-bold text-white bg-[#0E1626]">
+                <span>Operational Activity Log</span>
+                <span class="text-[10px] text-cyan-400 font-mono">Live</span>
+              </div>
+              <div id="notifications-list" class="max-h-72 overflow-y-auto"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- 3. DYNAMIC CONTENT CONTAINER -->
+      <main id="main-content" class="flex-1 overflow-y-auto p-6 md:p-8">
+        <!-- Rendered dynamically by active component -->
+      </main>
+
+      <!-- 4. BOTTOM POSITIONING FOOTER -->
+      <footer class="h-9 border-t border-[#1E293B] bg-[#070D18] px-6 flex items-center justify-between text-[11px] text-[#64748B] flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <span class="text-[#94A3B8] font-medium">ReRoute AI 2.0</span>
+          <span>•</span>
+          <span class="italic">“Dynamic Logistics Decision-Support: Predict empty returns, rank backhauls, recover autonomously.”</span>
+        </div>
+        <div class="flex items-center gap-3 font-mono">
+          <span class="text-blue-400">DATA-DRIVEN</span>
+          <span>•</span>
+          <span class="text-cyan-400">EXPLAINABLE</span>
+          <span>•</span>
+          <span class="text-amber-400">RESILIENT</span>
+          <span>•</span>
+          <span class="text-emerald-400">ESG-ALIGNED</span>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Scripts in clean dependency order -->
+  <script src="./js/data/sample-data.js"></script>
+  <script src="./js/engines/distance-engine.js"></script>
+  <script src="./js/engines/risk-engine.js"></script>
+  <script src="./js/engines/eta-engine.js"></script>
+  <script src="./js/engines/sustainability-engine.js"></script>
+  <script src="./js/engines/matching-engine.js"></script>
+  <script src="./js/engines/recovery-engine.js"></script>
+  <script src="./js/validation.js"></script>
+  <!-- Supabase JS Client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase-client.js"></script>
+  <script src="./js/store.js"></script>
+  <script src="./js/components/dashboard.js"></script>
+  <script src="./js/components/fleet.js"></script>
+  <script src="./js/components/shipments.js"></script>
+  <script src="./js/components/analysis.js"></script>
+  <script src="./js/components/matching.js"></script>
+  <script src="./js/components/explainability.js"></script>
+  <script src="./js/components/recovery.js"></script>
+  <script src="./js/components/routes.js"></script>
+  <script src="./js/components/sustainability.js"></script>
+  <script src="./js/components/analytics.js"></script>
+  <script src="./js/components/data-management.js"></script>
+  <script src="./js/components/settings.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
