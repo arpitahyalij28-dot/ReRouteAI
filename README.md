@@ -261,6 +261,19 @@ ReRouteAI/
 
 ---
 
+## 🚚 Shipper Truck Marketplace & Reverse Matching (Uber-Style)
+
+ReRoute AI features a bidirectional demand-supply matching engine allowing shippers to discover, evaluate, and lock returning corridor fleet trucks for spot freight consignments.
+
+### Capabilities
+- **Reverse Matching Optimization (`src/engine/reverseMatching.js`)**: Inverts the optimization problem: given a specific consignment tender, evaluates all returning trucks against payload capacity, route detour from return vector, and pickup bay arrival buffers.
+- **Dynamic Backhaul Quotes & Savings**: Automatically computes outbound dedicated hiring price vs discounted return spot rate, highlighting net cost savings (e.g. *Save ₹8,400 (27%) vs dedicated truck*).
+- **10-Minute Soft-Reservation Hold**: Shippers can place a 10-minute hold lock on candidate vehicles (`truck_requests` with `status: 'requested'`), preventing double-booking while drivers review the request.
+- **Driver Portal Dispatch Loop**: Incoming requests appear instantly in the mobile Driver Portal with offered spot rates and a 10-minute timer. Accepting converts the request into an active assignment and dispatches the vehicle.
+- **Dual Mode & RLS Security**: Backed by `LocalDemoAdapter` in-memory / localStorage storage for offline demos and `truck_requests` PostgreSQL table with strict Row-Level Security in Supabase (`20261022000003_shipper_marketplace_requests.sql`).
+
+---
+
 ## ⚠️ Limitations & Operational Boundaries
 
 1. **OSRM Public Routing API**: The public OSRM demo server has community rate limits. In production, provide an `OPENROUTESERVICE_API_KEY` or self-host an OSRM instance. If the external routing service is unreachable or rate-limited, the system falls back seamlessly to Great-Circle Haversine distance with a corridor winding coefficient (1.25x).

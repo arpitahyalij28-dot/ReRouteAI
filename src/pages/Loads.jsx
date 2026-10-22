@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Package, Plus, Search, Filter, CheckCircle2, AlertTriangle, XCircle, ArrowRight, X, LoaderCircle, MapPin, Edit2, Trash2, Sparkles } from 'lucide-react';
+import { Package, Plus, Search, Filter, CheckCircle2, AlertTriangle, XCircle, ArrowRight, X, LoaderCircle, MapPin, Edit2, Trash2, Sparkles, Truck } from 'lucide-react';
 import { useReRoute } from '../context/ReRouteContext';
 import { useAuth } from '../context/AuthContext';
 import { validateShipment } from '../engine/validation';
 import { apiFetch } from '../lib/api';
+import ShipperMarketplaceModal from '../components/ShipperMarketplaceModal';
 
 export default function Loads() {
   const {
@@ -22,6 +23,7 @@ export default function Loads() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [marketplaceShipment, setMarketplaceShipment] = useState(null);
 
   // New Load Form State
   const [formData, setFormData] = useState({
@@ -296,13 +298,23 @@ export default function Loads() {
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                         {!isCancelled && !isAssigned && (
-                          <button
-                            onClick={() => cancelShipment(s.id, 'Tender cancelled by shipper.')}
-                            className="px-2 py-1 text-[10px] font-bold text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 rounded-md transition-colors cursor-pointer"
-                            title="Cancel this tender"
-                          >
-                            Cancel
-                          </button>
+                          <>
+                            <button
+                              onClick={() => setMarketplaceShipment(s)}
+                              className="px-2.5 py-1 text-[10px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-600 hover:text-white border border-blue-200 rounded-md transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
+                              title="Find available return trucks (Uber-Style)"
+                            >
+                              <Truck className="w-3 h-3" />
+                              <span>Find Trucks</span>
+                            </button>
+                            <button
+                              onClick={() => cancelShipment(s.id, 'Tender cancelled by shipper.')}
+                              className="px-2 py-1 text-[10px] font-bold text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 rounded-md transition-colors cursor-pointer"
+                              title="Cancel this tender"
+                            >
+                              Cancel
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -481,6 +493,13 @@ export default function Loads() {
           </div>
         </div>
       )}
+
+      {/* Shipper Marketplace Reverse Match Modal */}
+      <ShipperMarketplaceModal
+        isOpen={!!marketplaceShipment}
+        onClose={() => setMarketplaceShipment(null)}
+        shipment={marketplaceShipment}
+      />
     </div>
   );
 }

@@ -6,7 +6,15 @@ import { Layers, CheckCircle2, ArrowRight, Trash2, Fuel, DollarSign, Calendar } 
 import { useReRoute } from '../context/ReRouteContext';
 
 export default function Assignments() {
-  const { assignments, unassignShipment, trucks, shipments } = useReRoute();
+  const {
+    assignments,
+    unassignShipment,
+    trucks,
+    shipments,
+    truckRequests = [],
+    acceptTruckRequest,
+    rejectTruckRequest,
+  } = useReRoute();
 
   const handleUnassign = async (assignmentId) => {
     if (confirm('Cancel this backhaul assignment and release cargo back to demand pool?')) {
@@ -128,6 +136,98 @@ export default function Assignments() {
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Shipper Marketplace Requests Section */}
+      {truckRequests && truckRequests.length > 0 && (
+        <div className="bg-white rounded-[12px] border border-[#E2E8F0] shadow-soft overflow-hidden">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50/50 to-white">
+            <div className="flex items-center gap-2">
+              <span className="p-1 rounded-md bg-blue-100 text-blue-700">
+                <Layers className="w-4 h-4" />
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Marketplace Shipper Requests</h3>
+                <p className="text-[11px] text-slate-500">Reverse-matched truck booking requests from shippers</p>
+              </div>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+              {truckRequests.length} Requests
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#F8FAFC] text-[#64748B] uppercase text-[10px] border-b border-[#E2E8F0]">
+                <tr>
+                  <th className="py-3 px-4">Request ID</th>
+                  <th className="py-3 px-4">Vehicle</th>
+                  <th className="py-3 px-4">Shipment Tender</th>
+                  <th className="py-3 px-4">Offered Rate</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E2E8F0]">
+                {truckRequests.map((req) => {
+                  const reqTruck = trucks.find((t) => t.id === req.truckId);
+                  const reqShipment = shipments.find((s) => s.id === req.shipmentId);
+                  return (
+                    <tr key={req.id} className="hover:bg-slate-50">
+                      <td className="py-3 px-4 font-mono font-bold text-slate-700">{req.id}</td>
+                      <td className="py-3 px-4">
+                        <strong className="text-slate-900">{reqTruck?.regNumber || req.truckId}</strong>
+                        <span className="block text-[10px] text-slate-500">{reqTruck?.vehicleType}</span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="font-semibold text-slate-900">{reqShipment?.name || req.shipmentId}</span>
+                        <span className="block text-[10px] text-slate-500">
+                          {reqShipment?.origin} → {reqShipment?.destination}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 font-bold text-emerald-700">
+                        ₹{(req.offeredRateInr || req.quoteInr || 0).toLocaleString('en-IN')}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            req.status === 'accepted'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : req.status === 'rejected'
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                              : req.status === 'expired'
+                              ? 'bg-slate-100 text-slate-600'
+                              : 'bg-amber-50 text-amber-800 border border-amber-300'
+                          }`}
+                        >
+                          {req.status.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {req.status === 'requested' && (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => acceptTruckRequest?.(req.id)}
+                              className="px-2.5 py-1 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-all cursor-pointer shadow-xs"
+                            >
+                              Accept
+                            </button>
+                            <button
+                              onClick={() => rejectTruckRequest?.(req.id)}
+                              className="px-2.5 py-1 text-[10px] font-semibold text-slate-600 hover:bg-slate-200 bg-slate-100 rounded-md transition-all cursor-pointer"
+                            >
+                              Decline
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
