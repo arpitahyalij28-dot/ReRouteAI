@@ -29,3 +29,9 @@ jobs:
 
       - name: Validate Production Build & Rollup Bundle
         run: npm run build
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run End-to-End Playwright Suite against Vite Preview
+        run: npm run test:e2e
