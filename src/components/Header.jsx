@@ -1,5 +1,6 @@
 import React from 'react';
-import { Truck, Activity, CircleHelp, User } from 'lucide-react';
+import { Truck, Activity, CircleHelp } from 'lucide-react';
+import RoleSwitcher from './RoleSwitcher';
 
 export default function Header({ onOpenDemoGuide, onResetAll }) {
   return (
@@ -39,7 +40,7 @@ export default function Header({ onOpenDemoGuide, onResetAll }) {
           <span className="text-blue-600 font-bold">1 In-Transit (T101)</span>
         </div>
 
-        {/* Controls & User */}
+        {/* Controls & Role Switcher */}
         <div className="flex items-center gap-2.5">
           <button
             onClick={onOpenDemoGuide}
@@ -58,14 +59,8 @@ export default function Header({ onOpenDemoGuide, onResetAll }) {
             <span>Reset Demo</span>
           </button>
 
-          <div className="flex items-center gap-2.5 pl-2 border-l border-[#E2E8F0]">
-            <div className="w-8 h-8 rounded-full bg-slate-100 border border-[#E2E8F0] flex items-center justify-center text-slate-700">
-              <User className="w-4 h-4" />
-            </div>
-            <div className="hidden md:block text-left">
-              <div className="text-xs font-semibold text-[#0F172A]">Fleet Operator</div>
-              <div className="text-[10px] text-[#64748B]">West Zone Dispatch</div>
-            </div>
+          <div className="pl-1 border-l border-[#E2E8F0]">
+            <RoleSwitcher />
           </div>
         </div>
       </div>

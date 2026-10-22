@@ -319,6 +319,42 @@ export class LocalDemoAdapter {
     return true;
   }
 
+  async createShipment(shipment) {
+    const newS = {
+      id: shipment.id || `S${this.shipments.length + 1}`,
+      createdAt: new Date().toISOString(),
+      status: 'Available',
+      ...shipment,
+    };
+    this.shipments = [newS, ...this.shipments];
+    this._save();
+    return newS;
+  }
+
+  async recordTelemetry(point) {
+    this.trucks = this.trucks.map((t) => {
+      if (t.id !== point.truckId) return t;
+      return {
+        ...t,
+        currentCoords: [point.lat, point.lng],
+        currentLat: point.lat,
+        currentLng: point.lng,
+        speedKmH: point.speed ?? t.speedKmH,
+        currentLocationName: point.locationName || t.currentLocationName,
+      };
+    });
+    this._save();
+    return { success: true };
+  }
+
+  async updateAssignmentStatus(assignmentId, status) {
+    this.assignments = this.assignments.map((a) =>
+      a.id === assignmentId ? { ...a, status } : a
+    );
+    this._save();
+    return true;
+  }
+
   async updateShipmentStatus(shipmentId, status, extraFields = {}) {
     this.shipments = this.shipments.map((s) => {
       if (s.id !== shipmentId) return s;
@@ -479,6 +515,48 @@ export class SupabaseAdapter {
         .eq('id', assignment.shipment_id);
     }
 
+    return true;
+  }
+
+  async createShipment(shipment) {
+    const row = shipmentToRow(shipment, this.orgId);
+    const { data, error } = await this.client
+      .from('shipments')
+      .insert(row)
+      .select()
+      .single();
+
+    if (error) throw new Error(`Supabase createShipment failed: ${error.message}`);
+    return rowToShipment(data);
+  }
+
+  async recordTelemetry(point) {
+    const row = {
+      truck_id: point.truckId,
+      lat: point.lat,
+      lng: point.lng,
+      speed_kmh: point.speed,
+      recorded_at: new Date().toISOString(),
+    };
+    await this.client.from('telemetry_points').insert(row);
+    await this.client
+      .from('trucks')
+      .update({
+        current_lat: point.lat,
+        current_lng: point.lng,
+        speed_kmh: point.speed,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', point.truckId);
+    return { success: true };
+  }
+
+  async updateAssignmentStatus(assignmentId, status) {
+    const { error } = await this.client
+      .from('assignments')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', assignmentId);
+    if (error) throw new Error(`Supabase updateAssignmentStatus failed: ${error.message}`);
     return true;
   }
 

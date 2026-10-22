@@ -163,4 +163,43 @@ describe('Data Layer & Seed Dataset', () => {
     const resetS1 = resetShipments.find((s) => s.id === 'S1');
     expect(resetS1.status).toBe('Available');
   });
+
+  it('supports createShipment, recordTelemetry, and updateAssignmentStatus in LocalDemoAdapter', async () => {
+    // 1. Create new shipment
+    const created = await adapter.createShipment({
+      name: 'Test Urgent Pune Tender',
+      origin: 'Mumbai',
+      destination: 'Pune',
+      weightTons: 6,
+      cargoWeight: 6000,
+      freightOfferInr: 22000,
+    });
+    expect(created.id).toBeDefined();
+    const allShipments = await adapter.getShipments();
+    expect(allShipments.some((s) => s.id === created.id)).toBe(true);
+
+    // 2. Record telemetry
+    await adapter.recordTelemetry({
+      truckId: 'T101',
+      lat: 19.55,
+      lng: 73.35,
+      speed: 62,
+      locationName: 'Kasara Ghat Summit',
+    });
+    const trucks = await adapter.getTrucks();
+    const t101 = trucks.find((t) => t.id === 'T101');
+    expect(t101.currentLat).toBe(19.55);
+    expect(t101.currentLocationName).toBe('Kasara Ghat Summit');
+
+    // 3. Update assignment status
+    const ass = await adapter.createAssignment({
+      truckId: 'T101',
+      shipmentId: created.id,
+      matchScore: 92,
+    });
+    await adapter.updateAssignmentStatus(ass.id, 'Cargo Loaded');
+    const assignments = await adapter.getAssignments();
+    const updatedAss = assignments.find((a) => a.id === ass.id);
+    expect(updatedAss.status).toBe('Cargo Loaded');
+  });
 });

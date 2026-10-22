@@ -17,13 +17,42 @@ import Disruptions from './pages/Disruptions';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import DataManagement from './pages/DataManagement';
+import DriverPortal from './pages/DriverPortal';
+import Login from './pages/Login';
+import { AuthProvider } from './context/AuthContext';
 
 function AppContent() {
-  const { resetDemo, isDemoMode } = useReRoute();
+  const { resetDemo, isDemoMode, toasts, dismissToast } = useReRoute();
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans text-[#0F172A] selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans text-[#0F172A] selection:bg-blue-100 selection:text-blue-900 relative">
+      {/* Realtime Toast Notifications */}
+      {toasts && toasts.length > 0 && (
+        <div className="fixed top-20 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+          {toasts.map((t) => (
+            <div
+              key={t.id}
+              className={`p-3.5 rounded-xl border shadow-lg text-xs font-semibold flex items-center justify-between gap-3 pointer-events-auto animate-in slide-in-from-top-2 duration-200 ${
+                t.type === 'alert'
+                  ? 'bg-rose-50 border-rose-300 text-rose-900'
+                  : t.type === 'success'
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                  : 'bg-blue-50 border-blue-300 text-blue-900'
+              }`}
+            >
+              <span>{t.message}</span>
+              <button
+                onClick={() => dismissToast(t.id)}
+                className="text-slate-400 hover:text-slate-700 font-bold ml-2 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* 1. Header Telemetry & Status Bar */}
       <Header
         onOpenDemoGuide={() => setIsDemoGuideOpen(true)}
@@ -39,11 +68,13 @@ function AppContent() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/fleet" element={<Fleet />} />
           <Route path="/loads" element={<Loads />} />
+          <Route path="/driver" element={<DriverPortal />} />
           <Route path="/assignments" element={<Assignments />} />
           <Route path="/disruptions" element={<Disruptions />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/data" element={<DataManagement />} />
+          <Route path="/login" element={<Login />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
@@ -84,9 +115,11 @@ function AppContent() {
 export default function App() {
   return (
     <BrowserRouter>
-      <ReRouteProvider>
-        <AppContent />
-      </ReRouteProvider>
+      <AuthProvider>
+        <ReRouteProvider>
+          <AppContent />
+        </ReRouteProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

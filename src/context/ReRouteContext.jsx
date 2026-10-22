@@ -25,6 +25,19 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toasts, setToasts] = useState([]);
+
+  const showToast = useCallback((message, type = 'info') => {
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4500);
+  }, []);
+
+  const dismissToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   // Fetch all core datasets
   const loadData = useCallback(async () => {
@@ -79,6 +92,7 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
         (payload) => {
           if (payload.eventType === 'INSERT') {
             loadData();
+            showToast(`New Load Posted: ${payload.new.name || payload.new.id}`, 'info');
           } else if (payload.eventType === 'UPDATE') {
             setShipments((prev) =>
               prev.map((s) => (s.id === payload.new.id ? { ...s, ...payload.new } : s))
@@ -91,8 +105,11 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'assignments' },
-        () => {
+        (payload) => {
           loadData();
+          if (payload.eventType === 'INSERT') {
+            showToast(`Assignment Dispatched: Truck ${payload.new.truck_id}`, 'success');
+          }
         }
       )
       .on(
@@ -101,6 +118,7 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
         (payload) => {
           if (payload.new) {
             setDisruptions((prev) => [payload.new, ...prev]);
+            showToast(`Disruption Alert: ${payload.new.type}`, 'alert');
           }
         }
       )
@@ -109,7 +127,7 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     return () => {
       channel.unsubscribe();
     };
-  }, [isDemoMode, loadData]);
+  }, [isDemoMode, loadData, showToast]);
 
   // Optimistic Assignment Creation with Rollback
   const assignShipment = async (truckId, shipmentId, evaluationData = {}) => {
@@ -295,6 +313,43 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     }
   };
 
+  const recordTelemetry = async (point) => {
+    // Optimistic update of truck location
+    setTrucks((prev) =>
+      prev.map((t) => {
+        if (t.id !== point.truckId) return t;
+        return {
+          ...t,
+          currentCoords: [point.lat, point.lng],
+          currentLat: point.lat,
+          currentLng: point.lng,
+          speedKmH: point.speed ?? t.speedKmH,
+          currentLocationName: point.locationName || t.currentLocationName,
+        };
+      })
+    );
+
+    try {
+      await repositoryRef.current.recordTelemetry(point);
+    } catch (err) {
+      console.warn('Failed to record telemetry:', err);
+    }
+  };
+
+  const updateAssignmentStatus = async (assignmentId, status) => {
+    setAssignments((prev) =>
+      prev.map((a) => (a.id === assignmentId ? { ...a, status } : a))
+    );
+
+    try {
+      await repositoryRef.current.updateAssignmentStatus(assignmentId, status);
+      showToast(`Assignment status updated to: ${status}`, 'success');
+    } catch (err) {
+      console.warn('Failed to update assignment status:', err);
+      showToast(`Failed to update assignment: ${err.message}`, 'alert');
+    }
+  };
+
   const updateSettings = async (newSettings) => {
     const merged = { ...settings, ...newSettings };
     setSettings(merged);
@@ -321,6 +376,9 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     isDemoMode,
     loading,
     error,
+    toasts,
+    showToast,
+    dismissToast,
     trucks,
     shipments,
     assignments,
@@ -334,6 +392,8 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     selectedShipment,
     assignShipment,
     unassignShipment,
+    updateAssignmentStatus,
+    recordTelemetry,
     cancelShipment,
     delayShipment,
     shiftShipmentWindow,

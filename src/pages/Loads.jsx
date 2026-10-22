@@ -1,13 +1,12 @@
-// ReRoute AI 2.0 - Freight Demand Pool (Loads Page)
-// Displays candidate backhaul loads and provides a verified load posting modal.
-
 import React, { useState } from 'react';
-import { Package, Plus, Search, Filter, CheckCircle2, AlertTriangle, XCircle, ArrowRight } from 'lucide-react';
+import { Package, Plus, Search, Filter, CheckCircle2, AlertTriangle, XCircle, ArrowRight, X } from 'lucide-react';
 import { useReRoute } from '../context/ReRouteContext';
+import { useAuth } from '../context/AuthContext';
 import { validateShipment } from '../engine/validation';
 
 export default function Loads() {
-  const { shipments, repository, refreshData } = useReRoute();
+  const { shipments, repository, refreshData, cancelShipment } = useReRoute();
+  const { role } = useAuth();
   const [filterStatus, setFilterStatus] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -123,6 +122,22 @@ export default function Loads() {
         </button>
       </div>
 
+      {/* Shipper Banner (When role is shipper) */}
+      {role === 'shipper' && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3 text-xs text-emerald-900 animate-in fade-in">
+          <div>
+            <strong className="block text-sm font-bold text-emerald-950">Shipper Consignment Portal</strong>
+            <span>You have permission to post new freight tenders and manage spot cargo along the corridor.</span>
+          </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shrink-0 cursor-pointer"
+          >
+            Post Cargo Now
+          </button>
+        </div>
+      )}
+
       {/* Filter and Search Bar */}
       <div className="bg-white p-3.5 rounded-[12px] border border-[#E2E8F0] shadow-soft flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
         {/* Search */}
@@ -168,6 +183,7 @@ export default function Loads() {
                 <th className="py-3 px-4">Pickup Window</th>
                 <th className="py-3 px-4">Gross Yield</th>
                 <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0]">
@@ -215,6 +231,17 @@ export default function Loads() {
                       >
                         {isCancelled ? 'Cancelled' : isAssigned ? 'Assigned' : 'Available'}
                       </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      {!isCancelled && !isAssigned && (
+                        <button
+                          onClick={() => cancelShipment(s.id, 'Tender cancelled by shipper.')}
+                          className="px-2 py-1 text-[10px] font-bold text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 rounded-md transition-colors cursor-pointer"
+                          title="Cancel this tender"
+                        >
+                          Cancel Tender
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
