@@ -66,3 +66,22 @@ export async function executeRecovery(
     solverLatencyMs,
   };
 }
+
+/**
+ * Higher-level recovery sequence runner returning promoted recommendation
+ */
+export async function executeRecoverySequence(
+  truck,
+  shipments = [],
+  cancelledShipmentId,
+  settings = {},
+  reason = ''
+) {
+  const result = await executeRecovery(truck, cancelledShipmentId, shipments, settings);
+  return {
+    ...result,
+    promotedShipmentId: result.newRecommendation?.shipmentId || null,
+    reason,
+  };
+}
+

@@ -11,6 +11,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/**/*.test.js', 'src/**/*.test.jsx', 'src/**/__tests__/**/*.js']
+    include: [
+      'src/**/*.test.js',
+      'src/**/*.test.jsx',
+      'src/**/__tests__/**/*.js',
+      'api/**/*.test.js',
+      'api/**/__tests__/**/*.js',
+    ]
   }
 })
