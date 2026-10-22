@@ -1,7 +1,7 @@
 import React from 'react';
 import { Play, X, ArrowRight } from 'lucide-react';
 
-export default function DemoGuideModal({ isOpen, onClose, onJumpStep }) {
+export default function DemoGuideModal({ isOpen, onClose, onJumpStep, onStartGuidedDemo }) {
   if (!isOpen) return null;
 
   const steps = [
@@ -85,9 +85,32 @@ export default function DemoGuideModal({ isOpen, onClose, onJumpStep }) {
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
           >
             <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Autoplay Banner */}
+        <div className="p-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-inner">
+          <div className="space-y-0.5">
+            <span className="text-xs font-black uppercase tracking-wider text-amber-300 block">
+              Autonomous Guided Presentation Mode
+            </span>
+            <p className="text-[11px] text-blue-100 leading-tight">
+              Autoplay all 7 pipeline stages with live telemetry and narration in ~90 seconds.
+            </p>
+          </div>
+          <button
+            data-testid="run-guided-demo-btn"
+            onClick={() => {
+              if (onStartGuidedDemo) onStartGuidedDemo();
+              onClose();
+            }}
+            className="px-4 py-2 bg-white hover:bg-blue-50 text-blue-700 font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          >
+            <Play className="w-3.5 h-3.5 fill-blue-700" />
+            <span>▶ Run Guided Demo</span>
           </button>
         </div>
 

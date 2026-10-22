@@ -25,12 +25,28 @@ async function testBrowser() {
   const activeTrucksText = await page.locator('text=Active Trucks:').locator('..').innerText();
   console.log('1440px Desktop Active Trucks:', activeTrucksText);
 
+  // Check BeforeVsAfterCard
+  const beforeVsAfterHeading = await page.locator('text=Fleet Performance: Before vs After').innerText();
+  console.log('Found BeforeVsAfterCard:', beforeVsAfterHeading);
+
   // Check clicking shipments
   const s2Button = page.locator('button:has-text("S2"), div:has-text("S2")').first();
   if (await s2Button.count() > 0) {
     await s2Button.click();
     console.log('Clicked S2 shipment');
   }
+
+  // 1.1 Test Guided Demo Modal & Autoplay Runner
+  const demoGuideBtn = page.locator('button:has-text("2-Min Demo Script")');
+  await demoGuideBtn.click();
+  console.log('Opened 2-Min Demo Script modal');
+
+  const runGuidedDemoBtn = page.locator('[data-testid="run-guided-demo-btn"]');
+  await runGuidedDemoBtn.click();
+  console.log('Clicked Run Guided Demo button');
+
+  const tourBarText = await page.locator('text=Stage 1 of 7').first().innerText();
+  console.log('Tour Bar rendered:', tourBarText);
 
   // 1.1 Verify Login page and quick-fill buttons
   await page.goto('http://localhost:4173/login', { waitUntil: 'networkidle' });

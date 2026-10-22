@@ -11,6 +11,7 @@ import DisruptionSimulator from '../components/DisruptionSimulator';
 import SustainabilityDashboard from '../components/SustainabilityDashboard';
 import CorridorMap from '../components/CorridorMap';
 import DemoGuideModal from '../components/DemoGuideModal';
+import BeforeVsAfterCard from '../components/BeforeVsAfterCard';
 import { useReRoute } from '../context/ReRouteContext';
 import {
   calculateShipmentScore,
@@ -23,6 +24,7 @@ export default function Dashboard() {
   const {
     trucks,
     shipments,
+    assignments,
     selectedTruckId,
     setSelectedTruckId,
     selectedTruck,
@@ -231,6 +233,13 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* 0. Before vs After Fleet Operational Impact Card */}
+      <BeforeVsAfterCard
+        trucks={trucks}
+        assignments={assignments}
+        settings={settings}
+      />
+
       {/* 1. Pipeline Stages Indicator */}
       <PipelineStages
         currentStage={currentStage}

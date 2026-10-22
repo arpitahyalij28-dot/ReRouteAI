@@ -1,11 +1,13 @@
 // ReRoute AI 2.0 - Core Application Hub
 // Multi-page routing with data-driven state provider and 100% demo continuity.
+// Integrates 7-stage guided tour autoplay with narrative controls for evaluators and judges.
 
-import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import Navbar from './components/Navbar';
 import DemoGuideModal from './components/DemoGuideModal';
+import GuidedTourBar from './components/GuidedTourBar';
 import { ReRouteProvider, useReRoute } from './context/ReRouteContext';
 
 // Pages
@@ -22,8 +24,172 @@ import Login from './pages/Login';
 import { AuthProvider } from './context/AuthContext';
 
 function AppContent() {
-  const { resetDemo, isDemoMode, toasts, dismissToast } = useReRoute();
+  const navigate = useNavigate();
+  const {
+    resetDemo,
+    isDemoMode,
+    toasts,
+    dismissToast,
+    setSelectedTruckId,
+    setSelectedShipmentId,
+    cancelShipment,
+  } = useReRoute();
+
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false);
+  const [isTourActive, setIsTourActive] = useState(false);
+  const [tourStageIndex, setTourStageIndex] = useState(0);
+  const [isTourPlaying, setIsTourPlaying] = useState(true);
+  const [tourProgress, setTourProgress] = useState(0);
+
+  // 7 High-Impact Presentation Stages for Judges
+  const TOUR_STAGES = [
+    {
+      stage: 1,
+      title: 'Predict: Telemetry Early Warning Radar',
+      caption: 'Stage 1 of 7 — Vehicle telemetry radar monitors 6 corridor trucks. Empty-return risk computed 2+ hours before arrival.',
+      action: async () => {
+        await resetDemo();
+        setSelectedTruckId('T101');
+        navigate('/');
+      },
+    },
+    {
+      stage: 2,
+      title: 'Warn: Early Backhaul Window Countdown',
+      caption: 'Stage 2 of 7 — 14:15 delivery at Bhiwandi triggers proactive backhaul matching window while truck is still in transit.',
+      action: async () => {
+        setSelectedTruckId('T101');
+        navigate('/');
+      },
+    },
+    {
+      stage: 3,
+      title: 'Match: 15 Candidate Consignments Evaluated',
+      caption: 'Stage 3 of 7 — 15 candidate loads scanned along NH 160. Multi-criteria engine evaluates capacity, time windows, and detour.',
+      action: async () => {
+        setSelectedTruckId('T101');
+        setSelectedShipmentId('S1');
+        navigate('/');
+      },
+    },
+    {
+      stage: 4,
+      title: 'Optimize: Kuhn-Munkres Fleet Assignment',
+      caption: 'Stage 4 of 7 — Hungarian combinatorial solver matches fleet loads globally, eliminating 159 empty km.',
+      action: async () => {
+        navigate('/fleet');
+      },
+    },
+    {
+      stage: 5,
+      title: 'Explain: Transparent Why / Why Not Math',
+      caption: 'Stage 5 of 7 — Transparent operational factor breakdown shows why S1 beat S2 (94% vs 86%) with verifiable formulas.',
+      action: async () => {
+        navigate('/');
+        setSelectedShipmentId('S1');
+      },
+    },
+    {
+      stage: 6,
+      title: 'Recover: Disruption Re-Routing in <400ms',
+      caption: 'Stage 6 of 7 — Disruption injected! Top tender S1 cancelled by shipper. Engine reroutes in <400ms, promoting S2.',
+      action: async () => {
+        navigate('/');
+        try {
+          await cancelShipment('S1', 'Cancelled by shipper tender revocation.');
+          setSelectedShipmentId('S2');
+        } catch (e) {
+          console.warn('Tour cancel action:', e);
+        }
+      },
+    },
+    {
+      stage: 7,
+      title: 'Measure: Scope 1 ESG & Net Rupees Saved',
+      caption: 'Stage 7 of 7 — ₹3,776 cost gain, 106.5 kg CO₂ saved per trip. Before vs After operational savings verified.',
+      action: async () => {
+        navigate('/');
+      },
+    },
+  ];
+
+  // Manual jump-to-step handler for DemoGuideModal
+  const handleJumpStep = async (stepNum) => {
+    switch (stepNum) {
+      case 1:
+        await resetDemo();
+        setSelectedTruckId('T101');
+        navigate('/');
+        break;
+      case 2:
+        setSelectedTruckId('T101');
+        setSelectedShipmentId('S1');
+        navigate('/');
+        break;
+      case 3:
+        setSelectedShipmentId('S2');
+        navigate('/');
+        break;
+      case 4:
+        navigate('/analytics');
+        break;
+      case 5:
+        navigate('/');
+        try {
+          await cancelShipment('S1', 'Cancelled by shipper tender revocation.');
+          setSelectedShipmentId('S2');
+        } catch (e) {
+          console.warn('Jump step cancel:', e);
+        }
+        break;
+      case 6:
+        await resetDemo();
+        navigate('/');
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleStartGuidedDemo = () => {
+    setIsTourActive(true);
+    setTourStageIndex(0);
+    setIsTourPlaying(true);
+    setTourProgress(0);
+  };
+
+  // Run stage action when index updates
+  useEffect(() => {
+    if (!isTourActive) return;
+    const stage = TOUR_STAGES[tourStageIndex];
+    if (stage?.action) {
+      stage.action();
+    }
+    setTourProgress(0);
+  }, [isTourActive, tourStageIndex]);
+
+  // Autoplay progression timer (~12.5 seconds per stage = ~87.5s total autoplay)
+  useEffect(() => {
+    if (!isTourActive || !isTourPlaying) return;
+
+    const interval = setInterval(() => {
+      setTourProgress((prev) => {
+        if (prev >= 100) {
+          setTourStageIndex((curr) => {
+            if (curr >= TOUR_STAGES.length - 1) {
+              setIsTourActive(false);
+              return 0;
+            }
+            return curr + 1;
+          });
+          return 0;
+        }
+        return prev + 0.8;
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isTourActive, isTourPlaying]);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans text-[#0F172A] selection:bg-blue-100 selection:text-blue-900 relative">
@@ -90,7 +256,7 @@ function AppContent() {
               ReRoute AI 2.0 • Predictive Backhaul Intelligence Platform
             </span>
             <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-200">
-              {isDemoMode ? 'Offline Demo Mode' : 'Cloud Sync Active'}
+              {isDemoMode ? 'Local sandbox' : 'Cloud Sync Active'}
             </span>
           </div>
 
@@ -106,8 +272,29 @@ function AppContent() {
       <DemoGuideModal
         isOpen={isDemoGuideOpen}
         onClose={() => setIsDemoGuideOpen(false)}
-        onJumpStep={() => {}}
+        onJumpStep={handleJumpStep}
+        onStartGuidedDemo={handleStartGuidedDemo}
       />
+
+      {/* 6. Guided Tour Floating Presentation Bar */}
+      {isTourActive && (
+        <GuidedTourBar
+          currentStageIndex={tourStageIndex}
+          isPlaying={isTourPlaying}
+          progress={tourProgress}
+          stages={TOUR_STAGES}
+          onPlayPause={() => setIsTourPlaying(!isTourPlaying)}
+          onNext={() => {
+            setTourStageIndex((curr) => Math.min(curr + 1, TOUR_STAGES.length - 1));
+            setTourProgress(0);
+          }}
+          onPrev={() => {
+            setTourStageIndex((curr) => Math.max(curr - 1, 0));
+            setTourProgress(0);
+          }}
+          onExit={() => setIsTourActive(false)}
+        />
+      )}
     </div>
   );
 }
