@@ -29,6 +29,7 @@ export default defineConfig({
       'src/**/__tests__/**/*.js',
       'api/**/*.test.js',
       'api/**/__tests__/**/*.js',
+      'tests/**/*.test.js',
     ]
   }
 })

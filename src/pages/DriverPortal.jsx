@@ -41,7 +41,7 @@ export default function DriverPortal() {
   // Find assigned shipment
   const assignedShipment = activeAssignment
     ? shipments.find((s) => s.id === activeAssignment.shipmentId)
-    : shipments.find((s) => s.id === 'S1'); // Fallback to candidate load
+    : shipments[0]; // Fallback to candidate load
 
   const [gpsActive, setGpsActive] = useState(true);
   const [lastPingTime, setLastPingTime] = useState(new Date().toLocaleTimeString());
