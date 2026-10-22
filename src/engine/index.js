@@ -10,3 +10,4 @@ export * from './recovery.js';
 export * from './validation.js';
 export * from './hungarian.js';
 export * from './loadParser.js';
+export * from './reverseMatching.js';
