@@ -16,6 +16,7 @@ export default function ExplainabilityPanel({
   allShipments = [],
   onSelectShipmentId,
   isRecommended,
+  conflictInfo = null,
 }) {
   const [activeTab, setActiveTab] = useState('whywhynot');
   const [showHeadToHead, setShowHeadToHead] = useState(false);
@@ -291,6 +292,28 @@ export default function ExplainabilityPanel({
               <p className="text-[#0F172A] leading-relaxed text-[11px] font-medium">
                 {aiExplanation.text}
               </p>
+            </div>
+          )}
+
+          {/* Fleet Competition Conflict Banner */}
+          {conflictInfo && conflictInfo.competingShipmentId === shipment.id && (
+            <div className="p-3 rounded-xl bg-amber-50/90 border border-amber-200 text-xs space-y-1.5 animate-in fade-in">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 font-bold text-amber-900 text-xs">
+                  <TriangleAlert className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>Fleet Competition Resolution (Why Not?)</span>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-amber-800 border border-amber-200">
+                  Global Winner: {conflictInfo.winnerTruckId}
+                </span>
+              </div>
+              <p className="text-amber-800 text-[11px] leading-relaxed font-medium">
+                {conflictInfo.reason}
+              </p>
+              <div className="text-[10px] text-amber-700 flex items-center justify-between border-t border-amber-200/60 pt-1">
+                <span>{conflictInfo.winnerTruckId} Score: <strong>{conflictInfo.winnerScore}%</strong></span>
+                <span>Active Truck Score: <strong>{conflictInfo.myScore}%</strong></span>
+              </div>
             </div>
           )}
 

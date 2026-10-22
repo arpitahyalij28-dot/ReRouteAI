@@ -26,6 +26,7 @@ export default function DisruptionSimulator({
   isRecalculating,
   recoveryBanner,
   measuredLatencyMs,
+  reassignmentAudit = null,
   // Backward compatibility props for demo scripts
   onCancelS1,
   onDelayS1,
@@ -180,19 +181,76 @@ export default function DisruptionSimulator({
 
       {/* Autonomous Recovery Success Banner */}
       {!isRecalculating && recoveryBanner && (
-        <div className="p-3 bg-emerald-50 border border-[#059669]/30 rounded-xl flex items-start gap-2.5 text-xs animate-in slide-in-from-top-2 duration-300">
-          <span className="p-1 rounded-md bg-[#059669] text-white shrink-0 mt-0.5">
-            <CircleCheck className="w-4 h-4" />
-          </span>
-          <div className="flex-1">
-            <div className="font-bold text-[#059669] flex items-center gap-2">
-              <span>Autonomous Disruption Recovery Completed</span>
-              <span className="text-[10px] px-1.5 py-0.2 bg-white/70 rounded text-[#059669] border border-[#059669]/20 font-mono">
-                Measured Latency: {measuredLatencyMs ?? 2.4}ms
-              </span>
+        <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+          <div className="p-3 bg-emerald-50 border border-[#059669]/30 rounded-xl flex items-start gap-2.5 text-xs">
+            <span className="p-1 rounded-md bg-[#059669] text-white shrink-0 mt-0.5">
+              <CircleCheck className="w-4 h-4" />
+            </span>
+            <div className="flex-1">
+              <div className="font-bold text-[#059669] flex items-center gap-2">
+                <span>Autonomous Disruption Recovery Completed</span>
+                <span className="text-[10px] px-1.5 py-0.2 bg-white/70 rounded text-[#059669] border border-[#059669]/20 font-mono">
+                  Latency: {measuredLatencyMs ?? 2.4}ms (&lt;450ms target)
+                </span>
+              </div>
+              <p className="text-emerald-950 font-medium mt-0.5 leading-snug">{recoveryBanner}</p>
             </div>
-            <p className="text-emerald-950 font-medium mt-0.5 leading-snug">{recoveryBanner}</p>
           </div>
+
+          {/* Fleet Reassignment Audit Grid */}
+          {reassignmentAudit && reassignmentAudit.length > 0 && (
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+              <div className="flex items-center justify-between font-bold text-slate-800">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                  <span>Fleet Combinatorial Reassignment Audit</span>
+                </span>
+                <span className="text-[10px] text-slate-500 font-normal">
+                  Kuhn-Munkres Bipartite Reallocation
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+                {reassignmentAudit.map((item) => {
+                  const isChanged = item.status === 'REASSIGNED';
+                  return (
+                    <div
+                      key={item.truckId}
+                      className={`p-2 rounded-lg border text-[11px] flex items-center justify-between ${
+                        isChanged
+                          ? 'bg-amber-50/70 border-amber-200'
+                          : 'bg-white border-slate-200'
+                      }`}
+                    >
+                      <div>
+                        <span className="font-bold text-[#0F172A]">{item.truckId}</span>
+                        <span className="text-[10px] text-slate-500 ml-1 truncate max-w-[80px]">
+                          ({item.route})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <span className="text-slate-400 line-through text-[10px]">
+                          {item.beforeShipmentId || 'None'}
+                        </span>
+                        <span className="text-slate-400">→</span>
+                        <span className={`font-bold ${isChanged ? 'text-blue-700' : 'text-slate-700'}`}>
+                          {item.afterShipmentId || 'None'}
+                        </span>
+                        <span
+                          className={`text-[9px] px-1.5 py-0.2 rounded font-bold ${
+                            isChanged
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
