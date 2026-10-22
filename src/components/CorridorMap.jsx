@@ -1,11 +1,8 @@
-// ReRoute AI 2.0 - Geo-Spatial Corridor Map Component
-// Interactive Leaflet map displaying live vehicle radar and candidate backhaul vectors.
-// 100% data-driven: renders any truck and candidate shipments without hardcoded identifiers.
-
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { MapPin, Compass, ShieldAlert, Sparkles } from 'lucide-react';
+import { MapPin, Compass, ShieldAlert, Sparkles, Navigation } from 'lucide-react';
 import { CORRIDOR_WAYPOINTS } from '../data/mockData';
+import { apiFetch } from '../lib/api';
 
 export default function CorridorMap({
   truck,
@@ -18,6 +15,55 @@ export default function CorridorMap({
   const mapInstanceRef = useRef(null);
   const layerGroupRef = useRef(null);
   const [isUsingApproximateRoutes, setIsUsingApproximateRoutes] = useState(false);
+  const [realRouteCoords, setRealRouteCoords] = useState(null);
+  const routeCacheRef = useRef(new Map());
+
+  // Fetch real road polyline from /api/route for the active focus shipment
+  useEffect(() => {
+    const focusId = selectedShipmentId || recommendedId;
+    const focusShipment = shipments.find((s) => s.id === focusId);
+    if (!truck?.currentLat || !focusShipment) return;
+
+    const pickLat = focusShipment.originCoords?.[0] || focusShipment.pickupLat;
+    const pickLng = focusShipment.originCoords?.[1] || focusShipment.pickupLng;
+    const dropLat = focusShipment.destCoords?.[0] || focusShipment.dropLat;
+    const dropLng = focusShipment.destCoords?.[1] || focusShipment.dropLng;
+
+    if (!pickLat || !dropLat) return;
+
+    const cacheKey = `${truck.currentLat.toFixed(3)},${truck.currentLng.toFixed(3)}-${pickLat.toFixed(3)},${pickLng.toFixed(3)}-${dropLat.toFixed(3)},${dropLng.toFixed(3)}`;
+
+    if (routeCacheRef.current.has(cacheKey)) {
+      setRealRouteCoords(routeCacheRef.current.get(cacheKey));
+      setIsUsingApproximateRoutes(false);
+      return;
+    }
+
+    let isMounted = true;
+    async function fetchRoadRoute() {
+      // Query intermediate truck destination to pickup to drop
+      const res = await apiFetch(
+        `/api/route?originLat=${truck.currentLat}&originLng=${truck.currentLng}&destLat=${dropLat}&destLng=${dropLng}`
+      );
+
+      if (!isMounted) return;
+
+      if (res?.coordinates && Array.isArray(res.coordinates) && res.coordinates.length > 2) {
+        routeCacheRef.current.set(cacheKey, res.coordinates);
+        setRealRouteCoords(res.coordinates);
+        setIsUsingApproximateRoutes(false);
+      } else {
+        setRealRouteCoords(null);
+        setIsUsingApproximateRoutes(true);
+      }
+    }
+
+    fetchRoadRoute();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [truck?.currentLat, truck?.currentLng, selectedShipmentId, recommendedId, shipments]);
 
   // Initialize Map Once
   useEffect(() => {
@@ -109,16 +155,19 @@ export default function CorridorMap({
         dropCoords,
       ];
 
-      if (isSelected || isRecommended) {
+      const isFocused = isSelected || isRecommended;
+      const pathToDraw = isFocused && realRouteCoords ? realRouteCoords : intermediate;
+
+      if (isFocused) {
         // Glowing halo line
-        L.polyline(intermediate, {
+        L.polyline(pathToDraw, {
           color: isRecommended ? '#059669' : '#2563EB',
           weight: 7,
           opacity: 0.25,
         }).addTo(layers);
 
         // Main active route line
-        L.polyline(intermediate, {
+        L.polyline(pathToDraw, {
           color: isRecommended ? '#059669' : '#2563EB',
           weight: 4,
           opacity: 0.95,
@@ -247,6 +296,17 @@ export default function CorridorMap({
           </span>
         </div>
         <div className="flex items-center gap-2 text-xs">
+          {isUsingApproximateRoutes ? (
+            <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 font-semibold border border-amber-200 text-[10px] flex items-center gap-1">
+              <Navigation className="w-3 h-3 text-amber-600" />
+              <span>Approximate Route</span>
+            </span>
+          ) : realRouteCoords ? (
+            <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 text-[10px] flex items-center gap-1">
+              <Navigation className="w-3 h-3 text-emerald-600" />
+              <span>OSRM Road Polyline</span>
+            </span>
+          ) : null}
           <span className="text-[11px] text-[#64748B]">Active Track:</span>
           <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200 text-[10px] flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-blue-600" />

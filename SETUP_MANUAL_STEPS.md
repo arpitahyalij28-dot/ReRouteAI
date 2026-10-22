@@ -67,11 +67,12 @@ In the Vercel project deployment screen (or **Settings** > **Environment Variabl
 | `VITE_SUPABASE_URL` | Production & Preview (Client) | Supabase project REST URL | Supabase Dashboard > Settings > API |
 | `VITE_SUPABASE_ANON_KEY` | Production & Preview (Client) | Supabase public anonymous API key | Supabase Dashboard > Settings > API |
 | `SUPABASE_SERVICE_ROLE_KEY` | Production & Preview (Serverless only) | Secret service role key for administrative functions | Supabase Dashboard > Settings > API |
-| `ANTHROPIC_API_KEY` | Production & Preview (Serverless only) | Claude 3.5 Sonnet key for natural language explainability | [Anthropic Console](https://console.anthropic.com/) |
+| `ANTHROPIC_API_KEY` | Production & Preview (Serverless only) | Anthropic API key for natural language explainability | [Anthropic Console](https://console.anthropic.com/) |
+| `ANTHROPIC_MODEL` | Production & Preview (Serverless only, Optional) | Model ID (defaults to `claude-3-5-haiku-20241022`) | [Anthropic Docs](https://docs.anthropic.com/) |
 | `OPENROUTESERVICE_API_KEY` | Production & Preview (Serverless only) | High-resolution corridor routing proxy key | [OpenRouteService](https://openrouteservice.org/dev/#/signup) |
 
 > [!WARNING]
-> Ensure `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, and `OPENROUTESERVICE_API_KEY` do **NOT** have the `VITE_` prefix. This ensures Vite's bundler will never leak them into the client-side JavaScript distribution.
+> Ensure `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, and `OPENROUTESERVICE_API_KEY` do **NOT** have the `VITE_` prefix. This ensures Vite's bundler will never leak them into the client-side JavaScript distribution.
 
 ---
 

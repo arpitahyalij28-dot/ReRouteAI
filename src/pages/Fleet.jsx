@@ -1,10 +1,8 @@
-// ReRoute AI 2.0 - Fleet Optimizer Page
-// Manages commercial fleet vehicles and runs global Hungarian multi-truck assignment.
-
 import React, { useState } from 'react';
 import { Truck, Cpu, Sparkles, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
 import { useReRoute } from '../context/ReRouteContext';
 import { optimizeFleet } from '../engine/index';
+import { apiFetch } from '../lib/api';
 
 export default function Fleet() {
   const { trucks, shipments, settings, assignShipment } = useReRoute();
@@ -14,12 +12,32 @@ export default function Fleet() {
 
   const handleOptimizeFleet = async () => {
     setIsSolving(true);
-    // Allow UI to render spinner
-    await new Promise((r) => setTimeout(r, 60));
+    const start = performance.now();
 
     try {
-      const result = optimizeFleet(trucks, shipments, settings);
-      setOptimizationResult(result);
+      // 1. Try calling serverless API endpoint
+      const res = await apiFetch('/api/optimize-fleet', {
+        method: 'POST',
+        body: JSON.stringify({ trucks, shipments, settings }),
+      });
+
+      const elapsed = Number((performance.now() - start).toFixed(2));
+
+      if (res && res.success && Array.isArray(res.assignments)) {
+        setOptimizationResult({
+          ...res,
+          latencyMs: res.latencyMs || elapsed,
+          solver: `Vercel Serverless /api/optimize-fleet (Kuhn-Munkres ${elapsed}ms roundtrip)`,
+        });
+      } else {
+        // 2. Graceful fallback to client-side Hungarian Kuhn-Munkres solver
+        const localResult = optimizeFleet(trucks, shipments, settings);
+        setOptimizationResult({
+          ...localResult,
+          latencyMs: elapsed,
+          solver: `Kuhn-Munkres Hungarian Solver (Local Engine Fallback · ${elapsed}ms)`,
+        });
+      }
     } catch (err) {
       console.error('Fleet optimization error:', err);
     } finally {

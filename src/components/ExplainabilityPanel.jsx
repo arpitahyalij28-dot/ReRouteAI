@@ -1,7 +1,4 @@
-// ReRoute AI 2.0 - Explainable Decision Engine Panel
-// 100% data-driven: renders dynamic checklist and head-to-head contrast for ANY candidate loads.
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Cpu,
   GitCompare,
@@ -9,7 +6,9 @@ import {
   CircleX,
   TriangleAlert,
   Info,
+  Sparkles,
 } from 'lucide-react';
+import { apiFetch } from '../lib/api';
 
 export default function ExplainabilityPanel({
   shipment,
@@ -20,6 +19,59 @@ export default function ExplainabilityPanel({
 }) {
   const [activeTab, setActiveTab] = useState('whywhynot');
   const [showHeadToHead, setShowHeadToHead] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState(null);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+
+  useEffect(() => {
+    setAiExplanation(null);
+  }, [shipment?.id]);
+
+  const handleGenerateAiExplanation = async () => {
+    if (!shipment || !score) return;
+    setIsGeneratingAi(true);
+
+    const payload = {
+      shipmentId: shipment.id,
+      matchScore: score.totalScore,
+      isFeasible: !shipment.isCancelled,
+      factors: {
+        route: score.factors?.route?.rawScore || 50,
+        time: score.factors?.time?.rawScore || 50,
+        capacity: score.factors?.capacity?.rawScore || 50,
+        detour: score.factors?.detour?.rawScore || 50,
+        cost: score.factors?.cost?.rawScore || 50,
+        disruption: score.factors?.disruption?.rawScore || 50,
+      },
+      detourKm: shipment.detourKm || 10,
+      etaBufferMinutes: shipment.etaBufferMinutes || 15,
+      capacityUtilizationPct: score.factors?.capacity?.rawScore || 80,
+      grossYieldInr: shipment.freightOfferInr || shipment.value || 25000,
+    };
+
+    const res = await apiFetch('/api/explain', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    if (res?.explanation) {
+      setAiExplanation({
+        text: res.explanation,
+        provider: res.provider || 'Anthropic Claude (AI Explained)',
+      });
+    } else {
+      const timing =
+        (shipment.etaBufferMinutes || 15) >= 20
+          ? `Truck arrives with a comfortable ${shipment.etaBufferMinutes || 15}m buffer before bay closing.`
+          : 'Tight dock operation buffer required.';
+      const detour = `Detour diversion is +${shipment.detourKm || 10} km from nominal transit corridor.`;
+      const yieldSummary = `Gross freight yield is ₹${(shipment.freightOfferInr || shipment.value || 25000).toLocaleString('en-IN')}.`;
+      setAiExplanation({
+        text: `Shipment ${shipment.id} matches at ${score.totalScore}% overall alignment. ${timing} ${detour} ${yieldSummary}`,
+        provider: 'Deterministic Multi-Criteria Rules (Offline Fallback)',
+      });
+    }
+    setIsGeneratingAi(false);
+  };
 
   // Dynamic candidate A and B for head-to-head comparison
   const candidateA = shipment;
@@ -198,6 +250,39 @@ export default function ExplainabilityPanel({
       {/* Tab 1: Why / Why Not? Checklist */}
       {activeTab === 'whywhynot' && (
         <div className="space-y-3">
+          {/* Action Row */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
+              Algorithmic Feasibility Checklist
+            </span>
+            <button
+              onClick={handleGenerateAiExplanation}
+              disabled={isGeneratingAi}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-all cursor-pointer shadow-xs disabled:opacity-60"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+              <span>{isGeneratingAi ? 'Synthesizing Explanation...' : 'Explain in plain words'}</span>
+            </button>
+          </div>
+
+          {/* AI Explanation Card (when generated) */}
+          {aiExplanation && (
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-50/90 to-indigo-50/90 border border-blue-200/80 text-xs space-y-1.5 animate-in fade-in">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-blue-900 font-bold text-xs">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Dispatcher Decision Briefing</span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white text-blue-800 font-bold border border-blue-200 shadow-2xs">
+                  {aiExplanation.provider}
+                </span>
+              </div>
+              <p className="text-[#0F172A] leading-relaxed text-[11px] font-medium">
+                {aiExplanation.text}
+              </p>
+            </div>
+          )}
+
           <div className="p-2.5 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] text-xs">
             <span className="font-semibold text-[#0F172A] block mb-0.5">
               {isRecommended ? 'Why Selected as Top Match:' : 'Candidate Match Assessment:'}

@@ -17,6 +17,7 @@ import {
   rankShipments,
   calculateSustainabilityMetrics,
 } from '../utils/scoring';
+import { apiFetch } from '../lib/api';
 
 export default function Dashboard() {
   const {
@@ -91,19 +92,39 @@ export default function Dashboard() {
     const start = performance.now();
     try {
       await cancelShipment(targetId, 'Shipper facility crane maintenance shutdown');
-      const latency = Number((performance.now() - start).toFixed(2));
-      setMeasuredRecoveryLatency(latency);
+
+      // 1. Attempt Serverless Recovery via /api/recover
+      const recoveryRes = await apiFetch('/api/recover', {
+        method: 'POST',
+        body: JSON.stringify({
+          truck: activeTruck,
+          cancelledShipmentId: targetId,
+          allShipments: shipments,
+          settings,
+        }),
+      });
+
+      const elapsed = Number((performance.now() - start).toFixed(2));
+      setMeasuredRecoveryLatency(elapsed);
       setIsCancelled(true);
       setIsRecalculating(false);
 
-      // Select next recommended feasible shipment
-      const remaining = shipments.filter((s) => s.id !== targetId && !s.isCancelled);
-      const nextEval = rankShipments(remaining, settings?.weights, activeTruck);
-      if (nextEval.recommendedId) {
-        setSelectedShipmentId(nextEval.recommendedId);
+      if (recoveryRes?.newRecommendation?.shipmentId) {
+        const nextId = recoveryRes.newRecommendation.shipmentId;
+        setSelectedShipmentId(nextId);
         setRecoveryBanner(
-          `Autonomous Recovery Active: ${targetId} cancelled. ${nextEval.recommendedId} dynamically promoted as optimal backhaul with ${latency}ms latency.`
+          `Autonomous Recovery Active: ${targetId} cancelled. ${nextId} dynamically promoted as optimal backhaul (${recoveryRes.solverLatencyMs}ms solver / ${elapsed}ms roundtrip via /api/recover).`
         );
+      } else {
+        // 2. Client-side local engine fallback
+        const remaining = shipments.filter((s) => s.id !== targetId && !s.isCancelled);
+        const nextEval = rankShipments(remaining, settings?.weights, activeTruck);
+        if (nextEval.recommendedId) {
+          setSelectedShipmentId(nextEval.recommendedId);
+          setRecoveryBanner(
+            `Autonomous Recovery Active: ${targetId} cancelled. ${nextEval.recommendedId} dynamically promoted as optimal backhaul (Computed locally · ${elapsed}ms).`
+          );
+        }
       }
     } catch {
       setIsRecalculating(false);
@@ -117,18 +138,38 @@ export default function Dashboard() {
     const start = performance.now();
     try {
       await delayShipment(targetId, 60, 'Heavy vehicle breakdown on ghat descent link');
-      const latency = Number((performance.now() - start).toFixed(2));
-      setMeasuredRecoveryLatency(latency);
+
+      // Attempt Serverless Recovery
+      const recoveryRes = await apiFetch('/api/recover', {
+        method: 'POST',
+        body: JSON.stringify({
+          truck: activeTruck,
+          cancelledShipmentId: targetId,
+          allShipments: shipments,
+          settings,
+        }),
+      });
+
+      const elapsed = Number((performance.now() - start).toFixed(2));
+      setMeasuredRecoveryLatency(elapsed);
       setIsDelayed(true);
       setIsRecalculating(false);
 
-      const nextEval = rankShipments(shipments, settings?.weights, activeTruck);
-      if (nextEval.recommendedId && nextEval.recommendedId !== targetId) {
-        setSelectedShipmentId(nextEval.recommendedId);
+      const promotedId = recoveryRes?.newRecommendation?.shipmentId;
+      if (promotedId) {
+        setSelectedShipmentId(promotedId);
+        setRecoveryBanner(
+          `Traffic Disruption Injected: ${targetId} delayed by 60 min. Re-ranked candidate shipments in ${elapsed}ms via /api/recover.`
+        );
+      } else {
+        const nextEval = rankShipments(shipments, settings?.weights, activeTruck);
+        if (nextEval.recommendedId && nextEval.recommendedId !== targetId) {
+          setSelectedShipmentId(nextEval.recommendedId);
+        }
+        setRecoveryBanner(
+          `Traffic Disruption Injected: ${targetId} delayed by 60 min. Re-ranked candidate shipments in ${elapsed}ms (computed locally).`
+        );
       }
-      setRecoveryBanner(
-        `Traffic Disruption Injected: ${targetId} delayed by 60 min. Re-ranked candidate shipments in ${latency}ms.`
-      );
     } catch {
       setIsRecalculating(false);
     }

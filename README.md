@@ -140,6 +140,9 @@ npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) to view the cockpit.
 
+> [!TIP]
+> **Serverless Backend Simulation**: `npm run dev` runs the Vite frontend with automatic, graceful fallback to client-side pure mathematical solvers whenever `/api/*` is unreachable. To run the full-stack serverless functions locally alongside the frontend, run `npx vercel dev`.
+
 ### Run Quality & Test Suite
 ```bash
 # Run Vitest unit & E2E smoke tests (35 tests)
