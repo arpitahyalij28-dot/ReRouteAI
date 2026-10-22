@@ -5,13 +5,7 @@
 
 import { calculateRouteEstimate } from './distance.js';
 import { calculateETA } from './eta.js';
-import { normalizeWeights } from './matching.js';
-
-export const DEFAULT_WEATHER_PENALTIES = {
-  low: 0,
-  medium: 15,
-  high: 35,
-};
+import { normalizeWeights, DEFAULT_WEATHER_PENALTIES } from './matching.js';
 
 export const DEFAULT_MARKET_RATES = {
   freshTripPerKmInr: 48, // Standard outbound spot hiring rate
