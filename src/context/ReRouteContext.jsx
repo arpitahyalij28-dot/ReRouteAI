@@ -18,6 +18,21 @@ import AuthContext from './AuthContext';
 
 const ReRouteContext = createContext(null);
 
+export function addMinutesToTimeString(timeStr, minutesToAdd) {
+  if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return '12:00';
+  const [h, m] = timeStr.split(':').map(Number);
+  const total = (h * 60 + m + minutesToAdd + 1440) % 1440;
+  const newH = String(Math.floor(total / 60)).padStart(2, '0');
+  const newM = String(total % 60).padStart(2, '0');
+  return `${newH}:${newM}`;
+}
+
+export function timeStringToMinutes(timeStr) {
+  if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+}
+
 function useAuthSafe() {
   const context = useContext(AuthContext);
   return context || { user: null, profile: null, role: 'dispatcher', isDemoUser: true };
@@ -53,8 +68,9 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [disruptions, setDisruptions] = useState([]);
 
-  const [selectedTruckId, setSelectedTruckId] = useState('T101');
-  const [selectedShipmentId, setSelectedShipmentId] = useState('S1');
+  // Selections are derived dynamically from available data (no hardcoded 'T101' / 'S1')
+  const [selectedTruckId, setSelectedTruckId] = useState(null);
+  const [selectedShipmentId, setSelectedShipmentId] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -300,69 +316,99 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
   const delayShipment = async (shipmentId, delayMins = 60, reason = 'Corridor highway bottleneck delay') => {
     const previousShipments = [...shipments];
 
+    let updatedTarget = null;
     setShipments((prev) =>
       prev.map((s) => {
         if (s.id !== shipmentId) return s;
-        return {
+        const currentEta = s.predictedTruckEta || '14:15';
+        const newEta = addMinutesToTimeString(currentEta, delayMins);
+        const windowEndMins = timeStringToMinutes(s.pickupWindowEnd || '16:00');
+        const newEtaMins = timeStringToMinutes(newEta);
+        const newBuffer = windowEndMins - newEtaMins;
+        const delayRisk = newBuffer < 0 ? 'high' : newBuffer < 30 ? 'medium' : 'low';
+
+        updatedTarget = {
           ...s,
           isDelayed: true,
-          predictedTruckEta: '15:15',
-          etaBufferMinutes: (s.etaBufferMinutes || 15) - delayMins,
-          delayRisk: 'high',
+          predictedTruckEta: newEta,
+          etaBufferMinutes: newBuffer,
+          delayRisk,
           delayRiskReason: reason,
         };
+        return updatedTarget;
       })
     );
 
-    try {
-      await repoRef.current.updateShipmentStatus(shipmentId, 'Available', {
-        predictedTruckEta: '15:15',
-        etaBufferMinutes: -45,
-      });
+    if (updatedTarget) {
+      try {
+        await repoRef.current.updateShipmentStatus(shipmentId, 'Available', {
+          predictedTruckEta: updatedTarget.predictedTruckEta,
+          etaBufferMinutes: updatedTarget.etaBufferMinutes,
+        });
 
-      await repoRef.current.createDisruptionEvent({
-        type: 'DELAY',
-        shipmentId,
-        payload: { delayMinutes: delayMins, reason },
-      });
-    } catch (err) {
-      setShipments(previousShipments);
-      setError(`Delay update failed: ${err.message}`);
-      throw err;
+        await repoRef.current.createDisruptionEvent({
+          type: 'DELAY',
+          shipmentId,
+          payload: { delayMinutes: delayMins, reason },
+        });
+      } catch (err) {
+        setShipments(previousShipments);
+        setError(`Delay update failed: ${err.message}`);
+        throw err;
+      }
     }
   };
 
-  const shiftShipmentWindow = async (shipmentId, newStart = '15:30', newEnd = '17:00') => {
+  const shiftShipmentWindow = async (shipmentId, shiftOrNewStart = 60, optionalEnd = null) => {
     const previousShipments = [...shipments];
 
+    let updatedTarget = null;
     setShipments((prev) =>
       prev.map((s) => {
         if (s.id !== shipmentId) return s;
-        return {
+        let newStart, newEnd;
+        if (typeof shiftOrNewStart === 'number') {
+          newStart = addMinutesToTimeString(s.pickupWindowStart || '14:00', shiftOrNewStart);
+          newEnd = addMinutesToTimeString(s.pickupWindowEnd || '16:00', shiftOrNewStart);
+        } else {
+          newStart = shiftOrNewStart;
+          newEnd = optionalEnd || addMinutesToTimeString(newStart, 90);
+        }
+
+        const etaMins = timeStringToMinutes(s.predictedTruckEta || '14:15');
+        const newBuffer = timeStringToMinutes(newEnd) - etaMins;
+
+        updatedTarget = {
           ...s,
           pickupWindowStart: newStart,
           pickupWindowEnd: newEnd,
-          etaBufferMinutes: 75,
+          etaBufferMinutes: newBuffer,
         };
+        return updatedTarget;
       })
     );
 
-    try {
-      await repoRef.current.updateShipmentStatus(shipmentId, 'Available', {
-        pickupWindowStart: newStart,
-        pickupWindowEnd: newEnd,
-        etaBufferMinutes: 75,
-      });
+    if (updatedTarget) {
+      try {
+        await repoRef.current.updateShipmentStatus(shipmentId, 'Available', {
+          pickupWindowStart: updatedTarget.pickupWindowStart,
+          pickupWindowEnd: updatedTarget.pickupWindowEnd,
+          etaBufferMinutes: updatedTarget.etaBufferMinutes,
+        });
 
-      await repoRef.current.createDisruptionEvent({
-        type: 'WINDOW_SHIFT',
-        shipmentId,
-        payload: { newStart, newEnd },
-      });
-    } catch (err) {
-      setShipments(previousShipments);
-      setError(`Window shift failed: ${err.message}`);
-      throw err;
+        await repoRef.current.createDisruptionEvent({
+          type: 'WINDOW_SHIFT',
+          shipmentId,
+          payload: {
+            newStart: updatedTarget.pickupWindowStart,
+            newEnd: updatedTarget.pickupWindowEnd,
+          },
+        });
+      } catch (err) {
+        setShipments(previousShipments);
+        setError(`Window shift failed: ${err.message}`);
+        throw err;
+      }
     }
   };
 
@@ -416,8 +462,6 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
   const resetDemo = async () => {
     await repoRef.current.resetToDemo();
     await loadData(false);
-    setSelectedShipmentId((curr) => curr || 'S1');
-    setSelectedTruckId((curr) => curr || 'T101');
   };
 
   const selectedTruck = trucks.find((t) => t.id === selectedTruckId) || trucks[0] || null;

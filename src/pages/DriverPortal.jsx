@@ -19,8 +19,10 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useReRoute } from '../context/ReRouteContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function DriverPortal() {
+  const { user } = useAuth();
   const {
     trucks,
     shipments,
@@ -30,8 +32,8 @@ export default function DriverPortal() {
     showToast,
   } = useReRoute();
 
-  // Active driver truck is T101 (or first available truck)
-  const activeTruck = trucks.find((t) => t.id === 'T101') || trucks[0];
+  // Active driver truck: assigned to authenticated user, or first available fleet truck
+  const activeTruck = (user?.id ? trucks.find((t) => t.assignedDriverId === user.id) : null) || trucks[0] || null;
 
   // Find active assignment for this truck
   const activeAssignment = assignments.find(

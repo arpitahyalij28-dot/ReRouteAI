@@ -33,7 +33,7 @@ export default function DisruptionSimulator({
   isS1Cancelled,
   isS1Delayed,
 }) {
-  const currentTarget = targetShipment || allShipments[0] || { id: 'S1', name: 'Primary Tender' };
+  const currentTarget = targetShipment || allShipments[0] || { id: allShipments[0]?.id || 'load-1', name: allShipments[0]?.name || 'Primary Tender' };
   const targetId = currentTarget.id;
 
   const isCancelled = propIsCancelled ?? isS1Cancelled ?? false;

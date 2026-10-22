@@ -116,4 +116,39 @@ describe('7-Stage Live Demo Flow Verification', () => {
     expect(s2Rec.whyWhyNot.reasons.length).toBeGreaterThan(0);
     expect(s2Rec.whyWhyNot.recommendedSummary).toBeTruthy();
   });
+
+  it('runs successfully when T101 and S1 are completely absent (purely dynamic)', async () => {
+    const adapter = new LocalDemoAdapter();
+    await adapter.resetToDemo();
+
+    const allTrucks = await adapter.getTrucks();
+    const allShipments = await adapter.getShipments();
+
+    // Explicitly filter out T101 and S1
+    const customTrucks = allTrucks.filter((t) => t.id !== 'T101');
+    const customShipments = allShipments.filter((s) => s.id !== 'S1');
+
+    expect(customTrucks.length).toBeGreaterThan(0);
+    expect(customShipments.length).toBeGreaterThan(0);
+
+    const testTruck = customTrucks[0];
+    expect(testTruck.id).not.toBe('T101');
+
+    // Multi-criteria evaluation works dynamically on any truck/shipments
+    const evaluations = evaluateShipments(testTruck, customShipments);
+    expect(evaluations.length).toBe(customShipments.length);
+
+    const feasible = evaluations.filter((e) => e.isFeasible);
+    expect(feasible.length).toBeGreaterThan(0);
+
+    const topPick = evaluations.find((e) => e.isRecommended);
+    expect(topPick).toBeDefined();
+    expect(topPick.shipmentId).not.toBe('S1');
+
+    // Simulate cancellation of this dynamic top pick
+    const recovery = await executeRecovery(testTruck, topPick.shipmentId, customShipments);
+    expect(recovery.success).toBe(true);
+    expect(recovery.newRecommendation).toBeDefined();
+    expect(recovery.newRecommendation.shipmentId).not.toBe(topPick.shipmentId);
+  });
 });

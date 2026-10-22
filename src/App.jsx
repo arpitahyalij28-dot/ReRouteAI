@@ -30,10 +30,16 @@ function AppContent() {
     isDemoMode,
     toasts,
     dismissToast,
+    trucks,
+    shipments,
     setSelectedTruckId,
     setSelectedShipmentId,
     cancelShipment,
   } = useReRoute();
+
+  const primaryTruckId = trucks[0]?.id;
+  const topShipmentId = shipments[0]?.id;
+  const runnerUpShipmentId = shipments[1]?.id || shipments[0]?.id;
 
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false);
   const [isTourActive, setIsTourActive] = useState(false);
@@ -46,36 +52,36 @@ function AppContent() {
     {
       stage: 1,
       title: 'Predict: Telemetry Early Warning Radar',
-      caption: 'Stage 1 of 7 — Vehicle telemetry radar monitors 6 corridor trucks. Empty-return risk computed 2+ hours before arrival.',
+      caption: `Stage 1 of 7 — Vehicle telemetry radar monitors ${trucks.length || 6} corridor trucks. Empty-return risk computed 2+ hours before arrival.`,
       action: async () => {
         await resetDemo();
-        setSelectedTruckId('T101');
+        if (primaryTruckId) setSelectedTruckId(primaryTruckId);
         navigate('/');
       },
     },
     {
       stage: 2,
       title: 'Warn: Early Backhaul Window Countdown',
-      caption: 'Stage 2 of 7 — 14:15 delivery at Bhiwandi triggers proactive backhaul matching window while truck is still in transit.',
+      caption: 'Stage 2 of 7 — Estimated delivery triggers proactive backhaul matching window while truck is still in transit.',
       action: async () => {
-        setSelectedTruckId('T101');
+        if (primaryTruckId) setSelectedTruckId(primaryTruckId);
         navigate('/');
       },
     },
     {
       stage: 3,
-      title: 'Match: 15 Candidate Consignments Evaluated',
-      caption: 'Stage 3 of 7 — 15 candidate loads scanned along NH 160. Multi-criteria engine evaluates capacity, time windows, and detour.',
+      title: 'Match: Candidate Consignments Evaluated',
+      caption: `Stage 3 of 7 — Candidate loads scanned along the corridor. Multi-criteria engine evaluates capacity, time windows, and detour.`,
       action: async () => {
-        setSelectedTruckId('T101');
-        setSelectedShipmentId('S1');
+        if (primaryTruckId) setSelectedTruckId(primaryTruckId);
+        if (topShipmentId) setSelectedShipmentId(topShipmentId);
         navigate('/');
       },
     },
     {
       stage: 4,
       title: 'Optimize: Kuhn-Munkres Fleet Assignment',
-      caption: 'Stage 4 of 7 — Hungarian combinatorial solver matches fleet loads globally, eliminating 159 empty km.',
+      caption: 'Stage 4 of 7 — Hungarian combinatorial solver matches fleet loads globally, eliminating empty return km.',
       action: async () => {
         navigate('/fleet');
       },
@@ -83,21 +89,23 @@ function AppContent() {
     {
       stage: 5,
       title: 'Explain: Transparent Why / Why Not Math',
-      caption: 'Stage 5 of 7 — Transparent operational factor breakdown shows why S1 beat S2 (94% vs 86%) with verifiable formulas.',
+      caption: 'Stage 5 of 7 — Transparent operational factor breakdown shows candidate trade-offs with verifiable formulas.',
       action: async () => {
         navigate('/');
-        setSelectedShipmentId('S1');
+        if (topShipmentId) setSelectedShipmentId(topShipmentId);
       },
     },
     {
       stage: 6,
       title: 'Recover: Disruption Re-Routing in <400ms',
-      caption: 'Stage 6 of 7 — Disruption injected! Top tender S1 cancelled by shipper. Engine reroutes in <400ms, promoting S2.',
+      caption: 'Stage 6 of 7 — Disruption injected! Top tender cancelled by shipper. Engine reroutes in <400ms, promoting next candidate.',
       action: async () => {
         navigate('/');
         try {
-          await cancelShipment('S1', 'Cancelled by shipper tender revocation.');
-          setSelectedShipmentId('S2');
+          if (topShipmentId) {
+            await cancelShipment(topShipmentId, 'Cancelled by shipper tender revocation.');
+          }
+          if (runnerUpShipmentId) setSelectedShipmentId(runnerUpShipmentId);
         } catch (e) {
           console.warn('Tour cancel action:', e);
         }
@@ -106,7 +114,7 @@ function AppContent() {
     {
       stage: 7,
       title: 'Measure: Scope 1 ESG & Net Rupees Saved',
-      caption: 'Stage 7 of 7 — ₹3,776 cost gain, 106.5 kg CO₂ saved per trip. Before vs After operational savings verified.',
+      caption: 'Stage 7 of 7 — Cost gains and Scope 1 CO₂ reductions verified. Before vs After operational savings quantified.',
       action: async () => {
         navigate('/');
       },
@@ -118,16 +126,16 @@ function AppContent() {
     switch (stepNum) {
       case 1:
         await resetDemo();
-        setSelectedTruckId('T101');
+        if (primaryTruckId) setSelectedTruckId(primaryTruckId);
         navigate('/');
         break;
       case 2:
-        setSelectedTruckId('T101');
-        setSelectedShipmentId('S1');
+        if (primaryTruckId) setSelectedTruckId(primaryTruckId);
+        if (topShipmentId) setSelectedShipmentId(topShipmentId);
         navigate('/');
         break;
       case 3:
-        setSelectedShipmentId('S2');
+        if (runnerUpShipmentId) setSelectedShipmentId(runnerUpShipmentId);
         navigate('/');
         break;
       case 4:
@@ -136,8 +144,10 @@ function AppContent() {
       case 5:
         navigate('/');
         try {
-          await cancelShipment('S1', 'Cancelled by shipper tender revocation.');
-          setSelectedShipmentId('S2');
+          if (topShipmentId) {
+            await cancelShipment(topShipmentId, 'Cancelled by shipper tender revocation.');
+          }
+          if (runnerUpShipmentId) setSelectedShipmentId(runnerUpShipmentId);
         } catch (e) {
           console.warn('Jump step cancel:', e);
         }

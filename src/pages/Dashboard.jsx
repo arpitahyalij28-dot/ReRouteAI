@@ -12,7 +12,7 @@ import SustainabilityDashboard from '../components/SustainabilityDashboard';
 import CorridorMap from '../components/CorridorMap';
 import DemoGuideModal from '../components/DemoGuideModal';
 import BeforeVsAfterCard from '../components/BeforeVsAfterCard';
-import { useReRoute } from '../context/ReRouteContext';
+import { useReRoute, addMinutesToTimeString } from '../context/ReRouteContext';
 import {
   calculateShipmentScore,
   rankShipments,
@@ -178,9 +178,11 @@ export default function Dashboard() {
   };
 
   const handleShiftWindowTarget = async (targetId) => {
-    await shiftShipmentWindow(targetId, '15:30', '17:00');
+    const target = shipments.find((s) => s.id === targetId);
+    await shiftShipmentWindow(targetId, 60);
     setIsWindowShifted(true);
-    setRecoveryBanner(`Shipper window broadened: ${targetId} pickup window extended to 17:00 IST (+75 min buffer).`);
+    const newEnd = target ? addMinutesToTimeString(target.pickupWindowEnd, 60) : '17:00';
+    setRecoveryBanner(`Shipper window broadened: ${targetId} pickup window extended to ${newEnd} IST (+60 min relative shift).`);
   };
 
   const handleReset = async () => {
@@ -190,7 +192,7 @@ export default function Dashboard() {
     setIsWindowShifted(false);
     setIsRecalculating(false);
     setRecoveryBanner(null);
-    setSelectedShipmentId('S1');
+    if (shipments.length > 0) setSelectedShipmentId(shipments[0].id);
     setCurrentStage('warn');
   };
 

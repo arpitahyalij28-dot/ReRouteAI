@@ -7,22 +7,27 @@ import { useReRoute } from '../context/ReRouteContext';
 
 export default function Disruptions() {
   const { disruptions, shipments, trucks, cancelShipment, delayShipment, shiftShipmentWindow, resetDemo } = useReRoute();
-  const [selectedTargetId, setSelectedTargetId] = useState(shipments[0]?.id || 'S1');
+  const [selectedTargetId, setSelectedTargetId] = useState(shipments[0]?.id || '');
   const [activeMessage, setActiveMessage] = useState(null);
 
+  const activeTargetId = selectedTargetId || shipments[0]?.id;
+
   const handleTriggerCancel = async () => {
-    await cancelShipment(selectedTargetId, 'Shipper emergency facility maintenance');
-    setActiveMessage(`Tender ${selectedTargetId} cancelled. Disruption event logged.`);
+    if (!activeTargetId) return;
+    await cancelShipment(activeTargetId, 'Shipper emergency facility maintenance');
+    setActiveMessage(`Tender ${activeTargetId} cancelled. Disruption event logged.`);
   };
 
   const handleTriggerDelay = async () => {
-    await delayShipment(selectedTargetId, 60, 'Heavy road freight bottleneck delay');
-    setActiveMessage(`Transit delay (+60m) injected on ${selectedTargetId}.`);
+    if (!activeTargetId) return;
+    await delayShipment(activeTargetId, 60, 'Heavy road freight bottleneck delay');
+    setActiveMessage(`Transit delay (+60m) injected on ${activeTargetId}.`);
   };
 
   const handleTriggerShift = async () => {
-    await shiftShipmentWindow(selectedTargetId, '16:00', '18:00');
-    setActiveMessage(`Dock window modified for ${selectedTargetId} (16:00 - 18:00 IST).`);
+    if (!activeTargetId) return;
+    await shiftShipmentWindow(activeTargetId, 60);
+    setActiveMessage(`Dock window modified for ${activeTargetId} (+60m relative shift).`);
   };
 
   return (
