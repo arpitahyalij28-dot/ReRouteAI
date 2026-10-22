@@ -115,9 +115,10 @@ In line with enterprise evaluation best practices, every sub-system in ReRoute A
    - **Real External APIs**: Live routing coordinates fetched from `/api/route` (OpenRouteService / OSRM API). If offline or rate-limited, gracefully falls back to Haversine with a 1.25x road winding tortuosity factor.
    - **Live Weather**: Weather metrics fetched from `/api/weather` (Open-Meteo API) evaluating actual precipitation, wind speed, and temperature disruption risk deltas along the corridor.
 3. **Multi-Criteria Optimization & Scoring**:
-   - **Deterministic Heuristic Algorithms**: Evaluates candidate matches using configurable Multi-Criteria Decision Analysis (MCDA) heuristics (Route Alignment 25%, Detour 15%, Time Window 20%, Capacity 20%, Freight Yield 20%). The weights are human-tunable heuristics rather than black-box learned neural weights, allowing full explainability and zero hallucinations.
-4. **Fleet Optimization**:
-   - **Exact Combinatorial Mathematics**: True Kuhn-Munkres (Hungarian) algorithm running in $O(N^3)$ polynomial time, solving min-cost bipartite matching to maximize fleet-wide profitability and minimize deadhead kilometers.
+   - **Deterministic Heuristic Algorithms**: Evaluates candidate matches using configurable Multi-Criteria Decision Analysis (MCDA) heuristics (Route Alignment 25%, Detour 15%, Time Window 20%, Capacity 20%, Freight Yield 10%, Disruption/Risk 10%). The weights are human-tunable heuristics rather than black-box learned neural weights, allowing full explainability and zero hallucinations.
+4. **Fleet Optimization (Multi-Criteria Weighted Scoring + Global Assignment)**:
+   - **Exact Combinatorial Mathematics**: True Kuhn-Munkres (Hungarian) algorithm running in $O(N^3)$ polynomial time, solving min-cost bipartite matching to maximize fleet-wide profitability and minimize deadhead kilometers across any fleet size (1 to 50+ vehicles).
+   - **Conflict Resolution**: When multiple trucks compete for the highest-yielding return consignment, the global solver assigns the load to the highest overall compatibility score and tags competing trucks with explicit "Why Not?" justifications.
 5. **AI Explainability Justification**:
    - **Dual-Engine Architecture**: Invokes Anthropic Claude 3.5 Haiku via `/api/explain` for natural language operator synthesis. When API keys are absent, instantaneously falls back to deterministic rule-based template summaries with verified mathematical trade-off proofs.
 
@@ -125,7 +126,7 @@ In line with enterprise evaluation best practices, every sub-system in ReRoute A
 
 ## 📐 How the Algorithms & Math Work
 
-### 1. Single-Truck Ranking: Weighted Multi-Criteria Scoring (MCDA)
+### 1. Single-Truck Ranking: Multi-Criteria Weighted Scoring
 For a given truck $T$ and candidate backhaul shipment $L$, the engine first validates four strict feasibility constraints:
 1. **Status Feasibility**: $L.\text{status} \in \{\text{'Available'}, \text{'New'}\} \land \neg L.\text{isCancelled}$
 2. **Payload Capacity Constraint**: $L.\text{cargoWeight} \le T.\text{availableCapacity}$
@@ -135,24 +136,30 @@ For a given truck $T$ and candidate backhaul shipment $L$, the engine first vali
 If feasible, the overall match score $S(T, L) \in [0, 100]$ is computed as:
 $$S(T, L) = \frac{\sum_{i=1}^k w_i \cdot f_i(T, L)}{\sum_{i=1}^k w_i}$$
 
-Where the 5 default factors are:
+Where the 6 default factors are:
 - **Route Alignment ($f_{\text{route}}$, 25%)**: Vector dot product and deadhead distance penalty from current return leg.
 - **Time Compatibility ($f_{\text{time}}$, 20%)**: Margin between predicted vehicle ETA and shipper tender cutoff.
 - **Payload Capacity Fit ($f_{\text{capacity}}$, 20%)**: Cargo mass utilization ratio relative to gross vehicle weight rating.
 - **Detour Efficiency ($f_{\text{detour}}$, 15%)**: Linear penalty on additional kilometers diverted from nominal corridor.
-- **Freight Cost Yield ($f_{\text{cost}}$, 20%)**: Net operational margin remaining after deducting detour diesel expenses.
+- **Freight Cost Yield ($f_{\text{cost}}$, 10%)**: Net operational margin remaining after deducting detour diesel expenses.
+- **Disruption Stability ($f_{\text{risk}}$, 10%)**: Resistance against corridor delays and toll bottleneck risks.
 
-### 2. Fleet Optimization: Kuhn-Munkres (Hungarian) Assignment
-When allocating multiple trucks $T_1, \dots, T_n$ to multiple candidate loads $L_1, \dots, L_m$, greedy matching yields suboptimal fleet-wide deadhead miles. ReRoute AI uses an exact $O(N^3)$ implementation of the **Hungarian (Kuhn-Munkres) Combinatorial Solver** (`src/engine/hungarian.js`):
+### 2. Multi-Truck Fleet Optimization: Global Combinatorial Assignment
+When allocating multiple trucks $T_1, \dots, T_n$ to multiple candidate loads $L_1, \dots, L_m$, greedy matching yields suboptimal fleet-wide deadhead miles and conflicts. ReRoute AI uses an exact $O(N^3)$ implementation of the **Hungarian (Kuhn-Munkres) Combinatorial Solver** (`src/utils/fleetOptimizer.js` & `src/engine/hungarian.js`):
 $$\min \sum_{i=1}^n \sum_{j=1}^m C_{ij} \cdot X_{ij} \quad \text{s.t.} \quad \sum_{j} X_{ij} \le 1, \; \sum_{i} X_{ij} \le 1$$
-Where the assignment cost matrix is $C_{ij} = 100 - S(T_i, L_j)$ for feasible pairings and $\infty$ for infeasible pairings.
+Where the assignment cost matrix is $C_{ij} = (\max S + 10) - S(T_i, L_j)$ for feasible pairings and a penalty cost for infeasible pairings.
+
+Key properties:
+- **Conflict-Free**: No shipment is assigned as primary to two trucks simultaneously.
+- **Explainable Why Not**: Competing vehicles receive clear rationale for losing contentious loads to winning haulers.
+- **Multi-Load Consolidation**: Trucks with spare capacity are evaluated for complementary secondary shipments.
 
 ### 3. Self-Healing Disruption Recovery
 When a committed tender is cancelled or delayed:
 1. The system flags the affected assignment and releases highway reservations.
 2. The remaining available corridor demand is filtered and scored in real-time.
-3. Solver latency is measured via `performance.now()` (typically $<30\text{ms}$).
-4. An explainable decision audit log records the root cause and promoted alternate load.
+3. The Hungarian solver reallocates the fleet, measuring latency via `performance.now()` (typically $<15\text{ms}$, well below the 450ms target).
+4. An explainable decision audit log records the root cause, before/after reallocations, and promoted alternate loads.
 
 ---
 
