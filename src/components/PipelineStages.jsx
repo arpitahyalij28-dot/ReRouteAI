@@ -15,14 +15,14 @@ export default function PipelineStages({ currentStage, onSelectStage }) {
   const currentIndex = STAGES.findIndex((s) => s.id === currentStage);
 
   return (
-    <div className="bg-white border-b border-[#E2E8F0] px-4 py-2.5 shadow-sm">
-      <div className="max-w-[1680px] mx-auto flex items-center justify-between overflow-x-auto no-scrollbar gap-2">
+    <div className="bg-white border-b border-[#E2E8F0] px-3 sm:px-4 py-2 shadow-sm w-full max-w-full overflow-hidden">
+      <div className="max-w-[1680px] mx-auto flex items-center justify-between overflow-x-auto no-scrollbar gap-2 pb-0.5">
         <div className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] shrink-0 mr-1 flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-blue-600" />
           Pipeline Flow
         </div>
 
-        <div className="flex items-center flex-1 justify-between min-w-[760px]">
+        <div className="flex items-center flex-1 justify-between min-w-[760px] gap-1">
           {STAGES.map((stage, idx) => {
             const Icon = stage.icon;
             const isCurrent = stage.id === currentStage;
@@ -56,7 +56,7 @@ export default function PipelineStages({ currentStage, onSelectStage }) {
               <React.Fragment key={stage.id}>
                 <button
                   onClick={() => onSelectStage(stage.id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition-all group ${btnClass}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 min-h-[44px] rounded-xl text-left transition-all shrink-0 group ${btnClass}`}
                   title={`${stage.label}: ${stage.tagline}`}
                 >
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${badgeClass}`}>

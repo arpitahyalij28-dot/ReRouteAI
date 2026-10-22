@@ -202,7 +202,7 @@ function AppContent() {
   }, [isTourActive, isTourPlaying]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans text-[#0F172A] selection:bg-blue-100 selection:text-blue-900 relative">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F8FAFC] flex flex-col font-sans text-[#0F172A] selection:bg-blue-100 selection:text-blue-900 relative">
       {/* Realtime Toast Notifications */}
       {toasts && toasts.length > 0 && (
         <div className="fixed top-20 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">

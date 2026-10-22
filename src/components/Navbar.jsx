@@ -29,21 +29,21 @@ const NAV_ITEMS = [
 
 export default function Navbar() {
   return (
-    <nav className="bg-white border-b border-[#E2E8F0] shadow-xs">
-      <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1 overflow-x-auto py-2">
+    <nav className="bg-white border-b border-[#E2E8F0] shadow-xs w-full overflow-hidden">
+      <div className="max-w-[1680px] mx-auto px-3 sm:px-6 lg:px-8 flex items-center gap-1.5 overflow-x-auto py-2 no-scrollbar">
         {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
           <NavLink
             key={path}
             to={path}
             className={({ isActive }) =>
-              `flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
+              `flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-all shrink-0 ${
                 isActive
                   ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-xs'
                   : 'text-[#64748B] hover:text-[#0F172A] hover:bg-slate-50'
               }`
             }
           >
-            <Icon className="w-3.5 h-3.5 shrink-0" />
+            <Icon className="w-4 h-4 shrink-0" />
             <span>{label}</span>
           </NavLink>
         ))}

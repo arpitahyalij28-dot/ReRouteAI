@@ -56,24 +56,26 @@ async function testBrowser() {
   const passVal = await page.locator('input[type="password"]').inputValue();
   console.log(`Login page quick fill: email=${emailVal}, passLength=${passVal.length}`);
 
-  // 2. Test at 390px (Mobile)
-  const mobileContext = await browser.newContext({
-    viewport: { width: 390, height: 844 },
-  });
-  const mobilePage = await mobileContext.newPage();
-  mobilePage.on('console', (msg) => {
-    if (msg.type() === 'error') consoleErrors.push(msg.text());
-  });
+  // 2. Test Responsive Viewports (360px, 390px, 768px, 1440px)
+  const viewports = [360, 390, 768, 1440];
+  for (const width of viewports) {
+    const vpContext = await browser.newContext({
+      viewport: { width, height: 800 },
+    });
+    const vpPage = await vpContext.newPage();
+    await vpPage.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
 
-  await mobilePage.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
+    const scrollWidth = await vpPage.evaluate(() => document.documentElement.scrollWidth);
+    const innerWidth = await vpPage.evaluate(() => window.innerWidth);
+    console.log(`Viewport ${width}px -> scrollWidth: ${scrollWidth}, innerWidth: ${innerWidth}`);
 
-  const mobileBadgeText = await mobilePage.locator('[data-testid="env-badge"]').innerText();
-  console.log('390px Mobile Env Badge Text:', mobileBadgeText);
+    if (scrollWidth > innerWidth) {
+      throw new Error(`Horizontal scroll detected at ${width}px: scrollWidth ${scrollWidth} > innerWidth ${innerWidth}`);
+    }
+    await vpContext.close();
+  }
 
-  const scrollWidth = await mobilePage.evaluate(() => document.documentElement.scrollWidth);
-  const innerWidth = await mobilePage.evaluate(() => window.innerWidth);
-  console.log(`390px Mobile ScrollWidth: ${scrollWidth}, InnerWidth: ${innerWidth}`);
-
+  console.log('Zero horizontal scroll verified across 360, 390, 768, and 1440px!');
   console.log('Console Errors encountered:', consoleErrors);
 
   await browser.close();

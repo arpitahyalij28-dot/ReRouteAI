@@ -63,13 +63,13 @@ export default function RoleSwitcher() {
       {/* Role Pill Trigger */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[#E2E8F0] bg-white hover:bg-slate-50 transition-all text-xs font-semibold shadow-xs cursor-pointer"
+        className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 min-h-[44px] rounded-xl border border-[#E2E8F0] bg-white hover:bg-slate-50 transition-all text-xs font-semibold shadow-xs cursor-pointer shrink-0"
         title="Switch user role in Demo Mode"
       >
-        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-        <span className="text-[#64748B]">Role:</span>
-        <span className="text-[#0F172A] font-bold">{activeRoleObj.label}</span>
-        <ChevronDown className="w-3.5 h-3.5 text-[#64748B]" />
+        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+        <span className="text-[#64748B] hidden sm:inline">Role:</span>
+        <span className="text-[#0F172A] font-bold truncate max-w-[70px] sm:max-w-none">{activeRoleObj.label}</span>
+        <ChevronDown className="w-3.5 h-3.5 text-[#64748B] shrink-0" />
       </button>
 
       {/* Dropdown Menu */}
