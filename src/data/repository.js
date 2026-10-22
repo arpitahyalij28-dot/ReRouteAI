@@ -623,9 +623,16 @@ export class SupabaseAdapter {
 // --- Repository Factory ---
 
 export function createRepository(options = {}) {
-  const forceLocal = options.forceLocal || false;
-  if (!forceLocal && isSupabaseConfigured && supabase) {
-    return new SupabaseAdapter(supabase, options.orgId || 'demo-org');
+  const { user, profile, forceLocal = false, client } = options;
+
+  // New Rule: Visitors who are not logged in ALWAYS use LocalDemoAdapter
+  // (fully writable sandbox, zero cloud mutations, zero RLS errors).
+  // SupabaseAdapter is only used for an authenticated user with an active profile.
+  const activeClient = client || (isSupabaseConfigured ? supabase : null);
+  if (forceLocal || !user || !profile || !activeClient) {
+    return new LocalDemoAdapter();
   }
-  return new LocalDemoAdapter();
+
+  const orgId = profile.org_id || profile.orgId || 'demo-org';
+  return new SupabaseAdapter(activeClient, orgId);
 }

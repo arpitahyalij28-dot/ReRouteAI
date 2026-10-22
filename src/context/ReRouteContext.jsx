@@ -2,17 +2,50 @@
 // Provides unified access to trucks, shipments, assignments, model settings and realtime sync.
 // Handles optimistic updates with automatic rollback on error.
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
 import { createRepository } from '../data/repository.js';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient.js';
 import { DEFAULT_SETTINGS } from '../data/mockData.js';
+import AuthContext from './AuthContext';
 
 const ReRouteContext = createContext(null);
 
+function useAuthSafe() {
+  const context = useContext(AuthContext);
+  return context || { user: null, profile: null, role: 'dispatcher', isDemoUser: true };
+}
+
 export function ReRouteProvider({ children, initialForceLocal = false }) {
-  const repositoryRef = useRef(createRepository({ forceLocal: initialForceLocal }));
-  const [repository, setRepository] = useState(repositoryRef.current);
+  const auth = useAuthSafe();
+  const userId = auth.user?.id || null;
+  const orgId = auth.profile?.org_id || auth.profile?.orgId || null;
+
+  // Re-create repository when auth state changes (visitor guest = LocalDemoAdapter, logged in user = SupabaseAdapter)
+  const repository = useMemo(() => {
+    return createRepository({
+      user: auth.user,
+      profile: auth.profile,
+      forceLocal: initialForceLocal,
+    });
+  }, [userId, orgId, initialForceLocal, auth.user, auth.profile]);
+
+  const repoRef = useRef(repository);
+  useEffect(() => {
+    repoRef.current = repository;
+  }, [repository]);
+
   const [isDemoMode, setIsDemoMode] = useState(repository.name === 'LocalDemoAdapter');
+  useEffect(() => {
+    setIsDemoMode(repository.name === 'LocalDemoAdapter');
+  }, [repository]);
 
   const [trucks, setTrucks] = useState([]);
   const [shipments, setShipments] = useState([]);
@@ -24,6 +57,9 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
   const [selectedShipmentId, setSelectedShipmentId] = useState('S1');
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [fetchCount, setFetchCount] = useState(0);
+  const fetchCountRef = useRef(0);
   const [error, setError] = useState(null);
   const [toasts, setToasts] = useState([]);
 
@@ -39,18 +75,24 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  // Fetch all core datasets
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  // Fetch all core datasets - STABLE loadData that does NOT depend on selectedTruckId or selectedShipmentId
+  const loadData = useCallback(async (isBackground = false) => {
+    if (isBackground) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     try {
-      const repo = repositoryRef.current;
+      fetchCountRef.current += 1;
+      setFetchCount(fetchCountRef.current);
+
       const [tList, sList, aList, sSettings, dList] = await Promise.all([
-        repo.getTrucks(),
-        repo.getShipments(),
-        repo.getAssignments(),
-        repo.getModelSettings(),
-        repo.getDisruptionEvents(),
+        repository.getTrucks(),
+        repository.getShipments(),
+        repository.getAssignments(),
+        repository.getModelSettings(),
+        repository.getDisruptionEvents(),
       ]);
 
       setTrucks(tList);
@@ -59,39 +101,50 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
       setSettings(sSettings);
       setDisruptions(dList);
 
-      if (tList.length > 0 && !tList.some((t) => t.id === selectedTruckId)) {
-        setSelectedTruckId(tList[0].id);
-      }
-      if (sList.length > 0 && !sList.some((s) => s.id === selectedShipmentId)) {
-        setSelectedShipmentId(sList[0].id);
-      }
+      // Functional selection updates ensure selections never cause re-fetching
+      setSelectedTruckId((curr) => {
+        if (tList.length > 0 && (!curr || !tList.some((t) => t.id === curr))) {
+          return tList[0].id;
+        }
+        return curr;
+      });
+      setSelectedShipmentId((curr) => {
+        if (sList.length > 0 && (!curr || !sList.some((s) => s.id === curr))) {
+          return sList[0].id;
+        }
+        return curr;
+      });
     } catch (err) {
       console.error('Failed to load ReRoute data:', err);
       setError(err.message || 'Error loading logistics data');
     } finally {
-      setLoading(false);
+      if (isBackground) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
-  }, [selectedTruckId, selectedShipmentId]);
+  }, [repository]);
 
-  // Initial load
+  // Initial load when repository changes
   useEffect(() => {
-    loadData();
+    loadData(false);
   }, [loadData]);
 
-  // Setup Supabase Realtime Subscriptions (if active)
+  // Setup Supabase Realtime Subscriptions (only in cloud mode)
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase || isDemoMode) {
+    if (!isSupabaseConfigured || !supabase || isDemoMode || repository.name !== 'SupabaseAdapter') {
       return;
     }
 
     const channel = supabase
-      .channel('reroute-realtime')
+      .channel(`reroute-realtime-${repository.orgId || 'demo'}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'shipments' },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            loadData();
+            loadData(true);
             showToast(`New Load Posted: ${payload.new.name || payload.new.id}`, 'info');
           } else if (payload.eventType === 'UPDATE') {
             setShipments((prev) =>
@@ -106,7 +159,7 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'assignments' },
         (payload) => {
-          loadData();
+          loadData(true);
           if (payload.eventType === 'INSERT') {
             showToast(`Assignment Dispatched: Truck ${payload.new.truck_id}`, 'success');
           }
@@ -127,7 +180,7 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     return () => {
       channel.unsubscribe();
     };
-  }, [isDemoMode, loadData, showToast]);
+  }, [repository, isDemoMode, loadData, showToast]);
 
   // Optimistic Assignment Creation with Rollback
   const assignShipment = async (truckId, shipmentId, evaluationData = {}) => {
@@ -155,7 +208,7 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     );
 
     try {
-      const created = await repositoryRef.current.createAssignment(tempAssignment);
+      const created = await repoRef.current.createAssignment(tempAssignment);
       setAssignments((prev) =>
         prev.map((a) => (a.id === tempAssignment.id ? created : a))
       );
@@ -183,7 +236,7 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     }
 
     try {
-      await repositoryRef.current.deleteAssignment(assignmentId);
+      await repoRef.current.deleteAssignment(assignmentId);
     } catch (err) {
       setAssignments(previousAssignments);
       setShipments(previousShipments);
@@ -219,7 +272,7 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     );
 
     try {
-      await repositoryRef.current.updateShipmentStatus(shipmentId, 'Cancelled', {
+      await repoRef.current.updateShipmentStatus(shipmentId, 'Cancelled', {
         whyWhyNot: {
           recommendedSummary: `Cancelled: ${reason}`,
           reasons: [
@@ -232,7 +285,7 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
         },
       });
 
-      await repositoryRef.current.createDisruptionEvent({
+      await repoRef.current.createDisruptionEvent({
         type: 'CANCELLATION',
         shipmentId,
         payload: { reason },
@@ -262,12 +315,12 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     );
 
     try {
-      await repositoryRef.current.updateShipmentStatus(shipmentId, 'Available', {
+      await repoRef.current.updateShipmentStatus(shipmentId, 'Available', {
         predictedTruckEta: '15:15',
         etaBufferMinutes: -45,
       });
 
-      await repositoryRef.current.createDisruptionEvent({
+      await repoRef.current.createDisruptionEvent({
         type: 'DELAY',
         shipmentId,
         payload: { delayMinutes: delayMins, reason },
@@ -295,13 +348,13 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     );
 
     try {
-      await repositoryRef.current.updateShipmentStatus(shipmentId, 'Available', {
+      await repoRef.current.updateShipmentStatus(shipmentId, 'Available', {
         pickupWindowStart: newStart,
         pickupWindowEnd: newEnd,
         etaBufferMinutes: 75,
       });
 
-      await repositoryRef.current.createDisruptionEvent({
+      await repoRef.current.createDisruptionEvent({
         type: 'WINDOW_SHIFT',
         shipmentId,
         payload: { newStart, newEnd },
@@ -330,7 +383,7 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     );
 
     try {
-      await repositoryRef.current.recordTelemetry(point);
+      await repoRef.current.recordTelemetry(point);
     } catch (err) {
       console.warn('Failed to record telemetry:', err);
     }
@@ -342,7 +395,7 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     );
 
     try {
-      await repositoryRef.current.updateAssignmentStatus(assignmentId, status);
+      await repoRef.current.updateAssignmentStatus(assignmentId, status);
       showToast(`Assignment status updated to: ${status}`, 'success');
     } catch (err) {
       console.warn('Failed to update assignment status:', err);
@@ -354,27 +407,29 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     const merged = { ...settings, ...newSettings };
     setSettings(merged);
     try {
-      await repositoryRef.current.saveModelSettings(merged);
+      await repoRef.current.saveModelSettings(merged);
     } catch (err) {
       console.warn('Failed to persist settings:', err);
     }
   };
 
   const resetDemo = async () => {
-    await repositoryRef.current.resetToDemo();
-    await loadData();
-    setSelectedShipmentId('S1');
-    setSelectedTruckId('T101');
+    await repoRef.current.resetToDemo();
+    await loadData(false);
+    setSelectedShipmentId((curr) => curr || 'S1');
+    setSelectedTruckId((curr) => curr || 'T101');
   };
 
   const selectedTruck = trucks.find((t) => t.id === selectedTruckId) || trucks[0] || null;
   const selectedShipment = shipments.find((s) => s.id === selectedShipmentId) || shipments[0] || null;
 
   const value = {
-    repository: repositoryRef.current,
-    adapterName: repositoryRef.current.name,
+    repository,
+    adapterName: repository.name,
     isDemoMode,
     loading,
+    refreshing,
+    fetchCount,
     error,
     toasts,
     showToast,

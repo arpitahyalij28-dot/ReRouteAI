@@ -1,8 +1,22 @@
 import React from 'react';
 import { Truck, Activity, CircleHelp } from 'lucide-react';
 import RoleSwitcher from './RoleSwitcher';
+import { useAuth } from '../context/AuthContext';
+import { useReRoute } from '../context/ReRouteContext';
 
 export default function Header({ onOpenDemoGuide, onResetAll }) {
+  const { user, profile, role, isDemoUser } = useAuth();
+  const { isDemoMode, trucks } = useReRoute();
+
+  const isLocal = isDemoMode || !user || !profile || isDemoUser;
+  const orgName = profile?.org_name || profile?.org_id || 'demo-org';
+  const roleName = profile?.role || role || 'dispatcher';
+
+  const inTransitTrucks = (trucks || []).filter((t) => t.status === 'In-Transit');
+  const activeTruckSummary = inTransitTrucks.length > 0
+    ? `${inTransitTrucks.length} In-Transit (${inTransitTrucks.map((t) => t.id).join(', ')})`
+    : '0 In-Transit';
+
   return (
     <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-40 shadow-soft">
       <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
@@ -19,10 +33,25 @@ export default function Header({ onOpenDemoGuide, onResetAll }) {
                   2.0
                 </span>
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-[#059669] border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse" />
-                Predictive Engine Active
-              </span>
+              {isLocal ? (
+                <span
+                  data-testid="env-badge"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200"
+                  title="Running in local writable sandbox mode. Zero cloud mutations."
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  Local sandbox
+                </span>
+              ) : (
+                <span
+                  data-testid="env-badge"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200"
+                  title={`Connected to Supabase (${orgName})`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Cloud · {orgName} · {roleName}
+                </span>
+              )}
             </div>
             <p className="text-xs text-[#64748B] hidden sm:block font-medium">
               Predictive. Proactive. Explainable. Resilient. Sustainable.
@@ -37,7 +66,7 @@ export default function Header({ onOpenDemoGuide, onResetAll }) {
           <span className="text-[#0F172A] font-semibold">Nashik (Ambad) ↔ Mumbai MMR (Bhiwandi)</span>
           <span className="text-[#CBD5E1]">|</span>
           <span className="text-[#64748B]">Active Trucks:</span>
-          <span className="text-blue-600 font-bold">1 In-Transit (T101)</span>
+          <span className="text-blue-600 font-bold">{activeTruckSummary}</span>
         </div>
 
         {/* Controls & Role Switcher */}
