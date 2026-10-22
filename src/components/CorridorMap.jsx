@@ -117,9 +117,14 @@ export default function CorridorMap({
 
   // Update Dynamic Layers & Polylines
   useEffect(() => {
-    if (!mapInstanceRef.current || !layerGroupRef.current || !truck) return;
+    if (!mapInstanceRef.current || !layerGroupRef.current) return;
     const layers = layerGroupRef.current;
     layers.clearLayers();
+
+    if (!truck) {
+      mapInstanceRef.current.setView([19.5, 73.3], 7);
+      return;
+    }
 
     const boundsPoints = [];
     if (truck.currentCoords) boundsPoints.push(truck.currentCoords);
@@ -297,7 +302,7 @@ export default function CorridorMap({
             Western Freight Corridor Geo-Spatial Map
           </span>
           <span className="text-[10px] text-[#64748B] hidden sm:inline">
-            • {truck?.origin?.split(' ')[0] || 'Origin'} ↔ {truck?.destination?.split(' ')[0] || 'Dest'}
+            • {truck ? `${truck.origin?.split(' ')[0]} ↔ ${truck.destination?.split(' ')[0]}` : 'Western India Corridor Grid'}
           </span>
         </div>
         <div className="flex items-center gap-2 text-xs">
@@ -315,7 +320,7 @@ export default function CorridorMap({
           <span className="text-[11px] text-[#64748B]">Active Track:</span>
           <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200 text-[10px] flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-blue-600" />
-            <span>{selectedShipmentId ? `${selectedShipmentId} Vector` : 'Nominal Leg'}</span>
+            <span>{selectedShipmentId ? `${selectedShipmentId} Vector` : truck ? 'Nominal Leg' : 'Grid Centered'}</span>
           </span>
         </div>
       </div>

@@ -1,21 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { TriangleAlert, Clock, Search, ArrowRight, Radio, MapPin, CloudSun, Sun } from 'lucide-react';
+import {
+  TriangleAlert,
+  Clock,
+  Search,
+  ArrowRight,
+  Radio,
+  MapPin,
+  CloudSun,
+  Truck,
+  Plus,
+  Sparkles,
+  Edit2,
+  Trash2,
+} from 'lucide-react';
 import { formatCountdown } from '../utils/scoring';
 import { apiFetch } from '../lib/api';
+import { useDataContext } from '../context/DataContext';
 
-export default function TruckCard({ truck, onFindBackhaul, isMatched, activeShipmentCount }) {
-  const [secondsLeft, setSecondsLeft] = useState(truck.countdownSeconds);
+export default function TruckCard({
+  truck,
+  onFindBackhaul,
+  isMatched,
+  activeShipmentCount = 0,
+}) {
+  const {
+    setIsAddTruckOpen,
+    setEditingTruck,
+    deleteTruck,
+    handleRequestLoadDemo,
+  } = useDataContext();
+
+  const [secondsLeft, setSecondsLeft] = useState(truck?.countdownSeconds || 8100);
   const [weatherData, setWeatherData] = useState(null);
 
   useEffect(() => {
+    if (!truck) return;
+    setSecondsLeft(truck.countdownSeconds || 8100);
     const timer = setInterval(() => {
       setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [truck?.id, truck?.countdownSeconds]);
 
   // Fetch weather along truck corridor
   useEffect(() => {
+    if (!truck) return;
     let isMounted = true;
     const lat = truck.currentLat || truck.currentCoords?.[0] || 19.645;
     const lng = truck.currentLng || truck.currentCoords?.[1] || 73.485;
@@ -29,17 +58,64 @@ export default function TruckCard({ truck, onFindBackhaul, isMatched, activeShip
     return () => {
       isMounted = false;
     };
-  }, [truck.currentLat, truck.currentLng]);
+  }, [truck?.currentLat, truck?.currentLng, truck?.id]);
+
+  // Empty state handling
+  if (!truck) {
+    return (
+      <div className="bg-white rounded-[12px] border border-[#E2E8F0] shadow-soft p-6 text-center space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto">
+          <Truck className="w-6 h-6" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-[#0F172A]">No trucks added yet</h3>
+          <p className="text-xs text-[#64748B] mt-1 max-w-xs mx-auto">
+            Add your first vehicle or load the demonstration dataset to start predictive backhaul matching.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+          <button
+            onClick={() => {
+              setEditingTruck(null);
+              setIsAddTruckOpen(true);
+            }}
+            className="w-full sm:w-auto px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Truck</span>
+          </button>
+          <button
+            onClick={handleRequestLoadDemo}
+            className="w-full sm:w-auto px-4 py-2 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+            <span>Load Demo Data</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const countdown = formatCountdown(secondsLeft);
   const radius = 34;
   const circumference = 2 * Math.PI * radius;
-  const emptyProb = truck.emptyReturnProbability;
+  const emptyProb = truck.emptyReturnProbability || 85;
   const strokeDashoffset = circumference - (emptyProb / 100) * circumference;
 
-  const tripProgressPct = Math.round(
-    ((truck.totalTripKm - truck.outboundRemainingKm) / truck.totalTripKm) * 100
-  );
+  const totalKm = Number(truck.totalTripKm) || 160;
+  const remainingKm = Number(truck.outboundRemainingKm) || 60;
+  const tripProgressPct = Math.min(100, Math.max(0, Math.round(((totalKm - remainingKm) / totalKm) * 100)));
+
+  const handleEdit = () => {
+    setEditingTruck(truck);
+    setIsAddTruckOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (confirm(`Remove vehicle ${truck.id} (${truck.regNumber}) from fleet?`)) {
+      deleteTruck(truck.id);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -61,9 +137,22 @@ export default function TruckCard({ truck, onFindBackhaul, isMatched, activeShip
               </h2>
             </div>
           </div>
-          <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800 shrink-0">
-            High Deadhead Risk
-          </span>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={handleEdit}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+              title="Edit truck parameters"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleDelete}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+              title="Delete truck"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Gauge & Countdown Grid */}
@@ -99,104 +188,91 @@ export default function TruckCard({ truck, onFindBackhaul, isMatched, activeShip
                   </linearGradient>
                 </defs>
               </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <span className="text-base font-extrabold text-[#0F172A] leading-none">
-                  {emptyProb}%
+              <div className="absolute text-center leading-none">
+                <span className="text-base font-black text-[#0F172A]">
+                  {truck.emptyReturnProbability}%
                 </span>
-                <span className="text-[9px] font-medium text-[#64748B] mt-0.5">Empty Prob.</span>
+                <span className="block text-[8px] text-[#64748B] font-semibold uppercase">
+                  Deadhead
+                </span>
               </div>
             </div>
             <div>
-              <div className="text-xs font-semibold text-[#0F172A]">Deadhead Exposure</div>
-              <p className="text-[11px] text-[#64748B] leading-snug">
-                165 km empty return projected if unassigned before Bhiwandi depot arrival.
+              <span className="text-xs font-bold text-[#0F172A] block leading-tight">
+                Empty Return Risk
+              </span>
+              <p className="text-[11px] text-[#64748B] mt-0.5 leading-snug">
+                Destination has 4.2x freight demand deficit.
               </p>
             </div>
           </div>
 
-          {/* Countdown Clock */}
-          <div className="flex flex-col justify-center border-t sm:border-t-0 sm:border-l border-[#E2E8F0] pt-2.5 sm:pt-0 sm:pl-3">
-            <div className="flex items-center gap-1.5 text-xs text-[#64748B] font-medium mb-1">
+          {/* Countdown Clock Box */}
+          <div className="flex flex-col justify-center border-t sm:border-t-0 sm:border-l border-[#E2E8F0] pt-2 sm:pt-0 sm:pl-3">
+            <div className="flex items-center gap-1.5 text-xs text-[#64748B] mb-0.5">
               <Clock className="w-3.5 h-3.5 text-blue-600" />
-              <span>Expected Empty Availability:</span>
+              <span className="font-semibold text-[#0F172A]">Backhaul Opportunity Window</span>
             </div>
-            <div className="text-xl font-extrabold text-[#0F172A] tracking-tight font-mono">
+            <div className="font-mono text-lg font-black text-[#0F172A] tracking-tight">
               {countdown.formatted}
             </div>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              <span className="text-[10px] font-medium text-[#64748B]">
-                ETA Dock Bay 4: <strong className="text-[#0F172A]">14:15 IST</strong>
-              </span>
-            </div>
+            <p className="text-[10px] text-[#64748B]">
+              Expected empty at {truck.expectedDeliveryTime} IST ({truck.destination?.split(' ')[0]})
+            </p>
           </div>
         </div>
 
-        {/* Find Backhaul Action Button */}
-        <button
-          onClick={onFindBackhaul}
-          className={`w-full py-2.5 px-4 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-sm ${
-            isMatched
-              ? 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100'
-              : 'bg-[#2563EB] text-white hover:bg-blue-700 hover:shadow-md'
-          }`}
-        >
-          <Search className="w-4 h-4" />
-          <span>{isMatched ? 'Re-scan Backhaul Candidates' : 'Find Backhaul'}</span>
-          <span className="ml-1 px-1.5 py-0.2 text-[11px] rounded bg-white/20 font-bold">
-            {activeShipmentCount} Loads Ready
-          </span>
-          <ArrowRight className="w-4 h-4 ml-auto" />
-        </button>
+        {/* Find Backhaul CTA */}
+        <div className="space-y-2">
+          <button
+            onClick={onFindBackhaul}
+            className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+          >
+            <Search className="w-4 h-4" />
+            <span>Find Backhaul Loads Now ({activeShipmentCount} Consignments Available)</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+          <div className="flex items-center justify-between text-[11px] text-[#64748B] px-1">
+            <span className="flex items-center gap-1">
+              <Radio className="w-3 h-3 text-[#059669] animate-pulse" />
+              <span>GPS Telemetry: Active</span>
+            </span>
+            <span>Pre-matching in transit</span>
+          </div>
+        </div>
       </div>
 
-      {/* Vehicle Telemetry Spec Card */}
+      {/* Truck Specs Card */}
       <div className="bg-white rounded-[12px] border border-[#E2E8F0] shadow-soft p-5">
         <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0] mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
-              T101
-            </div>
-            <div>
-              <div className="text-xs font-bold text-[#0F172A]">{truck.regNumber}</div>
-              <div className="text-[11px] text-[#64748B]">{truck.model}</div>
-            </div>
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
+              Active Vehicle Specifications
+            </h3>
+            <span className="text-xs text-[#64748B]">
+              {truck.model || 'Heavy Commercial Vehicle'} • {truck.regNumber}
+            </span>
           </div>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-            <Radio className="w-3 h-3 text-blue-600 animate-pulse" />
+          <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
             {truck.status}
           </span>
         </div>
 
-        <div className="space-y-2.5 text-xs">
-          {/* Outbound Progress */}
+        <div className="space-y-3">
+          {/* Corridor Progress Bar */}
           <div>
-            <div className="flex justify-between text-[11px] text-[#64748B] mb-1">
-              <span>Active Outbound Trip</span>
-              <span className="font-semibold text-[#0F172A]">
-                {truck.totalTripKm - truck.outboundRemainingKm} / {truck.totalTripKm} km (
-                {tripProgressPct}%)
+            <div className="flex items-center justify-between text-xs mb-1">
+              <span className="font-semibold text-[#0F172A]">{truck.origin}</span>
+              <span className="text-[11px] text-[#64748B] font-medium">
+                {tripProgressPct}% ({totalKm - remainingKm} of {totalKm} km)
               </span>
+              <span className="font-semibold text-[#0F172A]">{truck.destination}</span>
             </div>
-            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${tripProgressPct}%` }}
               />
-            </div>
-          </div>
-
-          {/* Origin & Destination */}
-          <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
-            <div className="p-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
-              <span className="text-[#64748B] block text-[10px]">Origin:</span>
-              <span className="font-semibold text-[#0F172A] truncate block">{truck.origin}</span>
-            </div>
-            <div className="p-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
-              <span className="text-[#64748B] block text-[10px]">Current Dest:</span>
-              <span className="font-semibold text-[#0F172A] truncate block">
-                {truck.destination}
-              </span>
             </div>
           </div>
 
@@ -235,7 +311,7 @@ export default function TruckCard({ truck, onFindBackhaul, isMatched, activeShip
               <span className="text-slate-700">
                 {weatherData?.weather
                   ? `${weatherData.weather.weatherDesc} (${weatherData.weather.temperatureC}°C, Wind ${weatherData.weather.windSpeedKmh}km/h)`
-                  : 'Clear / Nominal (28°C · NH 160)'}
+                  : 'Clear / Nominal (28°C · Maharashtra)'}
               </span>
             </div>
             <span

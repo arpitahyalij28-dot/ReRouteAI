@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
-import { Package, Plus, Search, Filter, CheckCircle2, AlertTriangle, XCircle, ArrowRight, X, LoaderCircle, MapPin } from 'lucide-react';
+import { Package, Plus, Search, Filter, CheckCircle2, AlertTriangle, XCircle, ArrowRight, X, LoaderCircle, MapPin, Edit2, Trash2, Sparkles } from 'lucide-react';
 import { useReRoute } from '../context/ReRouteContext';
 import { useAuth } from '../context/AuthContext';
 import { validateShipment } from '../engine/validation';
 import { apiFetch } from '../lib/api';
 
 export default function Loads() {
-  const { shipments, repository, refreshData, cancelShipment, showToast } = useReRoute();
+  const {
+    shipments = [],
+    repository,
+    refreshData,
+    cancelShipment,
+    showToast,
+    setIsAddShipmentOpen,
+    setEditingShipment,
+    deleteShipment,
+    handleRequestLoadDemo,
+  } = useReRoute();
   const { role } = useAuth();
   const [filterStatus, setFilterStatus] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -138,8 +148,11 @@ export default function Loads() {
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 rounded-xl text-xs font-bold bg-[#2563EB] hover:bg-blue-700 text-white flex items-center gap-2 shadow-sm transition-all"
+          onClick={() => {
+            setEditingShipment?.(null);
+            setIsAddShipmentOpen?.(true);
+          }}
+          className="px-4 py-2 rounded-xl text-xs font-bold bg-[#2563EB] hover:bg-blue-700 text-white flex items-center gap-2 shadow-sm transition-all cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Post New Load Tender</span>
@@ -154,7 +167,10 @@ export default function Loads() {
             <span>You have permission to post new freight tenders and manage spot cargo along the corridor.</span>
           </div>
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingShipment?.(null);
+              setIsAddShipmentOpen?.(true);
+            }}
             className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shrink-0 cursor-pointer"
           >
             Post Cargo Now
@@ -257,15 +273,38 @@ export default function Loads() {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-right">
-                      {!isCancelled && !isAssigned && (
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
-                          onClick={() => cancelShipment(s.id, 'Tender cancelled by shipper.')}
-                          className="px-2 py-1 text-[10px] font-bold text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 rounded-md transition-colors cursor-pointer"
-                          title="Cancel this tender"
+                          onClick={() => {
+                            setEditingShipment?.(s);
+                            setIsAddShipmentOpen?.(true);
+                          }}
+                          className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                          title="Edit consignment"
                         >
-                          Cancel Tender
+                          <Edit2 className="w-3.5 h-3.5" />
                         </button>
-                      )}
+                        <button
+                          onClick={() => {
+                            if (confirm(`Remove consignment ${s.id} from demand pool?`)) {
+                              deleteShipment?.(s.id);
+                            }
+                          }}
+                          className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          title="Delete consignment"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                        {!isCancelled && !isAssigned && (
+                          <button
+                            onClick={() => cancelShipment(s.id, 'Tender cancelled by shipper.')}
+                            className="px-2 py-1 text-[10px] font-bold text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 rounded-md transition-colors cursor-pointer"
+                            title="Cancel this tender"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -273,6 +312,38 @@ export default function Loads() {
             </tbody>
           </table>
         </div>
+        {filteredShipments.length === 0 && (
+          <div className="p-12 text-center space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
+              <Package className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[#0F172A]">No loads available</h3>
+              <p className="text-xs text-[#64748B] mt-1 max-w-sm mx-auto">
+                Post your first freight consignment or load the demo dataset to begin matching with corridor fleet trucks.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                onClick={() => {
+                  setEditingShipment?.(null);
+                  setIsAddShipmentOpen?.(true);
+                }}
+                className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Shipment</span>
+              </button>
+              <button
+                onClick={handleRequestLoadDemo}
+                className="px-4 py-2 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>Load Demo Data</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Post Load Modal */}

@@ -655,3 +655,12 @@ export const DEFAULT_SETTINGS = {
   fuelPrice: 95.0,
   mileage: 4.0,
 };
+
+export const DEMO_DATA = {
+  trucks: INITIAL_TRUCKS,
+  shipments: INITIAL_SHIPMENTS,
+  waypoints: CORRIDOR_WAYPOINTS,
+  settings: DEFAULT_SETTINGS,
+  weights: FACTOR_WEIGHTS,
+};
+

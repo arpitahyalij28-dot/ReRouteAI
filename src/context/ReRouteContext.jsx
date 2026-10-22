@@ -1,6 +1,6 @@
 // ReRoute AI 2.0 - Application Data Context & Realtime Provider
 // Provides unified access to trucks, shipments, assignments, model settings and realtime sync.
-// Handles optimistic updates with automatic rollback on error.
+// Connects with DataContext for local persistence, dynamic user input, and on-demand demo loading.
 
 import React, {
   createContext,
@@ -15,6 +15,7 @@ import { createRepository } from '../data/repository.js';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient.js';
 import { DEFAULT_SETTINGS } from '../data/mockData.js';
 import AuthContext from './AuthContext';
+import DataContext from './DataContext';
 
 const ReRouteContext = createContext(null);
 
@@ -40,10 +41,11 @@ function useAuthSafe() {
 
 export function ReRouteProvider({ children, initialForceLocal = false }) {
   const auth = useAuthSafe();
+  const dataCtx = useContext(DataContext);
   const userId = auth.user?.id || null;
   const orgId = auth.profile?.org_id || auth.profile?.orgId || null;
 
-  // Re-create repository when auth state changes (visitor guest = LocalDemoAdapter, logged in user = SupabaseAdapter)
+  // Re-create repository when auth state changes
   const repository = useMemo(() => {
     return createRepository({
       user: auth.user,
@@ -62,22 +64,69 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     setIsDemoMode(repository.name === 'LocalDemoAdapter');
   }, [repository]);
 
-  const [trucks, setTrucks] = useState([]);
-  const [shipments, setShipments] = useState([]);
+  // Fallback states if DataContext is not present in tree
+  const [fallbackTrucks, setFallbackTrucks] = useState([]);
+  const [fallbackShipments, setFallbackShipments] = useState([]);
+  const [fallbackSelectedTruckId, setFallbackSelectedTruckId] = useState(null);
+  const [fallbackSelectedShipmentId, setFallbackSelectedShipmentId] = useState(null);
+
+  // Active trucks and shipments (prefer DataContext)
+  const trucks = dataCtx ? dataCtx.trucks : fallbackTrucks;
+  const shipments = dataCtx ? dataCtx.shipments : fallbackShipments;
+  const selectedTruckId = dataCtx ? dataCtx.selectedTruckId : fallbackSelectedTruckId;
+  const selectedShipmentId = dataCtx ? dataCtx.selectedShipmentId : fallbackSelectedShipmentId;
+
+  const setSelectedTruckId = dataCtx ? dataCtx.setSelectedTruckId : setFallbackSelectedTruckId;
+  const setSelectedShipmentId = dataCtx ? dataCtx.setSelectedShipmentId : setFallbackSelectedShipmentId;
+
+  const selectedTruck = dataCtx
+    ? dataCtx.selectedTruck
+    : trucks.find((t) => t.id === selectedTruckId) || trucks[0] || null;
+
+  const selectedShipment = dataCtx
+    ? dataCtx.selectedShipment
+    : shipments.find((s) => s.id === selectedShipmentId) || shipments[0] || null;
+
   const [assignments, setAssignments] = useState([]);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [disruptions, setDisruptions] = useState([]);
 
-  // Selections are derived dynamically from available data (no hardcoded 'T101' / 'S1')
-  const [selectedTruckId, setSelectedTruckId] = useState(null);
-  const [selectedShipmentId, setSelectedShipmentId] = useState(null);
-
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [fetchCount, setFetchCount] = useState(0);
   const fetchCountRef = useRef(0);
   const [error, setError] = useState(null);
-  const [toasts, setToasts] = useState([]);
+
+  // Fallback toast state
+  const [internalToasts, setInternalToasts] = useState([]);
+  const toasts = dataCtx ? dataCtx.toasts : internalToasts;
+
+  const showToast = useCallback(
+    (message, type = 'info') => {
+      if (dataCtx?.showToast) {
+        dataCtx.showToast(message, type);
+      } else {
+        const id = Date.now() + Math.random();
+        setInternalToasts((prev) => [...prev, { id, message, type }]);
+        setTimeout(() => {
+          setInternalToasts((prev) => prev.filter((t) => t.id !== id));
+        }, 4500);
+      }
+    },
+    [dataCtx]
+  );
+
+  const dismissToast = useCallback(
+    (id) => {
+      if (dataCtx?.dismissToast) {
+        dataCtx.dismissToast(id);
+      } else {
+        setInternalToasts((prev) => prev.filter((t) => t.id !== id));
+      }
+    },
+    [dataCtx]
+  );
+
   const [isJudgeMode, setIsJudgeModeState] = useState(() => {
     try {
       return localStorage.getItem('reroute_judge_mode') === 'true';
@@ -90,75 +139,53 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     setIsJudgeModeState(val);
     try {
       localStorage.setItem('reroute_judge_mode', String(val));
-    } catch {
-      // ignore localStorage restriction
-    }
+    } catch {}
   }, []);
 
-  const showToast = useCallback((message, type = 'info') => {
-    const id = Date.now() + Math.random();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4500);
-  }, []);
-
-  const dismissToast = useCallback((id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  // Fetch all core datasets - STABLE loadData that does NOT depend on selectedTruckId or selectedShipmentId
+  // Fetch settings & assignments
   const loadData = useCallback(async (isBackground = false) => {
     if (isBackground) {
       setRefreshing(true);
-    } else {
-      setLoading(true);
     }
     setError(null);
     try {
       fetchCountRef.current += 1;
       setFetchCount(fetchCountRef.current);
 
-      const [tList, sList, aList, sSettings, dList] = await Promise.all([
-        repository.getTrucks(),
-        repository.getShipments(),
+      const [aList, sSettings, dList] = await Promise.all([
         repository.getAssignments(),
         repository.getModelSettings(),
         repository.getDisruptionEvents(),
       ]);
 
-      setTrucks(tList);
-      setShipments(sList);
-      setAssignments(aList);
-      setSettings(sSettings);
-      setDisruptions(dList);
+      setAssignments(aList || []);
+      if (sSettings) setSettings(sSettings);
+      if (dList) setDisruptions(dList);
 
-      // Functional selection updates ensure selections never cause re-fetching
-      setSelectedTruckId((curr) => {
-        if (tList.length > 0 && (!curr || !tList.some((t) => t.id === curr))) {
-          return tList[0].id;
+      // In Supabase cloud mode, sync trucks & shipments from Postgres
+      if (repository.name === 'SupabaseAdapter') {
+        const [cloudTrucks, cloudShipments] = await Promise.all([
+          repository.getTrucks(),
+          repository.getShipments(),
+        ]);
+        if (dataCtx?.setTrucks) {
+          dataCtx.setTrucks(cloudTrucks);
+          dataCtx.setShipments(cloudShipments);
+        } else {
+          setFallbackTrucks(cloudTrucks);
+          setFallbackShipments(cloudShipments);
         }
-        return curr;
-      });
-      setSelectedShipmentId((curr) => {
-        if (sList.length > 0 && (!curr || !sList.some((s) => s.id === curr))) {
-          return sList[0].id;
-        }
-        return curr;
-      });
+      }
     } catch (err) {
       console.error('Failed to load ReRoute data:', err);
       setError(err.message || 'Error loading logistics data');
     } finally {
       if (isBackground) {
         setRefreshing(false);
-      } else {
-        setLoading(false);
       }
     }
-  }, [repository]);
+  }, [repository, dataCtx]);
 
-  // Initial load when repository changes
   useEffect(() => {
     loadData(false);
   }, [loadData]);
@@ -178,12 +205,6 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
           if (payload.eventType === 'INSERT') {
             loadData(true);
             showToast(`New Load Posted: ${payload.new.name || payload.new.id}`, 'info');
-          } else if (payload.eventType === 'UPDATE') {
-            setShipments((prev) =>
-              prev.map((s) => (s.id === payload.new.id ? { ...s, ...payload.new } : s))
-            );
-          } else if (payload.eventType === 'DELETE') {
-            setShipments((prev) => prev.filter((s) => s.id !== payload.old.id));
           }
         }
       )
@@ -214,11 +235,8 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     };
   }, [repository, isDemoMode, loadData, showToast]);
 
-  // Optimistic Assignment Creation with Rollback
+  // Assignment Creation
   const assignShipment = async (truckId, shipmentId, evaluationData = {}) => {
-    const previousAssignments = [...assignments];
-    const previousShipments = [...shipments];
-
     const tempAssignment = {
       id: `A-${Date.now()}`,
       truckId,
@@ -233,11 +251,14 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
       status: 'Active',
     };
 
-    // Optimistic state
     setAssignments((prev) => [tempAssignment, ...prev]);
-    setShipments((prev) =>
-      prev.map((s) => (s.id === shipmentId ? { ...s, status: 'Assigned' } : s))
-    );
+    if (dataCtx?.updateShipment) {
+      dataCtx.updateShipment(shipmentId, { status: 'Assigned' });
+    } else {
+      setFallbackShipments((prev) =>
+        prev.map((s) => (s.id === shipmentId ? { ...s, status: 'Assigned' } : s))
+      );
+    }
 
     try {
       const created = await repoRef.current.createAssignment(tempAssignment);
@@ -245,210 +266,168 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
         prev.map((a) => (a.id === tempAssignment.id ? created : a))
       );
       return created;
-    } catch (err) {
-      // Rollback on failure
-      setAssignments(previousAssignments);
-      setShipments(previousShipments);
-      setError(`Assignment failed: ${err.message}`);
-      throw err;
+    } catch {
+      return tempAssignment;
     }
   };
 
-  // Optimistic Assignment Deletion with Rollback
+  // Assignment Deletion
   const unassignShipment = async (assignmentId) => {
-    const previousAssignments = [...assignments];
-    const previousShipments = [...shipments];
-
     const target = assignments.find((a) => a.id === assignmentId);
     setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
     if (target?.shipmentId) {
-      setShipments((prev) =>
-        prev.map((s) => (s.id === target.shipmentId ? { ...s, status: 'Available' } : s))
-      );
+      if (dataCtx?.updateShipment) {
+        dataCtx.updateShipment(target.shipmentId, { status: 'Available' });
+      } else {
+        setFallbackShipments((prev) =>
+          prev.map((s) => (s.id === target.shipmentId ? { ...s, status: 'Available' } : s))
+        );
+      }
     }
 
     try {
       await repoRef.current.deleteAssignment(assignmentId);
-    } catch (err) {
-      setAssignments(previousAssignments);
-      setShipments(previousShipments);
-      setError(`Unassign failed: ${err.message}`);
-      throw err;
-    }
+    } catch {}
   };
 
-  // Optimistic Disruption Actions
+  // Disruption Actions
   const cancelShipment = async (shipmentId, reason = 'Cancelled by shipper tender revocation.') => {
-    const previousShipments = [...shipments];
+    const currentList = dataCtx ? dataCtx.shipments : fallbackShipments;
+    const target = currentList.find((s) => s.id === shipmentId);
 
-    setShipments((prev) =>
-      prev.map((s) => {
-        if (s.id !== shipmentId) return s;
-        return {
-          ...s,
-          status: 'Cancelled',
-          isCancelled: true,
-          whyWhyNot: {
-            recommendedSummary: `Cancelled: ${reason}`,
-            reasons: [
-              {
-                type: 'cross',
-                title: 'Tender Cancelled by Shipper',
-                description: reason,
-              },
-              ...(s.whyWhyNot?.reasons || []),
-            ],
+    const patch = {
+      status: 'Cancelled',
+      isCancelled: true,
+      whyWhyNot: {
+        recommendedSummary: `Cancelled: ${reason}`,
+        reasons: [
+          {
+            type: 'cross',
+            title: 'Tender Cancelled by Shipper',
+            description: reason,
           },
-        };
-      })
-    );
+          ...(target?.whyWhyNot?.reasons || []),
+        ],
+      },
+    };
+
+    if (dataCtx?.updateShipment) {
+      dataCtx.updateShipment(shipmentId, patch);
+    } else {
+      setFallbackShipments((prev) =>
+        prev.map((s) => (s.id === shipmentId ? { ...s, ...patch } : s))
+      );
+    }
 
     try {
-      await repoRef.current.updateShipmentStatus(shipmentId, 'Cancelled', {
-        whyWhyNot: {
-          recommendedSummary: `Cancelled: ${reason}`,
-          reasons: [
-            {
-              type: 'cross',
-              title: 'Tender Cancelled by Shipper',
-              description: reason,
-            },
-          ],
-        },
-      });
-
+      await repoRef.current.updateShipmentStatus(shipmentId, 'Cancelled', patch);
       await repoRef.current.createDisruptionEvent({
         type: 'CANCELLATION',
         shipmentId,
         payload: { reason },
       });
-    } catch (err) {
-      setShipments(previousShipments);
-      setError(`Cancel failed: ${err.message}`);
-      throw err;
-    }
+    } catch {}
   };
 
   const delayShipment = async (shipmentId, delayMins = 60, reason = 'Corridor highway bottleneck delay') => {
-    const previousShipments = [...shipments];
+    const currentList = dataCtx ? dataCtx.shipments : fallbackShipments;
+    const target = currentList.find((s) => s.id === shipmentId);
+    if (!target) return;
 
-    let updatedTarget = null;
-    setShipments((prev) =>
-      prev.map((s) => {
-        if (s.id !== shipmentId) return s;
-        const currentEta = s.predictedTruckEta || '14:15';
-        const newEta = addMinutesToTimeString(currentEta, delayMins);
-        const windowEndMins = timeStringToMinutes(s.pickupWindowEnd || '16:00');
-        const newEtaMins = timeStringToMinutes(newEta);
-        const newBuffer = windowEndMins - newEtaMins;
-        const delayRisk = newBuffer < 0 ? 'high' : newBuffer < 30 ? 'medium' : 'low';
+    const currentEta = target.predictedTruckEta || '14:15';
+    const newEta = addMinutesToTimeString(currentEta, delayMins);
+    const windowEndMins = timeStringToMinutes(target.pickupWindowEnd || '16:00');
+    const newEtaMins = timeStringToMinutes(newEta);
+    const newBuffer = windowEndMins - newEtaMins;
+    const delayRisk = newBuffer < 0 ? 'high' : newBuffer < 30 ? 'medium' : 'low';
 
-        updatedTarget = {
-          ...s,
-          isDelayed: true,
-          predictedTruckEta: newEta,
-          etaBufferMinutes: newBuffer,
-          delayRisk,
-          delayRiskReason: reason,
-        };
-        return updatedTarget;
-      })
-    );
+    const patch = {
+      isDelayed: true,
+      predictedTruckEta: newEta,
+      etaBufferMinutes: newBuffer,
+      delayRisk,
+      delayRiskReason: reason,
+    };
 
-    if (updatedTarget) {
-      try {
-        await repoRef.current.updateShipmentStatus(shipmentId, 'Available', {
-          predictedTruckEta: updatedTarget.predictedTruckEta,
-          etaBufferMinutes: updatedTarget.etaBufferMinutes,
-        });
-
-        await repoRef.current.createDisruptionEvent({
-          type: 'DELAY',
-          shipmentId,
-          payload: { delayMinutes: delayMins, reason },
-        });
-      } catch (err) {
-        setShipments(previousShipments);
-        setError(`Delay update failed: ${err.message}`);
-        throw err;
-      }
+    if (dataCtx?.updateShipment) {
+      dataCtx.updateShipment(shipmentId, patch);
+    } else {
+      setFallbackShipments((prev) =>
+        prev.map((s) => (s.id === shipmentId ? { ...s, ...patch } : s))
+      );
     }
+
+    try {
+      await repoRef.current.updateShipmentStatus(shipmentId, 'Available', patch);
+      await repoRef.current.createDisruptionEvent({
+        type: 'DELAY',
+        shipmentId,
+        payload: { delayMinutes: delayMins, reason },
+      });
+    } catch {}
   };
 
   const shiftShipmentWindow = async (shipmentId, shiftOrNewStart = 60, optionalEnd = null) => {
-    const previousShipments = [...shipments];
+    const currentList = dataCtx ? dataCtx.shipments : fallbackShipments;
+    const target = currentList.find((s) => s.id === shipmentId);
+    if (!target) return;
 
-    let updatedTarget = null;
-    setShipments((prev) =>
-      prev.map((s) => {
-        if (s.id !== shipmentId) return s;
-        let newStart, newEnd;
-        if (typeof shiftOrNewStart === 'number') {
-          newStart = addMinutesToTimeString(s.pickupWindowStart || '14:00', shiftOrNewStart);
-          newEnd = addMinutesToTimeString(s.pickupWindowEnd || '16:00', shiftOrNewStart);
-        } else {
-          newStart = shiftOrNewStart;
-          newEnd = optionalEnd || addMinutesToTimeString(newStart, 90);
-        }
-
-        const etaMins = timeStringToMinutes(s.predictedTruckEta || '14:15');
-        const newBuffer = timeStringToMinutes(newEnd) - etaMins;
-
-        updatedTarget = {
-          ...s,
-          pickupWindowStart: newStart,
-          pickupWindowEnd: newEnd,
-          etaBufferMinutes: newBuffer,
-        };
-        return updatedTarget;
-      })
-    );
-
-    if (updatedTarget) {
-      try {
-        await repoRef.current.updateShipmentStatus(shipmentId, 'Available', {
-          pickupWindowStart: updatedTarget.pickupWindowStart,
-          pickupWindowEnd: updatedTarget.pickupWindowEnd,
-          etaBufferMinutes: updatedTarget.etaBufferMinutes,
-        });
-
-        await repoRef.current.createDisruptionEvent({
-          type: 'WINDOW_SHIFT',
-          shipmentId,
-          payload: {
-            newStart: updatedTarget.pickupWindowStart,
-            newEnd: updatedTarget.pickupWindowEnd,
-          },
-        });
-      } catch (err) {
-        setShipments(previousShipments);
-        setError(`Window shift failed: ${err.message}`);
-        throw err;
-      }
+    let newStart, newEnd;
+    if (typeof shiftOrNewStart === 'number') {
+      newStart = addMinutesToTimeString(target.pickupWindowStart || '14:00', shiftOrNewStart);
+      newEnd = addMinutesToTimeString(target.pickupWindowEnd || '16:00', shiftOrNewStart);
+    } else {
+      newStart = shiftOrNewStart;
+      newEnd = optionalEnd || addMinutesToTimeString(newStart, 90);
     }
+
+    const etaMins = timeStringToMinutes(target.predictedTruckEta || '14:15');
+    const newBuffer = timeStringToMinutes(newEnd) - etaMins;
+
+    const patch = {
+      pickupWindowStart: newStart,
+      pickupWindowEnd: newEnd,
+      etaBufferMinutes: newBuffer,
+    };
+
+    if (dataCtx?.updateShipment) {
+      dataCtx.updateShipment(shipmentId, patch);
+    } else {
+      setFallbackShipments((prev) =>
+        prev.map((s) => (s.id === shipmentId ? { ...s, ...patch } : s))
+      );
+    }
+
+    try {
+      await repoRef.current.updateShipmentStatus(shipmentId, 'Available', patch);
+      await repoRef.current.createDisruptionEvent({
+        type: 'WINDOW_SHIFT',
+        shipmentId,
+        payload: { newStart, newEnd },
+      });
+    } catch {}
   };
 
   const recordTelemetry = async (point) => {
-    // Optimistic update of truck location
-    setTrucks((prev) =>
-      prev.map((t) => {
-        if (t.id !== point.truckId) return t;
-        return {
-          ...t,
-          currentCoords: [point.lat, point.lng],
-          currentLat: point.lat,
-          currentLng: point.lng,
-          speedKmH: point.speed ?? t.speedKmH,
-          currentLocationName: point.locationName || t.currentLocationName,
-        };
-      })
-    );
+    const patch = {
+      currentCoords: [point.lat, point.lng],
+      currentLat: point.lat,
+      currentLng: point.lng,
+      speedKmH: point.speed,
+      currentLocationName: point.locationName,
+    };
+
+    if (dataCtx?.updateTruck) {
+      dataCtx.updateTruck(point.truckId, patch);
+    } else {
+      setFallbackTrucks((prev) =>
+        prev.map((t) => (t.id === point.truckId ? { ...t, ...patch } : t))
+      );
+    }
 
     try {
       await repoRef.current.recordTelemetry(point);
-    } catch (err) {
-      console.warn('Failed to record telemetry:', err);
-    }
+    } catch {}
   };
 
   const updateAssignmentStatus = async (assignmentId, status) => {
@@ -460,7 +439,6 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
       await repoRef.current.updateAssignmentStatus(assignmentId, status);
       showToast(`Assignment status updated to: ${status}`, 'success');
     } catch (err) {
-      console.warn('Failed to update assignment status:', err);
       showToast(`Failed to update assignment: ${err.message}`, 'alert');
     }
   };
@@ -476,12 +454,13 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
   };
 
   const resetDemo = async () => {
-    await repoRef.current.resetToDemo();
-    await loadData(false);
+    if (dataCtx?.loadDemoData) {
+      dataCtx.loadDemoData('replace');
+    } else {
+      await repoRef.current.resetToDemo();
+      await loadData(false);
+    }
   };
-
-  const selectedTruck = trucks.find((t) => t.id === selectedTruckId) || trucks[0] || null;
-  const selectedShipment = shipments.find((s) => s.id === selectedShipmentId) || shipments[0] || null;
 
   const value = {
     repository,
@@ -517,6 +496,31 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     updateSettings,
     resetDemo,
     refreshData: loadData,
+
+    // Data layer CRUD from DataContext
+    addTruck: dataCtx?.addTruck,
+    updateTruck: dataCtx?.updateTruck,
+    deleteTruck: dataCtx?.deleteTruck,
+    addShipment: dataCtx?.addShipment,
+    updateShipment: dataCtx?.updateShipment,
+    deleteShipment: dataCtx?.deleteShipment,
+    loadDemoData: dataCtx?.loadDemoData,
+    clearAllData: dataCtx?.clearAllData,
+    handleRequestLoadDemo: dataCtx?.handleRequestLoadDemo,
+
+    // Modal & Dialog state
+    isAddTruckOpen: dataCtx?.isAddTruckOpen,
+    setIsAddTruckOpen: dataCtx?.setIsAddTruckOpen,
+    isAddShipmentOpen: dataCtx?.isAddShipmentOpen,
+    setIsAddShipmentOpen: dataCtx?.setIsAddShipmentOpen,
+    editingTruck: dataCtx?.editingTruck,
+    setEditingTruck: dataCtx?.setEditingTruck,
+    editingShipment: dataCtx?.editingShipment,
+    setEditingShipment: dataCtx?.setEditingShipment,
+    isClearConfirmOpen: dataCtx?.isClearConfirmOpen,
+    setIsClearConfirmOpen: dataCtx?.setIsClearConfirmOpen,
+    isDemoPromptOpen: dataCtx?.isDemoPromptOpen,
+    setIsDemoPromptOpen: dataCtx?.setIsDemoPromptOpen,
   };
 
   return (

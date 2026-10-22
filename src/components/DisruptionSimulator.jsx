@@ -33,8 +33,9 @@ export default function DisruptionSimulator({
   isS1Cancelled,
   isS1Delayed,
 }) {
-  const currentTarget = targetShipment || allShipments[0] || { id: allShipments[0]?.id || 'load-1', name: allShipments[0]?.name || 'Primary Tender' };
-  const targetId = currentTarget.id;
+  const hasLoads = Boolean(targetShipment || (allShipments && allShipments.length > 0));
+  const currentTarget = targetShipment || allShipments[0] || null;
+  const targetId = currentTarget?.id || 'No Load';
 
   const isCancelled = propIsCancelled ?? isS1Cancelled ?? false;
   const isDelayed = propIsDelayed ?? isS1Delayed ?? false;
@@ -43,16 +44,19 @@ export default function DisruptionSimulator({
   const hasActiveDisruption = isCancelled || isDelayed || isWindowShifted;
 
   const handleCancel = () => {
+    if (!hasLoads) return;
     if (onCancelShipment) onCancelShipment(targetId);
     else if (onCancelS1) onCancelS1();
   };
 
   const handleDelay = () => {
+    if (!hasLoads) return;
     if (onDelayShipment) onDelayShipment(targetId);
     else if (onDelayS1) onDelayS1();
   };
 
   const handleShiftWindow = () => {
+    if (!hasLoads) return;
     if (onShiftWindow) onShiftWindow(targetId);
     else if (onChangeWindowS1) onChangeWindowS1();
   };
@@ -70,7 +74,15 @@ export default function DisruptionSimulator({
               Dynamic Disruption Simulator
             </h3>
             <p className="text-[11px] text-[#64748B]">
-              Inject live field disruption on <strong className="text-blue-600">{targetId}</strong> to test self-healing recovery
+              {hasLoads ? (
+                <>
+                  Inject live field disruption on <strong className="text-blue-600">{targetId}</strong> to test self-healing recovery
+                </>
+              ) : (
+                <span className="text-amber-600 font-medium">
+                  Simulator idle · Add a truck and load to simulate live disruptions
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -78,7 +90,7 @@ export default function DisruptionSimulator({
         {hasActiveDisruption && (
           <button
             onClick={onReset}
-            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 text-[#64748B] hover:text-[#0F172A] bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+            className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 text-[#64748B] hover:text-[#0F172A] bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset Demo</span>
@@ -91,25 +103,29 @@ export default function DisruptionSimulator({
         {/* Cancel Tender */}
         <button
           onClick={handleCancel}
-          disabled={isRecalculating}
+          disabled={isRecalculating || !hasLoads}
           className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm ${
-            isCancelled
+            !hasLoads
+              ? 'bg-slate-50 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
+              : isCancelled
               ? 'bg-rose-100 text-rose-800 border border-rose-300 ring-2 ring-rose-400/20'
-              : 'bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 hover:border-rose-300'
+              : 'bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 hover:border-rose-300 cursor-pointer'
           }`}
         >
           <CircleAlert className="w-3.5 h-3.5 text-rose-600" />
-          <span>{isCancelled ? `${targetId} Cancelled (Active)` : `Cancel ${targetId} Load`}</span>
+          <span>{isCancelled ? `${targetId} Cancelled` : `Cancel ${targetId}`}</span>
         </button>
 
         {/* Delay +60m */}
         <button
           onClick={handleDelay}
-          disabled={isRecalculating}
+          disabled={isRecalculating || !hasLoads}
           className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm ${
-            isDelayed
+            !hasLoads
+              ? 'bg-slate-50 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
+              : isDelayed
               ? 'bg-amber-100 text-amber-900 border border-amber-300 ring-2 ring-amber-400/20'
-              : 'bg-white hover:bg-amber-50 text-amber-800 border border-amber-200'
+              : 'bg-white hover:bg-amber-50 text-amber-800 border border-amber-200 cursor-pointer'
           }`}
         >
           <Clock className="w-3.5 h-3.5 text-amber-600" />
@@ -119,11 +135,13 @@ export default function DisruptionSimulator({
         {/* Shift Window */}
         <button
           onClick={handleShiftWindow}
-          disabled={isRecalculating}
+          disabled={isRecalculating || !hasLoads}
           className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm ${
-            isWindowShifted
+            !hasLoads
+              ? 'bg-slate-50 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
+              : isWindowShifted
               ? 'bg-blue-100 text-blue-900 border border-blue-300 ring-2 ring-blue-400/20'
-              : 'bg-white hover:bg-slate-50 text-[#0F172A] border border-[#E2E8F0]'
+              : 'bg-white hover:bg-slate-50 text-[#0F172A] border border-[#E2E8F0] cursor-pointer'
           }`}
         >
           <CalendarClock className="w-3.5 h-3.5 text-blue-600" />
@@ -133,8 +151,12 @@ export default function DisruptionSimulator({
         {/* Restore Baseline */}
         <button
           onClick={onReset}
-          disabled={isRecalculating}
-          className="px-3 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 hover:bg-slate-200 text-[#0F172A] border border-[#E2E8F0] flex items-center justify-center gap-1.5"
+          disabled={isRecalculating || !hasLoads}
+          className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+            !hasLoads
+              ? 'bg-slate-50 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
+              : 'bg-slate-100 hover:bg-slate-200 text-[#0F172A] border border-[#E2E8F0] cursor-pointer'
+          }`}
         >
           <RotateCcw className="w-3.5 h-3.5 text-[#64748B]" />
           <span>Restore Baseline</span>

@@ -1,20 +1,29 @@
-import { INITIAL_TRUCK, FACTOR_WEIGHTS } from "../data/mockData.js";
 import {
   evaluateShipments,
   calculateSustainability,
   calculateRouteEstimate,
 } from "../engine/index.js";
 
+export const DEFAULT_FACTOR_WEIGHTS = {
+  route: 25,
+  time: 20,
+  capacity: 20,
+  detour: 15,
+  cost: 10,
+  disruption: 10,
+  risk: 10,
+};
+
 /**
  * Calculates score and breakdown for a single shipment against a truck.
- * Pure wrapper delegating directly to the matching engine.
+ * Returns null if either shipment or truck is missing.
  */
 export function calculateShipmentScore(
   shipment,
-  weights = FACTOR_WEIGHTS,
-  truck = INITIAL_TRUCK
+  weights = DEFAULT_FACTOR_WEIGHTS,
+  truck = null
 ) {
-  if (!shipment) return null;
+  if (!shipment || !truck) return null;
   const evaluated = evaluateShipments(truck, [shipment], { weights });
   return evaluated[0]?.score || null;
 }
@@ -22,14 +31,15 @@ export function calculateShipmentScore(
 /**
  * Evaluates and ranks all candidate shipments against a truck.
  * Infeasible shipments are never recommended.
+ * Returns empty ranked list if truck or shipments are missing.
  */
 export function rankShipments(
   shipments,
-  weights = FACTOR_WEIGHTS,
-  truck = INITIAL_TRUCK
+  weights = DEFAULT_FACTOR_WEIGHTS,
+  truck = null
 ) {
-  if (!Array.isArray(shipments) || shipments.length === 0) {
-    return { ranked: [], recommendedId: null };
+  if (!truck || !Array.isArray(shipments) || shipments.length === 0) {
+    return { ranked: [], recommendedId: null, metadata: { latencyMs: 0 } };
   }
 
   const evaluated = evaluateShipments(truck, shipments, { weights });
@@ -48,11 +58,11 @@ export function rankShipments(
 
 /**
  * Dynamically computes sustainability impact from truck and shipment parameters.
- * Zero hardcoded vehicle ratings or city distances.
+ * Zero hardcoded fallback vehicles.
  */
 export function calculateSustainabilityMetrics(
   shipment,
-  truck = INITIAL_TRUCK
+  truck = null
 ) {
   if (!shipment || shipment.isCancelled || !truck) {
     return {
@@ -114,7 +124,7 @@ export function calculateSustainabilityMetrics(
  * Formats a countdown value into human-readable hours, minutes, and seconds.
  */
 export function formatCountdown(seconds) {
-  if (seconds <= 0) {
+  if (!seconds || seconds <= 0) {
     return {
       hours: 0,
       minutes: 0,

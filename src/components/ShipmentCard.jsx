@@ -8,24 +8,41 @@ import {
   MapPin,
   Clock,
   ChevronRight,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
+import { useDataContext } from '../context/DataContext';
 
 export default function ShipmentCard({
   shipment,
-  score,
+  score = { totalScore: 0 },
   isRecommended,
   isSelected,
   rankIndex,
   onSelect,
 }) {
+  const { setIsAddShipmentOpen, setEditingShipment, deleteShipment } = useDataContext();
   const isCancelled = shipment.isCancelled;
+
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    setEditingShipment(shipment);
+    setIsAddShipmentOpen(true);
+  };
+
+  const handleDelete = (e) => {
+    e.stopPropagation();
+    if (confirm(`Delete consignment ${shipment.id} (${shipment.name})?`)) {
+      deleteShipment(shipment.id);
+    }
+  };
 
   const renderRiskBadge = () => {
     if (isCancelled) {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-[#EF4444] border border-[#EF4444]/30">
           <CircleX className="w-3.5 h-3.5" />
-          Cancelled by Shipper
+          Cancelled
         </span>
       );
     }
@@ -34,21 +51,21 @@ export default function ShipmentCard({
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-[#22C55E] border border-[#22C55E]/30">
             <CircleCheck className="w-3.5 h-3.5" />
-            Low Delay Risk
+            Low Risk
           </span>
         );
       case 'medium':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-[#F59E0B] border border-[#F59E0B]/30">
             <TriangleAlert className="w-3.5 h-3.5" />
-            Medium Delay Risk
+            Medium Risk
           </span>
         );
       case 'high':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-[#EF4444] border border-[#EF4444]/30">
             <CircleAlert className="w-3.5 h-3.5" />
-            High Delay Risk
+            High Risk
           </span>
         );
       default:
@@ -68,9 +85,12 @@ export default function ShipmentCard({
     cardClasses += 'border border-[#E2E8F0] hover:border-slate-300 hover:shadow-soft-md ';
   }
 
+  const safeScore = score?.totalScore ?? 0;
+  const freightYield = Number(shipment.freightOfferInr || shipment.value || 0);
+
   return (
     <div onClick={() => onSelect(shipment)} className={cardClasses}>
-      {/* Top Bar: Rank, ID, Tags, Score */}
+      {/* Top Bar: Rank, ID, Tags, Score, Edit/Delete */}
       <div className="flex items-center justify-between gap-2 mb-2.5">
         <div className="flex items-center gap-2">
           <span
@@ -107,15 +127,31 @@ export default function ShipmentCard({
               className={`text-lg font-black leading-none ${
                 isCancelled
                   ? 'text-[#EF4444] line-through'
-                  : score.totalScore >= 90
+                  : safeScore >= 90
                   ? 'text-[#2563EB]'
-                  : score.totalScore >= 80
+                  : safeScore >= 80
                   ? 'text-slate-800'
                   : 'text-[#64748B]'
               }`}
             >
-              {score.totalScore}%
+              {safeScore}%
             </div>
+          </div>
+          <div className="flex items-center gap-0.5 ml-1 border-l border-[#E2E8F0] pl-1.5">
+            <button
+              onClick={handleEdit}
+              className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+              title="Edit load specifications"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleDelete}
+              className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+              title="Delete load"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>
@@ -146,26 +182,26 @@ export default function ShipmentCard({
           <span className="text-[10px] text-[#64748B] block">Detour</span>
           <span
             className={`font-bold ${
-              shipment.detourKm <= 10
+              (shipment.detourKm || 0) <= 10
                 ? 'text-[#059669]'
-                : shipment.detourKm <= 25
+                : (shipment.detourKm || 0) <= 25
                 ? 'text-amber-600'
                 : 'text-[#EF4444]'
             }`}
           >
-            +{shipment.detourKm} km
+            +{shipment.detourKm || 0} km
           </span>
         </div>
         <div>
           <span className="text-[10px] text-[#64748B] block">Pickup Window</span>
           <span className="font-bold text-[#0F172A]">
-            {shipment.pickupWindowStart} - {shipment.pickupWindowEnd}
+            {shipment.pickupWindowStart || '14:30'} - {shipment.pickupWindowEnd || '16:00'}
           </span>
         </div>
         <div>
           <span className="text-[10px] text-[#64748B] block">Freight Yield</span>
           <span className="font-bold text-[#0F172A]">
-            ₹{shipment.freightOfferInr.toLocaleString('en-IN')}
+            ₹{freightYield.toLocaleString('en-IN')}
           </span>
         </div>
       </div>
@@ -176,7 +212,7 @@ export default function ShipmentCard({
           <div className="flex items-center gap-1 text-[#64748B]">
             <Clock className="w-3.5 h-3.5 text-blue-600" />
             <span>
-              Truck ETA: <strong className="text-[#0F172A]">{shipment.predictedTruckEta}</strong>
+              Truck ETA: <strong className="text-[#0F172A]">{shipment.predictedTruckEta || '14:15'}</strong>
             </span>
             <span>
               vs Window:{' '}
@@ -186,9 +222,9 @@ export default function ShipmentCard({
             </span>
           </div>
           <div>
-            {shipment.etaBufferMinutes >= 0 ? (
+            {(shipment.etaBufferMinutes ?? 15) >= 0 ? (
               <span className="font-bold text-[#22C55E] flex items-center gap-1">
-                +{shipment.etaBufferMinutes}m Safety Margin
+                +{shipment.etaBufferMinutes ?? 15}m Safety Margin
               </span>
             ) : (
               <span className="font-bold text-[#EF4444] flex items-center gap-1">
@@ -201,10 +237,10 @@ export default function ShipmentCard({
         {/* Visual Timeline Buffer Bar */}
         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden flex relative">
           <div className="absolute inset-y-0 left-[20%] right-[30%] bg-blue-100 border-x border-blue-300" />
-          {shipment.etaBufferMinutes >= 0 ? (
+          {(shipment.etaBufferMinutes ?? 15) >= 0 ? (
             <div
               className="h-full bg-[#22C55E] rounded-full transition-all duration-300"
-              style={{ width: `${Math.min(95, 30 + shipment.etaBufferMinutes * 2)}%` }}
+              style={{ width: `${Math.min(95, 30 + (shipment.etaBufferMinutes ?? 15) * 2)}%` }}
             />
           ) : (
             <div className="h-full bg-[#EF4444] rounded-full transition-all duration-300 style={{ width: '92%' }}" />
@@ -212,7 +248,7 @@ export default function ShipmentCard({
         </div>
 
         <p className="text-[10px] text-[#64748B] mt-1.5 flex items-center justify-between">
-          <span>{shipment.delayRiskReason}</span>
+          <span>{shipment.delayRiskReason || 'Nominal freight corridor routing'}</span>
           {isSelected && (
             <span className="text-blue-600 font-semibold flex items-center gap-0.5">
               Inspecting Explainability <ChevronRight className="w-3 h-3" />

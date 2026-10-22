@@ -2,7 +2,7 @@
 // 100% data-driven, reactive to truck selection, disruption injection, and candidate evaluation.
 
 import React, { useState, useMemo } from 'react';
-import { Sparkles, ChevronDown, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Sparkles, Package, Plus, AlertCircle } from 'lucide-react';
 import PipelineStages from '../components/PipelineStages';
 import TruckCard from '../components/TruckCard';
 import ShipmentCard from '../components/ShipmentCard';
@@ -22,9 +22,9 @@ import { apiFetch } from '../lib/api';
 
 export default function Dashboard() {
   const {
-    trucks,
-    shipments,
-    assignments,
+    trucks = [],
+    shipments = [],
+    assignments = [],
     selectedTruckId,
     setSelectedTruckId,
     selectedTruck,
@@ -35,6 +35,9 @@ export default function Dashboard() {
     shiftShipmentWindow,
     resetDemo,
     settings,
+    setIsAddTruckOpen,
+    setIsAddShipmentOpen,
+    handleRequestLoadDemo,
   } = useReRoute();
 
   const [currentStage, setCurrentStage] = useState('warn');
@@ -49,8 +52,8 @@ export default function Dashboard() {
   const [measuredRecoveryLatency, setMeasuredRecoveryLatency] = useState(null);
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false);
 
-  // Fallback active truck
-  const activeTruck = selectedTruck || trucks[0];
+  // Active truck (if any)
+  const activeTruck = selectedTruck || trucks[0] || null;
 
   // Dynamic ranking based on currently selected truck and settings
   const { ranked, recommendedId, metadata } = useMemo(() => {
@@ -61,7 +64,8 @@ export default function Dashboard() {
   }, [activeTruck, shipments, settings]);
 
   const selectedShipment = useMemo(() => {
-    return shipments.find((s) => s.id === selectedShipmentId) || shipments[0];
+    if (!shipments || shipments.length === 0) return null;
+    return shipments.find((s) => s.id === selectedShipmentId) || shipments[0] || null;
   }, [shipments, selectedShipmentId]);
 
   const selectedScore = useMemo(() => {
@@ -182,7 +186,9 @@ export default function Dashboard() {
     await shiftShipmentWindow(targetId, 60);
     setIsWindowShifted(true);
     const newEnd = target ? addMinutesToTimeString(target.pickupWindowEnd, 60) : '17:00';
-    setRecoveryBanner(`Shipper window broadened: ${targetId} pickup window extended to ${newEnd} IST (+60 min relative shift).`);
+    setRecoveryBanner(
+      `Shipper window broadened: ${targetId} pickup window extended to ${newEnd} IST (+60 min relative shift).`
+    );
   };
 
   const handleReset = async () => {
@@ -225,14 +231,6 @@ export default function Dashboard() {
 
   const topPickScore = ranked.find((r) => r.shipment?.id === recommendedId)?.score?.totalScore;
 
-  if (!activeTruck) {
-    return (
-      <div className="p-8 text-center text-xs text-[#64748B]">
-        Loading logistics telemetry...
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* 0. Before vs After Fleet Operational Impact Card */}
@@ -252,27 +250,56 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-[12px] border border-[#E2E8F0] shadow-soft">
         <div className="flex items-center gap-3">
           <span className="flex h-3 w-3 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#059669]" />
+            <span
+              className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                activeTruck ? 'bg-emerald-400' : 'bg-slate-400'
+              }`}
+            />
+            <span
+              className={`relative inline-flex rounded-full h-3 w-3 ${
+                activeTruck ? 'bg-[#059669]' : 'bg-slate-400'
+              }`}
+            />
           </span>
+
           <div className="text-xs">
             <span className="font-bold text-[#0F172A]">AI Logistics Dispatch Cockpit:</span>{' '}
-            <span className="text-[#64748B]">Active Vehicle: </span>
-            {/* Truck Selector Dropdown */}
-            <select
-              value={selectedTruckId}
-              onChange={(e) => setSelectedTruckId(e.target.value)}
-              className="font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-0.5 ml-1 text-xs outline-none cursor-pointer"
-            >
-              {trucks.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.id} — {t.model?.split(' ')[0]} ({t.capacityTons}t) [{t.origin?.split(' ')[0]} → {t.destination?.split(' ')[0]}]
-                </option>
-              ))}
-            </select>
-            <span className="text-[#64748B] hidden md:inline">
-              {' '}• Pre-allocating return load ahead of arrival at {activeTruck.destination?.split(' ')[0]}.
-            </span>
+            {activeTruck ? (
+              <>
+                <span className="text-[#64748B]">Active Vehicle: </span>
+                <select
+                  value={selectedTruckId || ''}
+                  onChange={(e) => setSelectedTruckId(e.target.value)}
+                  className="font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-0.5 ml-1 text-xs outline-none cursor-pointer"
+                >
+                  {trucks.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.id} — {t.model?.split(' ')[0]} ({t.capacityTons}t) [{t.origin?.split(' ')[0]} → {t.destination?.split(' ')[0]}]
+                    </option>
+                  ))}
+                </select>
+                <span className="text-[#64748B] hidden md:inline">
+                  {' '}• Pre-allocating return load ahead of arrival at {activeTruck.destination?.split(' ')[0]}.
+                </span>
+              </>
+            ) : (
+              <span className="text-[#64748B]">
+                No vehicles active •{' '}
+                <button
+                  onClick={() => setIsAddTruckOpen?.(true)}
+                  className="text-blue-600 hover:underline font-bold cursor-pointer"
+                >
+                  Add a truck
+                </button>{' '}
+                or{' '}
+                <button
+                  onClick={handleRequestLoadDemo}
+                  className="text-amber-800 hover:underline font-bold cursor-pointer"
+                >
+                  Load demo data
+                </button>
+              </span>
+            )}
           </div>
         </div>
 
@@ -281,7 +308,11 @@ export default function Dashboard() {
           <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 font-bold border border-blue-200 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" />
             <span>
-              {recommendedId ? `${recommendedId} (${topPickScore}%)` : 'None Viable'}
+              {recommendedId
+                ? `${recommendedId} (${topPickScore}%)`
+                : activeTruck
+                ? 'None Viable'
+                : 'Workspace Empty'}
             </span>
           </span>
         </div>
@@ -345,37 +376,60 @@ export default function Dashboard() {
               </div>
               <div className="text-[11px] text-[#64748B] flex items-center gap-1">
                 <span>Selected:</span>
-                <strong className="text-blue-600 font-bold">{selectedShipmentId}</strong>
+                <strong className="text-blue-600 font-bold">
+                  {selectedShipmentId || 'None'}
+                </strong>
               </div>
             </div>
 
-            <div className="space-y-3">
-              {ranked.map(({ shipment, score }, idx) => (
-                <ShipmentCard
-                  key={shipment.id}
-                  shipment={shipment}
-                  score={score}
-                  isRecommended={shipment.id === recommendedId}
-                  isSelected={shipment.id === selectedShipmentId}
-                  rankIndex={idx}
-                  onSelect={handleSelectShipment}
-                />
-              ))}
-            </div>
+            {shipments.length === 0 ? (
+              <div className="bg-white rounded-[12px] border border-[#E2E8F0] shadow-soft p-8 text-center space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
+                  <Package className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-[#0F172A]">No loads available</h4>
+                  <p className="text-xs text-[#64748B] mt-1 max-w-xs mx-auto">
+                    Post a return load or load the demo dataset to evaluate candidate consignments.
+                  </p>
+                </div>
+                <div className="pt-1">
+                  <button
+                    onClick={() => setIsAddShipmentOpen?.(true)}
+                    className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Shipment</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {ranked.map(({ shipment, score }, idx) => (
+                  <ShipmentCard
+                    key={shipment.id}
+                    shipment={shipment}
+                    score={score}
+                    isRecommended={shipment.id === recommendedId}
+                    isSelected={shipment.id === selectedShipmentId}
+                    rankIndex={idx}
+                    onSelect={handleSelectShipment}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
         {/* Right Column: Explainability Decision Engine (Width 4) */}
         <section className="lg:col-span-4 xl:col-span-4 space-y-4">
-          {selectedScore && (
-            <ExplainabilityPanel
-              shipment={selectedShipment}
-              score={selectedScore}
-              allShipments={shipments}
-              onSelectShipmentId={(id) => setSelectedShipmentId(id)}
-              isRecommended={selectedShipment?.id === recommendedId}
-            />
-          )}
+          <ExplainabilityPanel
+            shipment={selectedShipment}
+            score={selectedScore}
+            allShipments={shipments}
+            onSelectShipmentId={(id) => setSelectedShipmentId(id)}
+            isRecommended={selectedShipment?.id === recommendedId}
+          />
         </section>
       </div>
 

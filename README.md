@@ -61,23 +61,50 @@ graph TB
 
 ---
 
-## ⚡ Dual-Mode Architecture
+## ⚡ Empty-First Dynamic Architecture & Data Modes
 
-ReRoute AI 2.0 operates identically across two execution environments:
+ReRoute AI 2.0 operates with a client-first, empty-by-default architecture:
+- **Clean Slate on Fresh Launch**: The application initializes with zero default records, enabling dispatchers and freight operators to input their real-world vehicles and backhaul loads immediately.
+- **On-Demand Demo Loading**: At any time, operators can click **"Load Demo Data"** in the header or empty states. If data is already present, the system prompts whether to **Replace** or **Merge** with existing consignments.
+- **Client Persistence**: All added trucks, shipments, assignments, and model overrides persist in browser `localStorage` across page reloads.
+- **Instant Reset**: A single **"Clear All Data"** action (with confirmation safeguard) returns the platform to the initial empty state.
 
-| Feature | Offline Demo Mode (Default) | Cloud Sync Mode |
+| Feature | Dynamic Client Mode (Default) | Cloud Sync Mode |
 |---|---|---|
-| **Zero Env Vars Required** | ✅ Yes (100% offline ready) | Requires Supabase credentials |
-| **Data Adapter** | `LocalDemoAdapter` | `SupabaseAdapter` |
-| **Storage Engine** | In-Memory + Browser `localStorage` | Multi-Tenant PostgreSQL (Supabase) |
+| **Initial App State** | Clean slate (empty trucks & loads) | Connects to Supabase Database |
+| **Demo Data Injection** | On-demand via "Load Demo Data" button | Database migration seeds |
+| **Data Entry** | Interactive modals (+ Add Truck, + Add Load) | Database CRUD / UI forms |
+| **Storage Engine** | Browser `localStorage` + Memory | Multi-Tenant PostgreSQL (Supabase) |
+| **Zero Env Vars Required** | ✅ Yes (100% offline & local ready) | Requires Supabase credentials |
 | **Role Personas** | Switch instantly via UI header pill | Authenticated via Supabase Magic Links |
-| **Realtime Sync** | Simulated in-session broadcast | Supabase Realtime WebSocket Channels |
 | **Algorithmic Evaluation** | Client pure ES Modules (`src/engine/`) | Serverless Endpoints (`/api/*`) + Fallback |
-| **AI Explainability** | Deterministic rule-based template engine | Claude 3.5 Haiku (`claude-3-5-haiku-20241022`) + Fallback |
+| **AI Explainability** | Deterministic rule-based template engine | Claude 3.5 Haiku + Fallback |
 
 ---
 
-## 🔍 Operational Transparency: Real vs. Simulated Systems
+## 📥 How to Add Data & Use the Demonstration Mode
+
+### 1. Adding a Vehicle (Truck)
+1. Click **"+ Add Truck"** in the header navigation or the empty fleet prompt.
+2. Enter the **Truck ID** (e.g. `T-202`), **Driver Name**, **Vehicle Type** (Open Body, Container, Trailer, Tanker), **Total Capacity**, **Current Load**, and select **Origin** and **Destination** cities from the Maharashtra hub directory (Nashik, Mumbai, Pune, Thane, Bhiwandi, Surat, etc.).
+3. Choose status (*In-Transit*, *Available*, *Returning Empty*).
+4. Save the vehicle. The Corridor Map immediately plots the route, and the deadhead risk countdown begins live.
+
+### 2. Adding a Shipment / Consignment Load
+1. Click **"+ Add Load"** in the header navigation or the empty loads pool prompt.
+2. Enter the **Consignment Name**, **Pickup City**, **Drop City**, **Cargo Weight**, **Pickup Window**, **Freight Rate (INR)**, and **Priority Level**.
+3. Save the shipment. The weighted multi-criteria matching engine immediately computes compatibility scores (Alignment, Detour, Time, Capacity, Freight Yield) for all available trucks.
+
+### 3. Loading Pre-Packaged Demo Data
+- Click **"Load Demo Data"** in the header to load standard corridor scenario assets (including vehicle `T101` on the Nashik ↔ Mumbai NH 160 Kasara Ghat corridor, shipments `S1` through `S3`, and corridor waypoints).
+- If you already have active data, select **"Replace"** to restore pristine demo state, or **"Merge"** to append demo loads to your existing fleet.
+
+### 4. Clearing Data
+- Click **"Clear All Data"** in the header to wipe all stored trucks, loads, and corridor assignments, returning the cockpit to its clean empty state.
+
+---
+
+## 🔍 Operational Transparency: Real vs. Heuristic Systems
 
 In line with enterprise evaluation best practices, every sub-system in ReRoute AI 2.0 is categorized transparently:
 

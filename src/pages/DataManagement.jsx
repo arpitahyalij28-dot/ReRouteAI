@@ -1,15 +1,20 @@
 // ReRoute AI 2.0 - Data Gateway & Management Page
-// CSV Export, CSV Import with validation, JSON system backup and reset.
+// CSV Export, JSON system backup, Load Demo Data, and Clear All Data.
 
 import React, { useState } from 'react';
-import { Database, Download, Upload, RefreshCw, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Database, Download, Sparkles, Trash2, FileText, CheckCircle2 } from 'lucide-react';
 import { useReRoute } from '../context/ReRouteContext';
-import { validateTruck, validateShipment } from '../engine/validation';
 
 export default function DataManagement() {
-  const { trucks, shipments, assignments, resetDemo, refreshData } = useReRoute();
+  const {
+    trucks = [],
+    shipments = [],
+    assignments = [],
+    handleRequestLoadDemo,
+    setIsClearConfirmOpen,
+  } = useReRoute();
+
   const [statusMessage, setStatusMessage] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(null);
 
   // CSV Export for Trucks
   const handleExportTrucksCSV = () => {
@@ -76,13 +81,6 @@ export default function DataManagement() {
     document.body.removeChild(link);
   };
 
-  const handleResetData = async () => {
-    if (confirm('Reset all fleet and shipment data to default seed baseline?')) {
-      await resetDemo();
-      setStatusMessage('Data reset to baseline seed records.');
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -95,17 +93,27 @@ export default function DataManagement() {
             <h1 className="text-lg font-bold text-[#0F172A]">Data Management & CSV Gateway</h1>
           </div>
           <p className="text-xs text-[#64748B] mt-1">
-            Export, audit, and reset fleet vehicles and freight demand records.
+            Export, audit, load demo records, and clear fleet vehicles & freight demand records.
           </p>
         </div>
 
-        <button
-          onClick={handleResetData}
-          className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 flex items-center gap-1.5 transition-colors shadow-xs"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Reset to Seed Baseline</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRequestLoadDemo}
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300 flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+            <span>Load Demo Data</span>
+          </button>
+
+          <button
+            onClick={() => setIsClearConfirmOpen?.(true)}
+            className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+            <span>Clear All Data</span>
+          </button>
+        </div>
       </div>
 
       {statusMessage && (
@@ -128,7 +136,12 @@ export default function DataManagement() {
           </p>
           <button
             onClick={handleExportTrucksCSV}
-            className="w-full py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#0F172A] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+            disabled={trucks.length === 0}
+            className={`w-full py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-colors ${
+              trucks.length === 0
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                : 'bg-slate-100 hover:bg-slate-200 text-[#0F172A] cursor-pointer'
+            }`}
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export Trucks CSV</span>
@@ -146,7 +159,12 @@ export default function DataManagement() {
           </p>
           <button
             onClick={handleExportShipmentsCSV}
-            className="w-full py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#0F172A] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+            disabled={shipments.length === 0}
+            className={`w-full py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-colors ${
+              shipments.length === 0
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                : 'bg-slate-100 hover:bg-slate-200 text-[#0F172A] cursor-pointer'
+            }`}
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export Shipments CSV</span>
@@ -164,7 +182,7 @@ export default function DataManagement() {
           </p>
           <button
             onClick={handleExportJSON}
-            className="w-full py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+            className="w-full py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download Backup JSON</span>

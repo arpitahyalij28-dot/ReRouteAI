@@ -81,11 +81,22 @@ export default function ExplainabilityPanel({
 
   if (!shipment || !score) {
     return (
-      <div className="bg-white rounded-[12px] border border-[#E2E8F0] shadow-soft p-5 text-center text-xs text-[#64748B]">
-        Select a candidate shipment to inspect decision factors.
+      <div className="bg-white rounded-[12px] border border-[#E2E8F0] shadow-soft p-6 text-center space-y-3">
+        <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto">
+          <Cpu className="w-5 h-5" />
+        </div>
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
+            Explainability Engine Idle
+          </h3>
+          <p className="text-xs text-[#64748B] mt-1 max-w-xs mx-auto">
+            Select an active candidate consignment or add a shipment to inspect the 6-factor algorithmic score breakdown.
+          </p>
+        </div>
       </div>
     );
   }
+
 
   return (
     <div className="bg-white rounded-[12px] border border-[#E2E8F0] shadow-soft p-5 space-y-4">

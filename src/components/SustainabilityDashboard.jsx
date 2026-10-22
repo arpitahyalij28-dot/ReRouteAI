@@ -15,6 +15,17 @@ import CountUp from './CountUp';
 export default function SustainabilityDashboard({ metrics, selectedShipment, truck }) {
   const [showFormulas, setShowFormulas] = useState(false);
 
+  const safeMetrics = metrics || {
+    emptyKmAvoided: 0,
+    additionalDetourKm: 0,
+    fuelSavedLitres: 0,
+    costSavedInr: 0,
+    co2ReducedKg: 0,
+    vehicleUtilizationPct: 0,
+  };
+
+  const truckRating = truck?.capacityTons ? `${truck.capacityTons}t rating` : 'No vehicle selected';
+
   return (
     <div className="bg-white rounded-[12px] border border-[#E2E8F0] shadow-soft p-5 space-y-4">
       {/* Title & Formula Switch */}
@@ -35,7 +46,7 @@ export default function SustainabilityDashboard({ metrics, selectedShipment, tru
             <p className="text-[11px] text-[#64748B]">
               Real-time ecological & fleet efficiency metrics for assigned return load:{' '}
               <strong className="text-[#0F172A]">
-                {selectedShipment ? selectedShipment.id : 'None'}
+                {selectedShipment ? selectedShipment.id : 'None (Awaiting backhaul assignment)'}
               </strong>
             </p>
           </div>
@@ -43,7 +54,7 @@ export default function SustainabilityDashboard({ metrics, selectedShipment, tru
 
         <button
           onClick={() => setShowFormulas(!showFormulas)}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#059669] hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100/70 border border-emerald-200 rounded-lg transition-colors self-start sm:self-auto"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#059669] hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100/70 border border-emerald-200 rounded-lg transition-colors self-start sm:self-auto cursor-pointer"
         >
           <Info className="w-3.5 h-3.5" />
           <span>View Audit Formulas</span>
@@ -57,7 +68,7 @@ export default function SustainabilityDashboard({ metrics, selectedShipment, tru
             <span>Verified Green Logistics Mathematical Formulation:</span>
             <button
               onClick={() => setShowFormulas(false)}
-              className="text-[#64748B] hover:text-[#0F172A] font-semibold text-[11px]"
+              className="text-[#64748B] hover:text-[#0F172A] font-semibold text-[11px] cursor-pointer"
             >
               Close
             </button>
@@ -90,7 +101,7 @@ export default function SustainabilityDashboard({ metrics, selectedShipment, tru
             <Navigation className="w-4 h-4 text-[#059669]" />
           </div>
           <div className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
-            <CountUp value={metrics.emptyKmAvoided} decimals={0} suffix=" km" />
+            <CountUp value={safeMetrics.emptyKmAvoided} decimals={0} suffix=" km" />
           </div>
           <div className="text-[10px] text-[#059669] font-medium mt-1 flex items-center gap-1">
             <TrendingUp className="w-3 h-3" />
@@ -107,10 +118,10 @@ export default function SustainabilityDashboard({ metrics, selectedShipment, tru
             <Layers className="w-4 h-4 text-blue-600" />
           </div>
           <div className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
-            <CountUp value={metrics.additionalDetourKm} decimals={0} prefix="+" suffix=" km" />
+            <CountUp value={safeMetrics.additionalDetourKm} decimals={0} prefix="+" suffix=" km" />
           </div>
           <div className="text-[10px] text-[#64748B] font-medium mt-1">
-            Route diversion from NH 160
+            Route diversion from NH corridor
           </div>
         </div>
 
@@ -123,7 +134,7 @@ export default function SustainabilityDashboard({ metrics, selectedShipment, tru
             <Fuel className="w-4 h-4 text-[#059669]" />
           </div>
           <div className="text-2xl font-extrabold text-[#059669] tracking-tight">
-            <CountUp value={metrics.fuelSavedLitres} decimals={1} suffix=" L" />
+            <CountUp value={safeMetrics.fuelSavedLitres} decimals={1} suffix=" L" />
           </div>
           <div className="text-[10px] text-[#64748B] font-medium mt-1">Diesel conserved</div>
         </div>
@@ -137,7 +148,7 @@ export default function SustainabilityDashboard({ metrics, selectedShipment, tru
             <IndianRupee className="w-4 h-4 text-[#059669]" />
           </div>
           <div className="text-2xl font-extrabold text-[#059669] tracking-tight">
-            <CountUp value={metrics.costSavedInr} decimals={0} prefix="₹" />
+            <CountUp value={safeMetrics.costSavedInr} decimals={0} prefix="₹" />
           </div>
           <div className="text-[10px] text-[#64748B] font-medium mt-1">
             Direct operational savings
@@ -153,7 +164,7 @@ export default function SustainabilityDashboard({ metrics, selectedShipment, tru
             <Leaf className="w-4 h-4 text-[#059669]" />
           </div>
           <div className="text-2xl font-extrabold text-[#059669] tracking-tight">
-            <CountUp value={metrics.co2ReducedKg} decimals={1} suffix=" kg" />
+            <CountUp value={safeMetrics.co2ReducedKg} decimals={1} suffix=" kg" />
           </div>
           <div className="text-[10px] text-[#059669] font-medium mt-1 flex items-center gap-1">
             <CircleCheck className="w-3 h-3" />
@@ -170,11 +181,11 @@ export default function SustainabilityDashboard({ metrics, selectedShipment, tru
             <Gauge className="w-4 h-4 text-blue-600" />
           </div>
           <div className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
-            <CountUp value={metrics.vehicleUtilizationPct} decimals={0} suffix="%" />
+            <CountUp value={safeMetrics.vehicleUtilizationPct} decimals={0} suffix="%" />
           </div>
           <div className="text-[10px] text-[#64748B] font-medium mt-1">
-            {selectedShipment
-              ? `${selectedShipment.weightTons}t on ${truck.capacityTons}t rating`
+            {selectedShipment && truck
+              ? `${selectedShipment.weightTons}t on ${truckRating}`
               : 'Empty Return'}
           </div>
         </div>
@@ -184,11 +195,10 @@ export default function SustainabilityDashboard({ metrics, selectedShipment, tru
       <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-[#64748B] gap-2">
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-[#059669]" />
-          <span className="italic">Model-based estimates based on authentic corridor data.</span>
+          <span className="italic">Model-based estimates based on authentic corridor parameters.</span>
         </div>
         <div className="text-[10px] text-slate-500">
-          Base: 4.0 km/L diesel consumption • ₹95/L diesel spot tariff • 2.68 kg CO₂e/L diesel GHG
-          conversion
+          Base: 4.0 km/L diesel consumption • ₹95/L diesel spot tariff • 2.68 kg CO₂e/L diesel GHG conversion
         </div>
       </div>
     </div>

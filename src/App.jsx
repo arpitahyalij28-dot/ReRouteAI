@@ -9,6 +9,10 @@ import Navbar from './components/Navbar';
 import DemoGuideModal from './components/DemoGuideModal';
 import GuidedTourBar from './components/GuidedTourBar';
 import CoachmarkTour from './components/CoachmarkTour';
+import AddTruckModal from './components/AddTruckModal';
+import AddShipmentModal from './components/AddShipmentModal';
+import { ClearDataConfirmModal, DemoPromptModal } from './components/ConfirmModal';
+import { DataProvider } from './context/DataContext';
 import { ReRouteProvider, useReRoute } from './context/ReRouteContext';
 
 // Pages
@@ -31,11 +35,25 @@ function AppContent() {
     isDemoMode,
     toasts,
     dismissToast,
-    trucks,
-    shipments,
+    trucks = [],
+    shipments = [],
     setSelectedTruckId,
     setSelectedShipmentId,
     cancelShipment,
+    isAddTruckOpen,
+    setIsAddTruckOpen,
+    isAddShipmentOpen,
+    setIsAddShipmentOpen,
+    editingTruck,
+    setEditingTruck,
+    editingShipment,
+    setEditingShipment,
+    isClearConfirmOpen,
+    setIsClearConfirmOpen,
+    isDemoPromptOpen,
+    setIsDemoPromptOpen,
+    clearAllData,
+    loadDemoData,
   } = useReRoute();
 
   const primaryTruckId = trucks[0]?.id;
@@ -179,7 +197,7 @@ function AppContent() {
     setTourProgress(0);
   }, [isTourActive, tourStageIndex]);
 
-  // Autoplay progression timer (~12.5 seconds per stage = ~87.5s total autoplay)
+  // Autoplay progression timer
   useEffect(() => {
     if (!isTourActive || !isTourPlaying) return;
 
@@ -309,6 +327,35 @@ function AppContent() {
 
       {/* 7. Orientation Coachmark Tour for First-Time Evaluators */}
       <CoachmarkTour />
+
+      {/* 8. Global Modals for Data Entry & Confirmations */}
+      <AddTruckModal
+        isOpen={isAddTruckOpen}
+        onClose={() => {
+          setIsAddTruckOpen?.(false);
+          setEditingTruck?.(null);
+        }}
+        editingTruck={editingTruck}
+      />
+      <AddShipmentModal
+        isOpen={isAddShipmentOpen}
+        onClose={() => {
+          setIsAddShipmentOpen?.(false);
+          setEditingShipment?.(null);
+        }}
+        editingShipment={editingShipment}
+      />
+      <ClearDataConfirmModal
+        isOpen={isClearConfirmOpen}
+        onClose={() => setIsClearConfirmOpen?.(false)}
+        onConfirm={() => clearAllData?.()}
+      />
+      <DemoPromptModal
+        isOpen={isDemoPromptOpen}
+        onClose={() => setIsDemoPromptOpen?.(false)}
+        onReplace={() => loadDemoData?.('replace')}
+        onMerge={() => loadDemoData?.('merge')}
+      />
     </div>
   );
 }
@@ -317,9 +364,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ReRouteProvider>
-          <AppContent />
-        </ReRouteProvider>
+        <DataProvider>
+          <ReRouteProvider>
+            <AppContent />
+          </ReRouteProvider>
+        </DataProvider>
       </AuthProvider>
     </BrowserRouter>
   );
