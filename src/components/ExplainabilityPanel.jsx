@@ -1,3 +1,6 @@
+// ReRoute AI 2.0 - Explainable Decision Engine Panel
+// 100% data-driven: renders dynamic checklist and head-to-head contrast for ANY candidate loads.
+
 import React, { useState } from 'react';
 import {
   Cpu,
@@ -11,16 +14,26 @@ import {
 export default function ExplainabilityPanel({
   shipment,
   score,
-  allShipments,
+  allShipments = [],
   onSelectShipmentId,
   isRecommended,
 }) {
   const [activeTab, setActiveTab] = useState('whywhynot');
   const [showHeadToHead, setShowHeadToHead] = useState(false);
 
-  const s1 = allShipments.find((s) => s.id === 'S1');
-  const s2 = allShipments.find((s) => s.id === 'S2');
-  const factorKeys = ['route', 'time', 'capacity', 'detour', 'cost', 'risk'];
+  // Dynamic candidate A and B for head-to-head comparison
+  const candidateA = shipment;
+  const candidateB = allShipments.find((s) => s.id !== shipment?.id && !s.isCancelled) || allShipments[1] || allShipments[0];
+
+  const factorKeys = ['route', 'time', 'capacity', 'detour', 'cost', 'disruption'];
+
+  if (!shipment || !score) {
+    return (
+      <div className="bg-white rounded-[12px] border border-[#E2E8F0] shadow-soft p-5 text-center text-xs text-[#64748B]">
+        Select a candidate shipment to inspect decision factors.
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-[12px] border border-[#E2E8F0] shadow-soft p-5 space-y-4">
@@ -36,8 +49,7 @@ export default function ExplainabilityPanel({
                 Explainable Decision Engine
               </span>
               <h3 className="text-sm font-bold text-[#0F172A] leading-none">
-                Evaluation: {shipment.id} — {shipment.origin.split(' ')[0]} to{' '}
-                {shipment.destination.split(' ')[0]}
+                Evaluation: {shipment.id} — {shipment.origin?.split(' ')[0]} to {shipment.destination?.split(' ')[0]}
               </h3>
             </div>
           </div>
@@ -48,16 +60,16 @@ export default function ExplainabilityPanel({
         </div>
 
         {/* Inspect Tabs & Head-to-Head Button */}
-        <div className="flex items-center gap-1.5 pt-1">
-          <span className="text-[11px] text-[#64748B] font-medium mr-1">Inspect:</span>
+        <div className="flex items-center gap-1.5 pt-1 overflow-x-auto pb-1">
+          <span className="text-[11px] text-[#64748B] font-medium mr-1 shrink-0">Inspect:</span>
           {allShipments.map((s) => {
             const isCurrent = s.id === shipment.id;
-            const isCancelled = s.isCancelled;
+            const isCancelled = s.isCancelled || s.status === 'Cancelled';
             return (
               <button
                 key={s.id}
                 onClick={() => onSelectShipmentId(s.id)}
-                className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
+                className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all shrink-0 ${
                   isCurrent
                     ? 'bg-[#2563EB] text-white shadow-sm'
                     : isCancelled
@@ -70,17 +82,19 @@ export default function ExplainabilityPanel({
             );
           })}
 
-          <button
-            onClick={() => setShowHeadToHead(!showHeadToHead)}
-            className={`ml-auto text-[11px] font-semibold px-2 py-1 rounded border transition-colors flex items-center gap-1 ${
-              showHeadToHead
-                ? 'bg-blue-50 border-blue-300 text-blue-700'
-                : 'border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A]'
-            }`}
-          >
-            <GitCompare className="w-3 h-3" />
-            <span>S1 vs S2 Head-to-Head</span>
-          </button>
+          {candidateB && candidateB.id !== candidateA.id && (
+            <button
+              onClick={() => setShowHeadToHead(!showHeadToHead)}
+              className={`ml-auto text-[11px] font-semibold px-2 py-1 rounded border transition-colors flex items-center gap-1 shrink-0 ${
+                showHeadToHead
+                  ? 'bg-blue-50 border-blue-300 text-blue-700'
+                  : 'border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A]'
+              }`}
+            >
+              <GitCompare className="w-3 h-3" />
+              <span>Compare vs {candidateB.id}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -109,12 +123,12 @@ export default function ExplainabilityPanel({
       </div>
 
       {/* Head to Head Comparison Modal/Panel */}
-      {showHeadToHead && s1 && s2 && (
+      {showHeadToHead && candidateA && candidateB && (
         <div className="p-3 bg-blue-50/50 border border-blue-200 rounded-xl space-y-2.5 text-xs animate-in fade-in duration-200">
           <div className="flex items-center justify-between font-bold text-[#0F172A]">
             <span className="flex items-center gap-1.5 text-blue-700">
               <GitCompare className="w-3.5 h-3.5" />
-              Direct Contrast: S1 (Primary) vs S2 (Fallback)
+              Direct Contrast: {candidateA.id} vs {candidateB.id}
             </span>
             <button
               onClick={() => setShowHeadToHead(false)}
@@ -124,26 +138,57 @@ export default function ExplainabilityPanel({
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2 text-[11px]">
+            {/* Candidate A Card */}
             <div className="p-2.5 bg-white rounded-lg border border-blue-200">
               <div className="font-bold text-blue-700 mb-1 flex items-center justify-between">
-                <span>S1: Mumbai Hub (94%)</span>
-                <span className="text-[#22C55E]">✓ On-Time</span>
+                <span>{candidateA.id}: {candidateA.origin?.split(' ')[0]}</span>
+                <span className={candidateA.isCancelled ? 'text-[#EF4444]' : 'text-[#22C55E]'}>
+                  {candidateA.isCancelled ? 'Cancelled' : `${score.totalScore}%`}
+                </span>
               </div>
               <ul className="space-y-1 text-slate-700">
-                <li className="text-[#22C55E]">✓ 6 km detour only</li>
-                <li className="text-[#22C55E]">✓ +15m window buffer</li>
-                <li className="text-[#22C55E]">✓ Low corridor risk</li>
+                <li className="flex items-center gap-1">
+                  <span>Detour:</span>
+                  <strong>+{candidateA.detourKm || 0} km</strong>
+                </li>
+                <li className="flex items-center gap-1">
+                  <span>Window:</span>
+                  <strong>{candidateA.pickupWindowStart} - {candidateA.pickupWindowEnd}</strong>
+                </li>
+                <li className="flex items-center gap-1">
+                  <span>Cargo:</span>
+                  <strong>{candidateA.weightTons}t ({candidateA.cargoType?.split(' ')[0]})</strong>
+                </li>
+                <li className="flex items-center gap-1">
+                  <span>Yield:</span>
+                  <strong className="text-emerald-700">₹{(candidateA.freightOfferInr || candidateA.value || 0).toLocaleString('en-IN')}</strong>
+                </li>
               </ul>
             </div>
-            <div className="p-2.5 bg-white rounded-lg border border-amber-200">
-              <div className="font-bold text-amber-800 mb-1 flex items-center justify-between">
-                <span>S2: Thane Yard (86%)</span>
-                <span className="text-[#EF4444]">✗ 38m Mismatch</span>
+
+            {/* Candidate B Card */}
+            <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+              <div className="font-bold text-slate-800 mb-1 flex items-center justify-between">
+                <span>{candidateB.id}: {candidateB.origin?.split(' ')[0]}</span>
+                <span className="text-[#64748B] font-medium">Alternative</span>
               </div>
               <ul className="space-y-1 text-slate-700">
-                <li className="text-[#EF4444]">✗ 34 km detour penalty</li>
-                <li className="text-[#EF4444]">✗ Arrives 38m after cutoff</li>
-                <li className="text-amber-600">⚠ Ghodbunder toll risk</li>
+                <li className="flex items-center gap-1">
+                  <span>Detour:</span>
+                  <strong>+{candidateB.detourKm || 0} km</strong>
+                </li>
+                <li className="flex items-center gap-1">
+                  <span>Window:</span>
+                  <strong>{candidateB.pickupWindowStart} - {candidateB.pickupWindowEnd}</strong>
+                </li>
+                <li className="flex items-center gap-1">
+                  <span>Cargo:</span>
+                  <strong>{candidateB.weightTons}t ({candidateB.cargoType?.split(' ')[0]})</strong>
+                </li>
+                <li className="flex items-center gap-1">
+                  <span>Yield:</span>
+                  <strong className="text-emerald-700">₹{(candidateB.freightOfferInr || candidateB.value || 0).toLocaleString('en-IN')}</strong>
+                </li>
               </ul>
             </div>
           </div>
@@ -155,13 +200,15 @@ export default function ExplainabilityPanel({
         <div className="space-y-3">
           <div className="p-2.5 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] text-xs">
             <span className="font-semibold text-[#0F172A] block mb-0.5">
-              {isRecommended ? 'Why Selected as Top Match:' : 'Why Ranked Behind Alternative Loads:'}
+              {isRecommended ? 'Why Selected as Top Match:' : 'Candidate Match Assessment:'}
             </span>
-            <p className="text-[#64748B] leading-relaxed">{shipment.whyWhyNot.recommendedSummary}</p>
+            <p className="text-[#64748B] leading-relaxed">
+              {shipment.whyWhyNot?.recommendedSummary || 'Evaluated dynamically based on spatial corridor compatibility.'}
+            </p>
           </div>
 
           <div className="space-y-2">
-            {shipment.whyWhyNot.reasons.map((r, idx) => {
+            {(shipment.whyWhyNot?.reasons || []).map((r, idx) => {
               let Icon = CircleCheck;
               let styleClass = 'text-[#22C55E] bg-emerald-50 border-emerald-200';
               if (r.type === 'cross') {
@@ -200,17 +247,18 @@ export default function ExplainabilityPanel({
               Dynamic Multi-Criteria Weight Equation:
             </div>
             <code className="font-mono text-[10px] text-blue-800 block bg-white/70 p-1 rounded border border-blue-200">
-              Score = (Route×25%) + (Time×20%) + (Cap×20%) + (Detour×15%) + (Cost×10%) + (Risk×10%)
+              Score = Σ (Factor_i × Weight_i) / Σ (Weight_i)
             </code>
           </div>
 
           <div className="space-y-2.5">
             {factorKeys.map((key) => {
-              const factor = score.factors[key];
+              const factor = score.factors?.[key] || score.factors?.['disruption'];
+              if (!factor) return null;
               const raw = factor.rawScore;
               let barColor = 'bg-[#2563EB]';
-              if (raw < 70) barColor = 'bg-[#EF4444]';
-              else if (raw < 85) barColor = 'bg-[#F59E0B]';
+              if (raw < 50) barColor = 'bg-[#EF4444]';
+              else if (raw < 75) barColor = 'bg-[#F59E0B]';
 
               return (
                 <div key={key} className="text-xs">
@@ -231,7 +279,7 @@ export default function ExplainabilityPanel({
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full ${barColor} rounded-full transition-all duration-500`}
-                      style={{ width: `${raw}%` }}
+                      style={{ width: `${Math.min(100, Math.max(0, raw))}%` }}
                     />
                   </div>
                   <div className="text-[10px] text-[#64748B] mt-0.5 truncate">{factor.detail}</div>

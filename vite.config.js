@@ -8,6 +8,18 @@ export default defineConfig({
     port: 3000,
     open: true
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          leaflet: ['leaflet'],
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          lucide: ['lucide-react'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
   test: {
     globals: true,
     environment: 'node',
