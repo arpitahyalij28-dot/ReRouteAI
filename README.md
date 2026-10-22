@@ -73,7 +73,26 @@ ReRoute AI 2.0 operates identically across two execution environments:
 | **Role Personas** | Switch instantly via UI header pill | Authenticated via Supabase Magic Links |
 | **Realtime Sync** | Simulated in-session broadcast | Supabase Realtime WebSocket Channels |
 | **Algorithmic Evaluation** | Client pure ES Modules (`src/engine/`) | Serverless Endpoints (`/api/*`) + Fallback |
-| **AI Explainability** | Deterministic rule-based template engine | Claude 3.5 Sonnet + Fallback |
+| **AI Explainability** | Deterministic rule-based template engine | Claude 3.5 Haiku (`claude-3-5-haiku-20241022`) + Fallback |
+
+---
+
+## 🔍 Operational Transparency: Real vs. Simulated Systems
+
+In line with enterprise evaluation best practices, every sub-system in ReRoute AI 2.0 is categorized transparently:
+
+1. **Vehicle Telemetry & Tracking**:
+   - **Demo Mode**: Simulated GPS coordinates and speed progressions along the NH 160 corridor (Nashik Ambad ↔ Bhiwandi via Kasara Ghat).
+   - **Cloud Mode**: Real-time telemetry ingestion into PostgreSQL `telemetry_points` table via Driver Portal or hardware telematics webhooks.
+2. **Weather & Road Routing**:
+   - **Real External APIs**: Live routing coordinates fetched from `/api/route` (OpenRouteService / OSRM API). If offline or rate-limited, gracefully falls back to Haversine with a 1.25x road winding tortuosity factor.
+   - **Live Weather**: Weather metrics fetched from `/api/weather` (Open-Meteo API) evaluating actual precipitation, wind speed, and temperature disruption risk deltas along the corridor.
+3. **Multi-Criteria Optimization & Scoring**:
+   - **Deterministic Heuristic Algorithms**: Evaluates candidate matches using configurable Multi-Criteria Decision Analysis (MCDA) heuristics (Route Alignment 25%, Detour 15%, Time Window 20%, Capacity 20%, Freight Yield 20%). The weights are human-tunable heuristics rather than black-box learned neural weights, allowing full explainability and zero hallucinations.
+4. **Fleet Optimization**:
+   - **Exact Combinatorial Mathematics**: True Kuhn-Munkres (Hungarian) algorithm running in $O(N^3)$ polynomial time, solving min-cost bipartite matching to maximize fleet-wide profitability and minimize deadhead kilometers.
+5. **AI Explainability Justification**:
+   - **Dual-Engine Architecture**: Invokes Anthropic Claude 3.5 Haiku via `/api/explain` for natural language operator synthesis. When API keys are absent, instantaneously falls back to deterministic rule-based template summaries with verified mathematical trade-off proofs.
 
 ---
 
