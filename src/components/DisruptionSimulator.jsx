@@ -115,7 +115,7 @@ export default function DisruptionSimulator({
               Autonomous Solver Recalculating Corridors...
             </span>
             <span className="text-blue-700">
-              Re-evaluating time-space feasibility across S2, S3, S4 in 420ms
+              Re-evaluating time-space feasibility across candidate shipments
             </span>
           </div>
         </div>
@@ -131,7 +131,7 @@ export default function DisruptionSimulator({
             <div className="font-bold text-[#059669] flex items-center gap-2">
               <span>Autonomous Disruption Recovery Completed</span>
               <span className="text-[10px] px-1.5 py-0.2 bg-white/70 rounded text-[#059669] border border-[#059669]/20 font-mono">
-                Latency: 380ms
+                Solver Latency: &lt;5ms (local)
               </span>
             </div>
             <p className="text-emerald-950 font-medium mt-0.5 leading-snug">{recoveryBanner}</p>

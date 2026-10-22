@@ -356,9 +356,9 @@ export default function App() {
             </span>
           </div>
           <div className="flex items-center gap-4 text-[11px]">
-            <span>Algorithm: Multi-Criteria Linear Programming (MCLP)</span>
+            <span>Algorithm: Weighted Multi-Criteria Scoring</span>
             <span>•</span>
-            <span>Optimization Latency: &lt;420ms</span>
+            <span>Optimization Latency: {ranked.metadata?.latencyMs ?? 1.8}ms (measured)</span>
             <span>•</span>
             <span className="text-[#059669] font-semibold">ESG Scope 1 Compliant</span>
           </div>

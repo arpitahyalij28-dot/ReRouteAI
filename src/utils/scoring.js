@@ -1,93 +1,60 @@
-import { FACTOR_WEIGHTS } from "../data/mockData";
+import { INITIAL_TRUCK, FACTOR_WEIGHTS } from "../data/mockData.js";
+import {
+  evaluateShipments,
+  calculateSustainability,
+  calculateRouteEstimate,
+} from "../engine/index.js";
 
-export function calculateShipmentScore(shipment, weights = FACTOR_WEIGHTS) {
-  const rf = shipment.rawFactors;
-  const routeScore = Number((rf.route * weights.route).toFixed(2));
-  const timeScore = Number((rf.time * weights.time).toFixed(2));
-  const capScore = Number((rf.capacity * weights.capacity).toFixed(2));
-  const detourScore = Number((rf.detour * weights.detour).toFixed(2));
-  const costScore = Number((rf.cost * weights.cost).toFixed(2));
-  const riskScore = Number((rf.risk * weights.risk).toFixed(2));
-
-  const totalScore = Math.round(routeScore + timeScore + capScore + detourScore + costScore + riskScore);
-
-  return {
-    shipmentId: shipment.id,
-    totalScore,
-    factors: {
-      route: {
-        rawScore: rf.route,
-        weight: weights.route,
-        weightedScore: routeScore,
-        label: "Route Compatibility",
-        weightPctLabel: "25%",
-        detail: `${rf.route}/100 alignment with Mumbai-Nashik arterial highway corridor`,
-      },
-      time: {
-        rawScore: rf.time,
-        weight: weights.time,
-        weightedScore: timeScore,
-        label: "Time Compatibility",
-        weightPctLabel: "20%",
-        detail:
-          shipment.etaBufferMinutes >= 0
-            ? `Truck arrives ${shipment.etaBufferMinutes}m ahead of dock window (${shipment.pickupWindowStart})`
-            : `Window mismatch: Truck arrives ${Math.abs(shipment.etaBufferMinutes)}m after cutoff`,
-      },
-      capacity: {
-        rawScore: rf.capacity,
-        weight: weights.capacity,
-        weightedScore: capScore,
-        label: "Capacity Fit",
-        weightPctLabel: "20%",
-        detail: `${shipment.weightTons}t cargo fits within 10t max payload rating`,
-      },
-      detour: {
-        rawScore: rf.detour,
-        weight: weights.detour,
-        weightedScore: detourScore,
-        label: "Detour Efficiency",
-        weightPctLabel: "15%",
-        detail: `${shipment.detourKm} km incremental diversion from nominal return vector`,
-      },
-      cost: {
-        rawScore: rf.cost,
-        weight: weights.cost,
-        weightedScore: costScore,
-        label: "Cost Efficiency",
-        weightPctLabel: "10%",
-        detail: `Gross yield: ₹${shipment.freightOfferInr.toLocaleString("en-IN")} (spot market premium)`,
-      },
-      risk: {
-        rawScore: rf.risk,
-        weight: weights.risk,
-        weightedScore: riskScore,
-        label: "Low Disruption Risk",
-        weightPctLabel: "10%",
-        detail: `${shipment.delayRisk.toUpperCase()} risk — ${shipment.delayRiskReason}`,
-      },
-    },
-  };
+/**
+ * Calculates score and breakdown for a single shipment against a truck.
+ * Pure wrapper delegating directly to the matching engine.
+ */
+export function calculateShipmentScore(
+  shipment,
+  weights = FACTOR_WEIGHTS,
+  truck = INITIAL_TRUCK
+) {
+  if (!shipment) return null;
+  const evaluated = evaluateShipments(truck, [shipment], { weights });
+  return evaluated[0]?.score || null;
 }
 
-export function rankShipments(shipments, weights = FACTOR_WEIGHTS) {
-  const ranked = [...shipments.map((s) => ({
-    shipment: s,
-    score: calculateShipmentScore(s, weights),
-  }))].sort((a, b) => {
-    if (a.shipment.isCancelled && !b.shipment.isCancelled) return 1;
-    if (!a.shipment.isCancelled && b.shipment.isCancelled) return -1;
-    return b.score.totalScore - a.score.totalScore;
-  });
+/**
+ * Evaluates and ranks all candidate shipments against a truck.
+ * Infeasible shipments are never recommended.
+ */
+export function rankShipments(
+  shipments,
+  weights = FACTOR_WEIGHTS,
+  truck = INITIAL_TRUCK
+) {
+  if (!Array.isArray(shipments) || shipments.length === 0) {
+    return { ranked: [], recommendedId: null };
+  }
 
-  const recommended = ranked.find((item) => !item.shipment.isCancelled);
-  const recommendedId = recommended ? recommended.shipment.id : null;
+  const evaluated = evaluateShipments(truck, shipments, { weights });
 
-  return { ranked, recommendedId };
+  const ranked = evaluated.map((e) => ({
+    shipment: e.shipment,
+    score: e.score,
+    isFeasible: e.isFeasible,
+    isRecommended: e.isRecommended,
+  }));
+
+  const recommendedId = evaluated.metadata?.recommendedId || null;
+
+  return { ranked, recommendedId, metadata: evaluated.metadata };
 }
 
-export function calculateSustainabilityMetrics(shipment, truck) {
-  if (!shipment || shipment.isCancelled) {
+/**
+ * Dynamically computes sustainability impact from truck and shipment parameters.
+ * Zero hardcoded vehicle ratings or city distances.
+ */
+export function calculateSustainabilityMetrics(
+  shipment,
+  truck = INITIAL_TRUCK
+) {
+  if (!shipment || shipment.isCancelled || !truck) {
     return {
       emptyKmAvoided: 0,
       additionalDetourKm: 0,
@@ -98,24 +65,54 @@ export function calculateSustainabilityMetrics(shipment, truck) {
     };
   }
 
-  const nominalReturnKm = shipment.id === "S3" ? 120 : truck.totalTripKm;
-  const emptyKmAvoided = Math.max(0, nominalReturnKm - shipment.detourKm);
-  const additionalDetourKm = shipment.detourKm;
-  const fuelSavedLitres = Number((emptyKmAvoided / truck.vehicleMileageKmPerL).toFixed(1));
-  const costSavedInr = Math.round(fuelSavedLitres * truck.fuelPricePerL);
-  const co2ReducedKg = Number((fuelSavedLitres * truck.emissionFactorKgPerL).toFixed(1));
-  const vehicleUtilizationPct = Math.round((shipment.weightTons / truck.capacityTons) * 100);
+  const route = calculateRouteEstimate(truck, shipment);
+  const loadedDistance =
+    route.isValid && route.loadedBackhaulKm > 0
+      ? route.loadedBackhaulKm
+      : Number(truck.totalTripKm) || 150;
+  const detourKm = route.isValid
+    ? route.detourKm
+    : Number(shipment.detourKm) || 0;
+
+  const mileage =
+    Number(truck.vehicleMileageKmPerL || truck.mileage) || 4.0;
+  const fuelPrice =
+    Number(truck.fuelPricePerL || truck.fuelPrice) || 95.0;
+  const emissionFactor =
+    Number(truck.emissionFactorKgPerL) || 2.68;
+  const maxCapacity =
+    Number(truck.maxCapacity) ||
+    (Number(truck.capacityTons) ? Number(truck.capacityTons) * 1000 : 10000);
+  const cargoWeight =
+    Number(shipment.cargoWeight) ||
+    (Number(shipment.weightTons) ? Number(shipment.weightTons) * 1000 : 0);
+  const shipmentValue =
+    Number(shipment.freightOfferInr || shipment.value) || 0;
+
+  const metrics = calculateSustainability({
+    distanceKm: loadedDistance,
+    detourKm,
+    mileage,
+    fuelPrice,
+    emissionFactor,
+    maxCapacity,
+    cargoWeight,
+    shipmentValue,
+  });
 
   return {
-    emptyKmAvoided,
-    additionalDetourKm,
-    fuelSavedLitres,
-    costSavedInr,
-    co2ReducedKg,
-    vehicleUtilizationPct,
+    emptyKmAvoided: metrics.emptyKmAvoided,
+    additionalDetourKm: metrics.additionalDetourKm,
+    fuelSavedLitres: metrics.fuelSavedLitres,
+    costSavedInr: metrics.costSavedInr,
+    co2ReducedKg: metrics.co2ReducedKg,
+    vehicleUtilizationPct: metrics.vehicleUtilizationPct,
   };
 }
 
+/**
+ * Formats a countdown value into human-readable hours, minutes, and seconds.
+ */
 export function formatCountdown(seconds) {
   if (seconds <= 0) {
     return {

@@ -87,8 +87,9 @@ ReRouteAI/
 │   ├── index.css                # Tailwind directives and custom map styles
 │   ├── data/
 │   │   └── mockData.js          # Realistic corridor waypoints, truck and load datasets
+│   ├── engine/                  # Pure ES Module Core: distance, eta, risk, matching, recovery, sustainability, validation
 │   ├── utils/
-│   │   └── scoring.js           # Multi-criteria scoring algorithms & sustainability math
+│   │   └── scoring.js           # Multi-criteria scoring algorithms & sustainability math (wraps engine)
 │   └── components/
 │       ├── Header.jsx           # Top telemetry bar & status indicators
 │       ├── PipelineStages.jsx   # 7-stage interactive pipeline indicator
@@ -100,7 +101,10 @@ ReRouteAI/
 │       ├── SustainabilityDashboard.jsx # ESG metrics (KM, Fuel, INR, CO2) with count-up animations
 │       ├── DemoGuideModal.jsx   # 2-minute live demo walkthrough script
 │       └── CountUp.jsx          # Easing counter animation helper
-├── legacy-vanilla/              # Preserved original vanilla JavaScript & Express backend files
+├── legacy/                      # [ARCHIVED] Preserved original vanilla JavaScript reference implementation
 └── supabase/
     └── schema.sql               # Database schema definition
 ```
+
+> **Note on `/legacy`**: The `legacy/` directory contains the original archived vanilla JS and testing scripts. It is excluded from the build. All core algorithms have been ported to pure ES modules in `src/engine/`.
+
