@@ -20,22 +20,36 @@
 ### 1.2 Run Schema Migrations
 1. In the Supabase project sidebar, click **SQL Editor** (icon with `>_`).
 2. Click **New Query**.
-3. Copy the entire contents of [`supabase/migrations/20261022000000_create_reroute_schema.sql`](file:///c:/Users/Omkar/Downloads/New%20folder/ReRouteAI/supabase/migrations/20261022000000_create_reroute_schema.sql) and paste into the SQL editor.
+3. Copy the entire contents of [supabase/migrations/20261022000000_create_reroute_schema.sql](supabase/migrations/20261022000000_create_reroute_schema.sql) and paste into the SQL editor.
 4. Click **Run**.
+5. Open another query, copy [supabase/migrations/20261022000001_handle_new_user_and_profiles.sql](supabase/migrations/20261022000001_handle_new_user_and_profiles.sql), and click **Run**.
    - This creates 9 core relational tables: `organizations`, `profiles`, `trucks`, `shipments`, `assignments`, `disruption_events`, `telemetry_points`, `model_settings`, and `audit_log`.
-   - Enables Row-Level Security (RLS) policies enforcing multi-tenant isolation by `org_id` and role permissions (`dispatcher`, `shipper`, `driver`, `admin`).
+   - Attaches `handle_new_user()` trigger on `auth.users` to automatically create profiles with default least-privilege `shipper` role.
+   - Enables Row-Level Security (RLS) policies enforcing multi-tenant isolation via `public.current_user_org_id()` and role permissions (`dispatcher`, `shipper`, `driver`, `admin`).
    - Configures idempotent realtime replication for `shipments`, `assignments`, and `disruption_events`.
 
 ---
 
 ### 1.3 Seed Demonstration Data
 1. In the Supabase **SQL Editor**, open another **New Query**.
-2. Copy the entire contents of [`supabase/seed.sql`](file:///c:/Users/Omkar/Downloads/New%20folder/ReRouteAI/supabase/seed.sql) and paste into the editor.
+2. Copy the entire contents of [supabase/seed.sql](supabase/seed.sql) and paste into the editor.
 3. Click **Run**.
    - Inserts the default organization `demo-org` (Western Corridor Logistics Consortium).
    - Inserts 6 commercial trucks (`T101` - `T106`) across the Mumbai-Nashik-Pune-Surat network.
    - Inserts 15 candidate backhaul consignments (`S1` - `S15`) including capacity, vehicle type, and time window edge cases.
    - Sets baseline algorithm weights and fuel/emissions factors.
+
+---
+
+### 1.4 Seed Demo User Accounts
+Run the user provisioning script locally using your project's `service_role` key:
+```bash
+SUPABASE_SERVICE_ROLE_KEY="<your-service-role-key>" VITE_SUPABASE_URL="https://<your-project>.supabase.co" node scripts/seed-users.js
+```
+This automatically provisions 3 ready-to-test accounts with pre-set passwords:
+- Dispatcher: `dispatcher@demo.reroute` / `ReRoute2026!Demo`
+- Shipper: `shipper@demo.reroute` / `ReRoute2026!Demo`
+- Driver: `driver@demo.reroute` / `ReRoute2026!Demo` (assigned to truck `T101`)
 
 ---
 
@@ -109,7 +123,7 @@ WHERE email = 'dispatcher@beta.com';
 ### Step 4: Verify Cross-Tenant Isolation
 1. Sign in as `dispatcher@alpha.com` and post a new shipment via the UI (`Loads Pool`).
 2. Sign in as `dispatcher@beta.com` in a separate private browser window.
-3. **Expected result**: `dispatcher@beta.com` cannot see `org-alpha`'s shipment or vehicle telemetry. Supabase Postgres RLS policies automatically filter queries by `auth.jwt() ->> 'org_id'`.
+3. **Expected result**: `dispatcher@beta.com` cannot see `org-alpha`'s shipment or vehicle telemetry. Supabase Postgres RLS policies automatically filter queries by `public.current_user_org_id()` resolved dynamically from `public.profiles`.
 
 ---
 

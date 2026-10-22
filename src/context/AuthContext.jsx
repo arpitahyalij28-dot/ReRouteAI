@@ -75,6 +75,23 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const loginWithPassword = async (email, password) => {
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error('Supabase is not configured. Please continue in Demo Mode.');
+    }
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+    if (data?.user) {
+      setUser(data.user);
+      setIsDemoUser(false);
+      await fetchProfile(data.user.id);
+    }
+    return data;
+  };
+
   const loginWithMagicLink = async (email) => {
     if (!isSupabaseConfigured || !supabase) {
       throw new Error('Supabase is not configured. Please continue in Demo Mode.');
@@ -114,6 +131,7 @@ export function AuthProvider({ children }) {
     role,
     loading,
     isDemoUser,
+    loginWithPassword,
     loginWithMagicLink,
     logout,
     setDemoRole,
@@ -123,10 +141,27 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+export const DEMO_CREDENTIALS = {
+  dispatcher: { email: 'dispatcher@demo.reroute', password: 'ReRoute2026!Demo', role: 'dispatcher', label: 'Dispatcher' },
+  shipper: { email: 'shipper@demo.reroute', password: 'ReRoute2026!Demo', role: 'shipper', label: 'Shipper' },
+  driver: { email: 'driver@demo.reroute', password: 'ReRoute2026!Demo', role: 'driver', label: 'Driver' },
+};
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    return {
+      user: null,
+      profile: null,
+      role: 'dispatcher',
+      loading: false,
+      isDemoUser: true,
+      loginWithPassword: async () => {},
+      loginWithMagicLink: async () => {},
+      logout: async () => {},
+      setDemoRole: () => {},
+      continueInDemoMode: () => {},
+    };
   }
   return context;
 }

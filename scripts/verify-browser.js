@@ -32,6 +32,14 @@ async function testBrowser() {
     console.log('Clicked S2 shipment');
   }
 
+  // 1.1 Verify Login page and quick-fill buttons
+  await page.goto('http://localhost:4173/login', { waitUntil: 'networkidle' });
+  const dispatcherBtn = page.locator('[data-testid="fill-dispatcher"]');
+  await dispatcherBtn.click();
+  const emailVal = await page.locator('input[type="email"]').inputValue();
+  const passVal = await page.locator('input[type="password"]').inputValue();
+  console.log(`Login page quick fill: email=${emailVal}, passLength=${passVal.length}`);
+
   // 2. Test at 390px (Mobile)
   const mobileContext = await browser.newContext({
     viewport: { width: 390, height: 844 },
