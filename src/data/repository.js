@@ -160,6 +160,7 @@ export function shipmentToRow(s, orgId = 'demo-org') {
   return {
     id: s.id,
     org_id: s.orgId || orgId,
+    shipper_user_id: s.shipperUserId || s.shipper_user_id || null,
     name: s.name,
     pickup_location: s.origin || s.pickup_location,
     drop_location: s.destination || s.drop_location,
@@ -477,6 +478,31 @@ export class SupabaseAdapter {
 
   async createAssignment(assignment) {
     const row = assignmentToRow(assignment, this.orgId);
+
+    // 1. Attempt atomic database RPC call
+    try {
+      const { data: rpcData, error: rpcError } = await this.client.rpc('create_assignment_atomic', {
+        p_id: row.id,
+        p_org_id: row.org_id,
+        p_truck_id: row.truck_id,
+        p_shipment_id: row.shipment_id,
+        p_match_score: row.match_score,
+        p_detour_km: row.detour_km,
+        p_loaded_km: row.loaded_km,
+        p_eta_arrival: row.eta_arrival,
+        p_sustainability: row.sustainability,
+        p_cost_gain: row.cost_gain,
+        p_status: row.status,
+      });
+
+      if (!rpcError && rpcData) {
+        return rowToAssignment(rpcData);
+      }
+    } catch {
+      // Graceful fallback to sequential operations
+    }
+
+    // 2. Sequential fallback if RPC is unavailable
     const { data, error } = await this.client
       .from('assignments')
       .insert(row)
@@ -519,7 +545,19 @@ export class SupabaseAdapter {
   }
 
   async createShipment(shipment) {
-    const row = shipmentToRow(shipment, this.orgId);
+    let currentUserId = null;
+    try {
+      const { data: userData } = await this.client.auth.getUser();
+      currentUserId = userData?.user?.id || null;
+    } catch {
+      // Ignored if unauthenticated
+    }
+
+    const row = shipmentToRow({
+      ...shipment,
+      shipperUserId: shipment.shipperUserId || shipment.shipper_user_id || currentUserId,
+    }, this.orgId);
+
     const { data, error } = await this.client
       .from('shipments')
       .insert(row)
@@ -531,11 +569,13 @@ export class SupabaseAdapter {
   }
 
   async recordTelemetry(point) {
+    // Aligns with schema: column is `speed` (not speed_kmh) and includes required NOT NULL `org_id`
     const row = {
+      org_id: this.orgId,
       truck_id: point.truckId,
       lat: point.lat,
       lng: point.lng,
-      speed_kmh: point.speed,
+      speed: Number(point.speed ?? 0),
       recorded_at: new Date().toISOString(),
     };
     await this.client.from('telemetry_points').insert(row);
@@ -544,7 +584,7 @@ export class SupabaseAdapter {
       .update({
         current_lat: point.lat,
         current_lng: point.lng,
-        speed_kmh: point.speed,
+        speed_kmh: Number(point.speed ?? 50),
         updated_at: new Date().toISOString(),
       })
       .eq('id', point.truckId);
@@ -552,9 +592,10 @@ export class SupabaseAdapter {
   }
 
   async updateAssignmentStatus(assignmentId, status) {
+    // Schema does not contain `updated_at` on assignments table
     const { error } = await this.client
       .from('assignments')
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({ status })
       .eq('id', assignmentId);
     if (error) throw new Error(`Supabase updateAssignmentStatus failed: ${error.message}`);
     return true;

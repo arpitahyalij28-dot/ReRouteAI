@@ -30,6 +30,7 @@ export default defineConfig({
       'api/**/*.test.js',
       'api/**/__tests__/**/*.js',
       'tests/**/*.test.js',
+      'supabase/tests/**/*.test.js',
     ]
   }
 })
