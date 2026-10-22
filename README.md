@@ -261,6 +261,19 @@ ReRouteAI/
 
 ---
 
+## 💬 WhatsApp & Regional Message Load Parser
+
+ReRoute AI includes an NLP consignment parsing engine designed for Indian freight logistics, accepting unstructured transporter broadcasts, broker tenders, and WhatsApp messages in **Hindi, Hinglish, Marathi, and English**.
+
+### Capabilities
+- **Hybrid AI & Deterministic Architecture**: Automatically utilizes Anthropic Claude (`ANTHROPIC_MODEL` or `claude-3-5-haiku-20241022`) via `POST /api/parse-load` with strict JSON schema and confidence scoring. If offline or without an API key, instantly falls back to a deterministic regex engine (`src/engine/loadParser.js`).
+- **City Normalization & Vernacular Aliases**: Resolves colloquial and regional names (e.g., *Bombay/बम्बई* → Mumbai, *Poona/पुणे* → Pune, *Nasik/नाशिक* → Nashik, *Baroda/वडोदरा* → Vadodara, *Aurangabad/औरंगाबाद* → Chhatrapati Sambhajinagar).
+- **Unit & Currency Handling**: Automatically converts kilograms to metric tons (e.g., *5000 kg* → 5t) and parses abbreviated rates (*28k*, *18 hazar*, *₹28,000/-*, *28000 dunga*).
+- **Relative Scheduling**: Resolves relative expressions (*kal subah 6 baje* → tomorrow 06:00, *parso sham 4 baje* → day-after-tomorrow 16:00) into ISO ready timestamps and dock operation windows.
+- **Dispatcher Review UI**: Integrated into `AddShipmentModal` with one-click test sample chips, confidence metrics, and editable form pre-filling.
+
+---
+
 ## ⚠️ Limitations & Operational Boundaries
 
 1. **OSRM Public Routing API**: The public OSRM demo server has community rate limits. In production, provide an `OPENROUTESERVICE_API_KEY` or self-host an OSRM instance. If the external routing service is unreachable or rate-limited, the system falls back seamlessly to Great-Circle Haversine distance with a corridor winding coefficient (1.25x).
