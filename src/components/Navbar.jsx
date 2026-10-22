@@ -13,7 +13,9 @@ import {
   Sliders,
   Database,
   Smartphone,
+  ShieldCheck,
 } from 'lucide-react';
+import { useReRoute } from '../context/ReRouteContext';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Cockpit', icon: LayoutDashboard },
@@ -28,10 +30,15 @@ const NAV_ITEMS = [
 ];
 
 export default function Navbar() {
+  const { isJudgeMode } = useReRoute();
+  const visibleItems = isJudgeMode
+    ? NAV_ITEMS.filter((item) => item.path !== '/settings' && item.path !== '/data')
+    : NAV_ITEMS;
+
   return (
     <nav className="bg-white border-b border-[#E2E8F0] shadow-xs w-full overflow-hidden">
       <div className="max-w-[1680px] mx-auto px-3 sm:px-6 lg:px-8 flex items-center gap-1.5 overflow-x-auto py-2 no-scrollbar">
-        {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
+        {visibleItems.map(({ path, label, icon: Icon }) => (
           <NavLink
             key={path}
             to={path}

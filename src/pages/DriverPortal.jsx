@@ -21,8 +21,86 @@ import {
 import { useReRoute } from '../context/ReRouteContext';
 import { useAuth } from '../context/AuthContext';
 
+const TRANSLATIONS = {
+  en: {
+    activeShift: 'Active Shift',
+    gpsTelemetry: 'GPS Telemetry',
+    transmitting: 'Transmitting (10s)',
+    paused: 'Paused',
+    pausePing: 'Pause Ping',
+    resumePing: 'Resume Ping',
+    assignedTender: 'Assigned Backhaul Tender',
+    pickupBay: '1. Pickup Bay',
+    window: 'Window',
+    destDepot: '2. Destination Depot',
+    cargo: 'Cargo',
+    tons: 'tons',
+    launchNav: 'Launch Google Maps GPS Navigation',
+    sendWhatsapp: 'Send Dispatch Details via WhatsApp',
+    checkinMilestones: 'Driver Check-in Milestones',
+    atPickup: '1. At Pickup',
+    loaded: '2. Loaded',
+    delivered: '3. Delivered',
+    hotline: '24/7 Dispatch Hotline',
+    callDispatch: 'Call Dispatch',
+    noActive: 'No Active Backhaul Consignment',
+    waitingMatch: 'You have completed all scheduled deliveries. Waiting for autonomous dispatcher match.',
+  },
+  hi: {
+    activeShift: 'सक्रिय शिफ्ट',
+    gpsTelemetry: 'जीपीएस टेलीमेट्री',
+    transmitting: 'भेजा जा रहा है (10s)',
+    paused: 'रोक दिया गया',
+    pausePing: 'पॉज़ करें',
+    resumePing: 'शुरू करें',
+    assignedTender: 'सौंपा गया बैकहॉल टेंडर',
+    pickupBay: '१. पिकअप स्थान',
+    window: 'समय सीमा',
+    destDepot: '२. डिलीवरी स्थान',
+    cargo: 'सामान',
+    tons: 'टन',
+    launchNav: 'गूगल मैप्स नेविगेशन खोलें',
+    sendWhatsapp: 'व्हाट्सएप पर डिस्पैच विवरण भेजें',
+    checkinMilestones: 'ड्राइवर चेक-इन चरण',
+    atPickup: '१. पिकअप पर पहुंचे',
+    loaded: '२. लोड हो गया',
+    delivered: '३. डिलीवरी संपन्न',
+    hotline: '24/7 डिस्पैच कंट्रोल रूम',
+    callDispatch: 'कॉल करें',
+    noActive: 'कोई सक्रिय बैकहॉल टेंडर नहीं',
+    waitingMatch: 'सभी डिलीवरी पूरी हो चुकी हैं। नए बैकहॉल लोड की प्रतीक्षा की जा रही है।',
+  },
+  mr: {
+    activeShift: 'सक्रिय पाळी (Shift)',
+    gpsTelemetry: 'जीपीएस टेलीमेट्री',
+    transmitting: 'पाठवले जात आहे (10s)',
+    paused: 'थांबवले',
+    pausePing: 'थांबवा',
+    resumePing: 'सुरू करा',
+    assignedTender: 'नियोजित बॅकहॉल टेंडर',
+    pickupBay: '१. माल उचलण्याचे ठिकाण (Pickup)',
+    window: 'वेळ मर्यादा',
+    destDepot: '२. माल वितरण ठिकाण (Drop)',
+    cargo: 'माल',
+    tons: 'टन',
+    launchNav: 'गुगल मॅप्स नेव्हिगेशन सुरू करा',
+    sendWhatsapp: 'व्हॉट्सअ‍ॅपवर पाठवा',
+    checkinMilestones: 'चालक चेक-इन टप्पे',
+    atPickup: '१. पिकअपवर पोहोचलो',
+    loaded: '२. माल भरला (Loaded)',
+    delivered: '३. वितरण पूर्ण (Delivered)',
+    hotline: '२४/७ डिस्पॅच नियंत्रण कक्ष',
+    callDispatch: 'कॉल करा',
+    noActive: 'सक्रिय बॅकहॉल लोड नाही',
+    waitingMatch: 'सर्व वितरणे पूर्ण झाली आहेत. नवीन बॅकहॉल लोड नियोजनाची प्रतीक्षा करत आहे.',
+  },
+};
+
 export default function DriverPortal() {
   const { user } = useAuth();
+  const [lang, setLang] = useState('en');
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+
   const {
     trucks,
     shipments,
@@ -102,10 +180,47 @@ export default function DriverPortal() {
       }`
     : '#';
 
+  // Generate WhatsApp Dispatch URL
+  const waText = encodeURIComponent(
+    `🚛 *ReRoute AI Dispatch Assignment*\n` +
+    `• Truck: ${activeTruck?.regNumber || 'MH-15-EG-4402'} (${activeTruck?.driverName || 'Driver'})\n` +
+    `• Tender: ${assignedShipment?.name || 'Backhaul Tender'}\n` +
+    `• Pickup: ${assignedShipment?.origin || 'Bhiwandi'} (${assignedShipment?.pickupWindowStart || '14:00'} - ${assignedShipment?.pickupWindowEnd || '16:00'})\n` +
+    `• Dropoff: ${assignedShipment?.destination || 'Nashik'}\n` +
+    `• Cargo: ${assignedShipment?.weightTons || 10}T (${assignedShipment?.cargoType || 'Industrial'})\n` +
+    `• Freight: ₹${assignedShipment?.freightOfferInr?.toLocaleString('en-IN') || '28,000'}\n` +
+    `• Live Track: https://reroute-ai-2.vercel.app/driver`
+  );
+  const waUrl = `https://wa.me/?text=${waText}`;
+
   const assignmentStatus = activeAssignment?.status || 'Assigned';
 
   return (
     <div className="max-w-md mx-auto space-y-4 pb-12">
+      {/* Language Selector Bar */}
+      <div className="flex items-center justify-between bg-white px-4 py-2 rounded-xl border border-[#E2E8F0] shadow-xs">
+        <span className="text-xs font-bold text-[#64748B]">भाषा / Language:</span>
+        <div className="flex items-center gap-1">
+          {[
+            { code: 'en', label: 'English' },
+            { code: 'hi', label: 'हिंदी' },
+            { code: 'mr', label: 'मराठी' },
+          ].map((l) => (
+            <button
+              key={l.code}
+              onClick={() => setLang(l.code)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                lang === l.code
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-[#64748B] hover:text-[#0F172A] bg-slate-100 hover:bg-slate-200'
+              }`}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Driver Identity Card */}
       <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-5 shadow-xl border border-slate-700 relative overflow-hidden">
         <div className="absolute right-[-20px] top-[-20px] w-36 h-36 bg-blue-500/10 rounded-full blur-2xl" />
@@ -121,7 +236,7 @@ export default function DriverPortal() {
                   {activeTruck?.driverName || 'Driver Ramesh Shinde'}
                 </h1>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
-                  Active Shift
+                  {t.activeShift}
                 </span>
               </div>
               <p className="text-xs text-slate-300 font-mono">
@@ -145,7 +260,7 @@ export default function DriverPortal() {
               />
             </span>
             <span className="text-slate-300 text-[11px]">
-              GPS Telemetry: {gpsActive ? 'Transmitting (10s)' : 'Paused'}
+              {t.gpsTelemetry}: {gpsActive ? t.transmitting : t.paused}
             </span>
           </div>
 
@@ -153,7 +268,7 @@ export default function DriverPortal() {
             onClick={() => setGpsActive(!gpsActive)}
             className="text-[11px] font-bold text-blue-400 hover:text-blue-300 cursor-pointer"
           >
-            {gpsActive ? 'Pause Ping' : 'Resume Ping'}
+            {gpsActive ? t.pausePing : t.resumePing}
           </button>
         </div>
 
@@ -173,7 +288,7 @@ export default function DriverPortal() {
               </span>
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
-                  Assigned Backhaul Tender
+                  {t.assignedTender}
                 </span>
                 <h2 className="text-sm font-bold text-[#0F172A]">{assignedShipment.name}</h2>
               </div>
@@ -190,12 +305,12 @@ export default function DriverPortal() {
                 <MapPin className="w-4 h-4 text-emerald-600" />
               </div>
               <div className="flex-1 text-xs">
-                <span className="text-[10px] text-[#64748B] uppercase font-bold">1. Pickup Bay</span>
+                <span className="text-[10px] text-[#64748B] uppercase font-bold">{t.pickupBay}</span>
                 <p className="font-bold text-[#0F172A]">{assignedShipment.origin}</p>
                 <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#64748B]">
                   <Clock className="w-3 h-3 text-blue-600" />
                   <span>
-                    Window: {assignedShipment.pickupWindowStart} - {assignedShipment.pickupWindowEnd}
+                    {t.window}: {assignedShipment.pickupWindowStart} - {assignedShipment.pickupWindowEnd}
                   </span>
                 </div>
               </div>
@@ -208,62 +323,73 @@ export default function DriverPortal() {
                 <MapPin className="w-4 h-4 text-rose-600" />
               </div>
               <div className="flex-1 text-xs">
-                <span className="text-[10px] text-[#64748B] uppercase font-bold">2. Destination Depot</span>
+                <span className="text-[10px] text-[#64748B] uppercase font-bold">{t.destDepot}</span>
                 <p className="font-bold text-[#0F172A]">{assignedShipment.destination}</p>
                 <span className="text-[11px] text-[#64748B]">
-                  Cargo: {assignedShipment.weightTons} tons • {assignedShipment.cargoType}
+                  {t.cargo}: {assignedShipment.weightTons || 10} {t.tons} • {assignedShipment.cargoType}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Turn-by-Turn Navigation Action */}
-          <a
-            href={navUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full py-3 px-4 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
-          >
-            <Navigation className="w-4 h-4" />
-            <span>Launch Google Maps GPS Navigation</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          {/* Action Buttons: Google Maps Navigation + WhatsApp Dispatch */}
+          <div className="space-y-2 pt-1">
+            <a
+              href={navUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3 px-4 min-h-[44px] rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+            >
+              <Navigation className="w-4 h-4" />
+              <span>{t.launchNav}</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-2.5 px-4 min-h-[44px] rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+            >
+              <span>📱 {t.sendWhatsapp}</span>
+            </a>
+          </div>
 
           {/* Driver Milestone Status Progression */}
           <div className="space-y-2 pt-2 border-t border-[#E2E8F0]">
             <span className="text-[11px] font-bold text-[#0F172A] block">
-              Driver Check-in Milestones
+              {t.checkinMilestones}
             </span>
             <div className="grid grid-cols-3 gap-2 text-[11px]">
               <button
                 onClick={() => handleMilestone('Arrived at Pickup')}
-                className={`py-2 px-1 rounded-xl font-bold border transition-all cursor-pointer text-center ${
+                className={`py-2 px-1 min-h-[44px] rounded-xl font-bold border transition-all cursor-pointer text-center ${
                   assignmentStatus === 'Arrived at Pickup'
                     ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                     : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
                 }`}
               >
-                1. At Pickup
+                {t.atPickup}
               </button>
               <button
                 onClick={() => handleMilestone('Cargo Loaded')}
-                className={`py-2 px-1 rounded-xl font-bold border transition-all cursor-pointer text-center ${
+                className={`py-2 px-1 min-h-[44px] rounded-xl font-bold border transition-all cursor-pointer text-center ${
                   assignmentStatus === 'Cargo Loaded'
                     ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                     : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
                 }`}
               >
-                2. Loaded
+                {t.loaded}
               </button>
               <button
                 onClick={() => handleMilestone('Delivered')}
-                className={`py-2 px-1 rounded-xl font-bold border transition-all cursor-pointer text-center ${
+                className={`py-2 px-1 min-h-[44px] rounded-xl font-bold border transition-all cursor-pointer text-center ${
                   assignmentStatus === 'Delivered'
                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                     : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
                 }`}
               >
-                3. Delivered
+                {t.delivered}
               </button>
             </div>
           </div>
@@ -271,9 +397,9 @@ export default function DriverPortal() {
       ) : (
         <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-soft text-center space-y-3">
           <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-          <h3 className="text-sm font-bold text-[#0F172A]">No Active Backhaul Consignment</h3>
+          <h3 className="text-sm font-bold text-[#0F172A]">{t.noActive}</h3>
           <p className="text-xs text-[#64748B]">
-            You have completed all scheduled deliveries. Waiting for autonomous dispatcher match.
+            {t.waitingMatch}
           </p>
         </div>
       )}
@@ -285,15 +411,15 @@ export default function DriverPortal() {
             <PhoneCall className="w-4 h-4" />
           </div>
           <div>
-            <span className="font-bold text-[#0F172A] block">24/7 Dispatch Hotline</span>
+            <span className="font-bold text-[#0F172A] block">{t.hotline}</span>
             <span className="text-[11px] text-[#64748B]">West Zone Control Room</span>
           </div>
         </div>
         <a
           href="tel:18002004400"
-          className="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors"
+          className="px-3 py-2 min-h-[44px] rounded-lg bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors inline-flex items-center"
         >
-          Call Dispatch
+          {t.callDispatch}
         </a>
       </div>
     </div>

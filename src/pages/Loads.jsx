@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Package, Plus, Search, Filter, CheckCircle2, AlertTriangle, XCircle, ArrowRight, X } from 'lucide-react';
+import { Package, Plus, Search, Filter, CheckCircle2, AlertTriangle, XCircle, ArrowRight, X, LoaderCircle, MapPin } from 'lucide-react';
 import { useReRoute } from '../context/ReRouteContext';
 import { useAuth } from '../context/AuthContext';
 import { validateShipment } from '../engine/validation';
+import { apiFetch } from '../lib/api';
 
 export default function Loads() {
-  const { shipments, repository, refreshData, cancelShipment } = useReRoute();
+  const { shipments, repository, refreshData, cancelShipment, showToast } = useReRoute();
   const { role } = useAuth();
   const [filterStatus, setFilterStatus] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   // New Load Form State
   const [formData, setFormData] = useState({
@@ -48,6 +50,25 @@ export default function Loads() {
 
     return matchesStatus && matchesQuery;
   });
+
+  const handleResolveCity = async (type, cityName) => {
+    if (!cityName || cityName.length < 3) return;
+    setIsGeocoding(true);
+    try {
+      const geo = await apiFetch(`/api/geocode?query=${encodeURIComponent(cityName)}`);
+      if (geo?.lat && geo?.lng) {
+        if (type === 'pickup') {
+          setFormData((prev) => ({ ...prev, pickupLat: geo.lat, pickupLng: geo.lng }));
+        } else {
+          setFormData((prev) => ({ ...prev, dropLat: geo.lat, dropLng: geo.lng }));
+        }
+      }
+    } catch (err) {
+      console.warn('Geocode resolve error:', err);
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
 
   const handlePostLoad = async (e) => {
     e.preventDefault();
@@ -94,6 +115,9 @@ export default function Loads() {
     }
 
     await refreshData();
+    if (showToast) {
+      showToast(`Tender ${newId} posted! Autonomous solver re-ranking corridor pool.`, 'success');
+    }
     setIsModalOpen(false);
   };
 
@@ -291,23 +315,32 @@ export default function Loads() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-semibold text-[#0F172A] block mb-1">Pickup Location</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-semibold text-[#0F172A] block">Pickup Location</label>
+                    {isGeocoding && <span className="text-[10px] text-blue-600 font-semibold animate-pulse">Resolving...</span>}
+                  </div>
                   <input
                     type="text"
                     required
                     value={formData.pickupLocation}
                     onChange={(e) => setFormData({ ...formData, pickupLocation: e.target.value })}
+                    onBlur={() => handleResolveCity('pickup', formData.pickupLocation)}
                     className="w-full px-3 py-2 rounded-lg border border-[#E2E8F0] text-xs outline-none focus:border-blue-500"
+                    placeholder="e.g. Bhiwandi, Thane, Kalyan"
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-[#0F172A] block mb-1">Drop Location</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-semibold text-[#0F172A] block">Drop Location</label>
+                  </div>
                   <input
                     type="text"
                     required
                     value={formData.dropLocation}
                     onChange={(e) => setFormData({ ...formData, dropLocation: e.target.value })}
+                    onBlur={() => handleResolveCity('drop', formData.dropLocation)}
                     className="w-full px-3 py-2 rounded-lg border border-[#E2E8F0] text-xs outline-none focus:border-blue-500"
+                    placeholder="e.g. Nashik, Pune, Mumbai"
                   />
                 </div>
               </div>

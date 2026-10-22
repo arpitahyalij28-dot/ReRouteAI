@@ -8,6 +8,7 @@ import Header from './components/Header';
 import Navbar from './components/Navbar';
 import DemoGuideModal from './components/DemoGuideModal';
 import GuidedTourBar from './components/GuidedTourBar';
+import CoachmarkTour from './components/CoachmarkTour';
 import { ReRouteProvider, useReRoute } from './context/ReRouteContext';
 
 // Pages
@@ -305,6 +306,9 @@ function AppContent() {
           onExit={() => setIsTourActive(false)}
         />
       )}
+
+      {/* 7. Orientation Coachmark Tour for First-Time Evaluators */}
+      <CoachmarkTour />
     </div>
   );
 }

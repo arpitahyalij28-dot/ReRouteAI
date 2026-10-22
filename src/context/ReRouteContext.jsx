@@ -78,6 +78,22 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
   const fetchCountRef = useRef(0);
   const [error, setError] = useState(null);
   const [toasts, setToasts] = useState([]);
+  const [isJudgeMode, setIsJudgeModeState] = useState(() => {
+    try {
+      return localStorage.getItem('reroute_judge_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const setIsJudgeMode = useCallback((val) => {
+    setIsJudgeModeState(val);
+    try {
+      localStorage.setItem('reroute_judge_mode', String(val));
+    } catch {
+      // ignore localStorage restriction
+    }
+  }, []);
 
   const showToast = useCallback((message, type = 'info') => {
     const id = Date.now() + Math.random();
@@ -471,6 +487,8 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     repository,
     adapterName: repository.name,
     isDemoMode,
+    isJudgeMode,
+    setIsJudgeMode,
     loading,
     refreshing,
     fetchCount,

@@ -103,13 +103,31 @@ export default function Assignments() {
                         {new Date(a.assignedAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </td>
                       <td className="py-3 px-4">
-                        <button
-                          onClick={() => handleUnassign(a.id)}
-                          className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors"
-                          title="Cancel assignment"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <a
+                            href={`https://wa.me/?text=${encodeURIComponent(
+                              `🚛 *ReRoute AI Dispatch Assignment* (${a.id})\n` +
+                              `• Truck: ${a.truckId} (${truck?.regNumber || 'Vehicle'})\n` +
+                              `• Load: ${a.shipmentId} - ${shipment?.name || 'Cargo'}\n` +
+                              `• Detour: +${a.detourKm} km | Loaded: ${a.loadedKm || 140} km\n` +
+                              `• Margin: ₹${(a.costGain || 24000).toLocaleString('en-IN')}\n` +
+                              `• Dispatch Portal: https://reroute-ai-2.vercel.app/driver`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 border border-emerald-200 transition-colors inline-flex items-center"
+                            title="Share assignment via WhatsApp"
+                          >
+                            <span>📱</span>
+                          </a>
+                          <button
+                            onClick={() => handleUnassign(a.id)}
+                            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors"
+                            title="Cancel assignment"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

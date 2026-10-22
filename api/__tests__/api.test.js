@@ -7,6 +7,7 @@ import recoverHandler from '../recover.js';
 import weatherHandler from '../weather.js';
 import explainHandler from '../explain.js';
 import routeHandler from '../route.js';
+import geocodeHandler from '../geocode.js';
 
 import { INITIAL_TRUCK, INITIAL_TRUCKS, INITIAL_SHIPMENTS } from '../../src/data/mockData.js';
 
@@ -175,5 +176,18 @@ describe('Serverless Backend Endpoints (/api/*)', () => {
     expect(res.responseData.distanceKm).toBeGreaterThan(0);
     expect(res.responseData.durationMinutes).toBeGreaterThan(0);
     expect(Array.isArray(res.responseData.coordinates)).toBe(true);
+  });
+
+  it('GET /api/geocode resolves corridor cities and coordinates cleanly', async () => {
+    const { req, res } = createMockReqRes({
+      method: 'GET',
+      query: { query: 'Bhiwandi' },
+    });
+    await geocodeHandler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.responseData.name).toBe('Bhiwandi');
+    expect(res.responseData.lat).toBeCloseTo(19.2967, 1);
+    expect(res.responseData.lng).toBeCloseTo(73.0631, 1);
   });
 });

@@ -1,12 +1,14 @@
-import React from 'react';
-import { Truck, Activity, CircleHelp } from 'lucide-react';
+import React, { useState } from 'react';
+import { Truck, Activity, CircleHelp, QrCode } from 'lucide-react';
 import RoleSwitcher from './RoleSwitcher';
+import ShareJudgeModal from './ShareJudgeModal';
 import { useAuth } from '../context/AuthContext';
 import { useReRoute } from '../context/ReRouteContext';
 
 export default function Header({ onOpenDemoGuide, onResetAll }) {
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const { user, profile, role, isDemoUser } = useAuth();
-  const { isDemoMode, trucks } = useReRoute();
+  const { isDemoMode, trucks, isJudgeMode } = useReRoute();
 
   const isLocal = isDemoMode || !user || !profile || isDemoUser;
   const orgName = profile?.org_name || profile?.org_id || 'demo-org';
@@ -74,6 +76,15 @@ export default function Header({ onOpenDemoGuide, onResetAll }) {
         {/* Controls & Role Switcher */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           <button
+            onClick={() => setIsShareOpen(true)}
+            className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 min-h-[44px] text-xs font-semibold text-slate-700 hover:text-[#0F172A] bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-colors shadow-xs"
+            title="Open live system on your phone via QR code"
+          >
+            <QrCode className="w-4 h-4 text-slate-700" />
+            <span className="hidden sm:inline">Phone QR</span>
+          </button>
+
+          <button
             onClick={onOpenDemoGuide}
             className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 min-h-[44px] text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-colors shadow-sm"
             title="Open 2-minute live demo instructions"
@@ -82,19 +93,23 @@ export default function Header({ onOpenDemoGuide, onResetAll }) {
             <span className="hidden md:inline">2-Min Demo Script</span>
           </button>
 
-          <button
-            onClick={onResetAll}
-            className="hidden sm:inline-flex items-center justify-center gap-1 px-2.5 py-1.5 min-h-[44px] text-xs font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] border border-[#E2E8F0] rounded-xl transition-colors"
-            title="Reset simulation to initial state"
-          >
-            <span>Reset Demo</span>
-          </button>
+          {!isJudgeMode && (
+            <button
+              onClick={onResetAll}
+              className="hidden sm:inline-flex items-center justify-center gap-1 px-2.5 py-1.5 min-h-[44px] text-xs font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] border border-[#E2E8F0] rounded-xl transition-colors"
+              title="Reset simulation to initial state"
+            >
+              <span>Reset Demo</span>
+            </button>
+          )}
 
           <div className="pl-1 border-l border-[#E2E8F0]">
             <RoleSwitcher />
           </div>
         </div>
       </div>
+
+      <ShareJudgeModal isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} />
     </header>
   );
 }
