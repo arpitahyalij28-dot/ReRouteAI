@@ -15,6 +15,7 @@ export default function CorridorMap({
   const mapInstanceRef = useRef(null);
   const layerGroupRef = useRef(null);
   const [isUsingApproximateRoutes, setIsUsingApproximateRoutes] = useState(false);
+  const [isTilesOffline, setIsTilesOffline] = useState(false);
   const [realRouteCoords, setRealRouteCoords] = useState(null);
   const routeCacheRef = useRef(new Map());
 
@@ -78,10 +79,14 @@ export default function CorridorMap({
 
     map.setView(defaultCenter, 9);
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const tileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors',
-    }).addTo(map);
+    });
+    tileLayer.on('tileerror', () => {
+      setIsTilesOffline(true);
+    });
+    tileLayer.addTo(map);
 
     L.control.zoom({ position: 'topright' }).addTo(map);
 
@@ -318,9 +323,17 @@ export default function CorridorMap({
       {/* Map DOM Canvas */}
       <div
         ref={mapContainerRef}
-        className="w-full h-[360px] min-h-[360px] bg-slate-100 relative z-10"
+        className="w-full h-[360px] min-h-[360px] relative z-10"
         style={{ height: '360px' }}
       />
+
+      {/* Offline tile alert badge */}
+      {isTilesOffline && (
+        <div className="absolute top-14 left-3 z-20 bg-amber-50/95 backdrop-blur-sm border border-amber-300 text-amber-900 px-2.5 py-1 rounded-lg text-[10px] font-semibold flex items-center gap-1.5 shadow-sm">
+          <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+          <span>Map tiles offline — rendering grid fallback & vectors</span>
+        </div>
+      )}
 
       {/* Floating Legend */}
       <div className="absolute bottom-3 left-3 z-20 bg-white/95 backdrop-blur-sm border border-[#E2E8F0] p-2.5 rounded-lg text-[10px] shadow-sm space-y-1.5 max-w-[280px]">

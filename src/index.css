@@ -9,6 +9,13 @@
   }
 }
 
+/* Fallback light grid background when map tiles are loading or offline */
+.leaflet-container {
+  background-color: #f1f5f9 !important;
+  background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px) !important;
+  background-size: 20px 20px !important;
+}
+
 /* Custom Leaflet Map Tooltips & Pins */
 .map-city-pill {
   background-color: #ffffff !important;
