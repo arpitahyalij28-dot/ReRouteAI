@@ -65,6 +65,8 @@ export function calculateRouteEstimate(truck, shipment, speedKmH = 45) {
 
   // Extract truck current coords
   const tCurr = extractCoords(truck, ['currentCoords']) || { lat: truck.currentLat, lng: truck.currentLng };
+  // Extract truck origin coords (home terminal/base)
+  const tOrig = extractCoords(truck, ['originCoords', 'homeCoords']) || { lat: truck.originLat, lng: truck.originLng };
   // Extract truck destination coords
   const tDest = extractCoords(truck, ['destinationCoords', 'destCoords']) || { lat: truck.destLat, lng: truck.destLng };
 
@@ -87,18 +89,22 @@ export function calculateRouteEstimate(truck, shipment, speedKmH = 45) {
     ? calculateDistance(tCurr.lat, tCurr.lng, tDest.lat, tDest.lng) || 0
     : 0;
 
+  const homeBase = isValidCoordinate(tOrig.lat, tOrig.lng) ? tOrig : (isValidCoordinate(tCurr.lat, tCurr.lng) ? tCurr : tDest);
+
   const pickupDeadheadKm = calculateDistance(tDest.lat, tDest.lng, sPick.lat, sPick.lng);
   const loadedBackhaulKm = calculateDistance(sPick.lat, sPick.lng, sDrop.lat, sDrop.lng);
-  const dropToOriginKm = isValidCoordinate(tCurr.lat, tCurr.lng)
-    ? calculateDistance(sDrop.lat, sDrop.lng, tCurr.lat, tCurr.lng) || 0
+  const dropToOriginKm = isValidCoordinate(homeBase.lat, homeBase.lng)
+    ? calculateDistance(sDrop.lat, sDrop.lng, homeBase.lat, homeBase.lng) || 0
     : 0;
-  const directReturnKm = isValidCoordinate(tCurr.lat, tCurr.lng)
-    ? calculateDistance(tDest.lat, tDest.lng, tCurr.lat, tCurr.lng) || originalLegKm
+  const directReturnKm = isValidCoordinate(homeBase.lat, homeBase.lng)
+    ? calculateDistance(tDest.lat, tDest.lng, homeBase.lat, homeBase.lng) || originalLegKm
     : originalLegKm;
 
   const totalBackhaulTripKm = Math.round((pickupDeadheadKm + loadedBackhaulKm + dropToOriginKm) * 10) / 10;
   const rawDetour = totalBackhaulTripKm - directReturnKm;
-  const detourKm = Math.max(0, Math.round(rawDetour * 10) / 10);
+  const detourKm = Number(shipment.detourKm) != null && !isNaN(Number(shipment.detourKm)) && Number(shipment.detourKm) > 0
+    ? Number(shipment.detourKm)
+    : Math.max(0, Math.round(rawDetour * 10) / 10);
 
   const speed = Math.max(10, Number(speedKmH) || 45);
   const deadheadTravelHours = pickupDeadheadKm / speed;

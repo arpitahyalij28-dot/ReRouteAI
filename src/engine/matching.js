@@ -74,7 +74,11 @@ export function evaluateShipments(truck, shipments = [], settings = {}) {
   if (isNaN(truckCurrentLoad) || truckCurrentLoad < 0) {
     truckCurrentLoad = (Number(truck.currentLoadTons) || 0) * 1000;
   }
-  const availableCapacity = Math.max(0, truckMaxCap - truckCurrentLoad);
+  // For backhaul planning, in-transit trucks will be empty upon unloading at the destination hub.
+  let availableCapacity = truckMaxCap - truckCurrentLoad;
+  if (availableCapacity <= 0 || truck.status === 'In-Transit') {
+    availableCapacity = truckMaxCap;
+  }
 
   const evaluated = shipments.map((shipment) => {
     // 1. Route calculations
@@ -104,7 +108,7 @@ export function evaluateShipments(truck, shipments = [], settings = {}) {
     }
 
     // Rule 2: Capacity fit
-    if (availableCapacity > 0 && cargoWeight > availableCapacity) {
+    if (cargoWeight > availableCapacity) {
       const cargoTonsStr = (cargoWeight / 1000).toFixed(1);
       const availTonsStr = (availableCapacity / 1000).toFixed(1);
       infeasibleReasons.push(
