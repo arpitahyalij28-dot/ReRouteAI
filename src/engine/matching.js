@@ -325,18 +325,6 @@ export function evaluateShipments(truck, shipments = [], settings = {}) {
         });
       }
 
-      if (weatherPenalty > 0) {
-        const weatherCondition = weather?.currentWeather?.condition || weather?.condition || 'Adverse corridor weather';
-        const locationName = weather?.location?.name || truck.currentLocationName || 'Corridor transit route';
-        const delayMins = eta.weatherSlowdownMins || 0;
-        const etaText = delayMins > 0 ? `, ETA +${delayMins} min` : '';
-
-        whyReasons.push({
-          type: weatherRisk === 'high' ? 'warning' : 'info',
-          title: weatherRisk === 'high' ? 'Adverse weather hazard' : 'Weather slowdown advisory',
-          description: `${weatherCondition} near ${locationName}: disruption score reduced (-${weatherPenalty} pts)${etaText}.`,
-        });
-      }
     } else {
       infeasibleReasons.forEach((reason) => {
         whyReasons.push({
@@ -344,6 +332,19 @@ export function evaluateShipments(truck, shipments = [], settings = {}) {
           title: 'Feasibility constraint breached',
           description: reason,
         });
+      });
+    }
+
+    if (weatherPenalty > 0) {
+      const weatherCondition = weather?.currentWeather?.condition || weather?.condition || 'Adverse corridor weather';
+      const locationName = weather?.location?.name || truck.currentLocationName || 'Corridor transit route';
+      const delayMins = eta.weatherSlowdownMins || 0;
+      const etaText = delayMins > 0 ? `, ETA +${delayMins} min` : '';
+
+      whyReasons.push({
+        type: weatherRisk === 'high' ? 'warning' : 'info',
+        title: weatherRisk === 'high' ? 'Adverse weather hazard' : 'Weather slowdown advisory',
+        description: `${weatherCondition} near ${locationName}: disruption score reduced (-${weatherPenalty} pts)${etaText}.`,
       });
     }
 

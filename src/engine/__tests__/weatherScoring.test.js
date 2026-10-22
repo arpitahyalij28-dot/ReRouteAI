@@ -19,6 +19,7 @@ describe('Weather-Aware Scoring Engine', () => {
     currentLoad: 0,
     status: 'In-Transit',
     speedKmH: 50,
+    expectedDeliveryTime: new Date(Date.now() + 3600 * 1000).toISOString(),
   };
 
   const sampleShipment = {
@@ -31,8 +32,8 @@ describe('Weather-Aware Scoring Engine', () => {
     dropLat: 19.9975,
     dropLng: 73.7898,
     cargoWeight: 8000,
-    pickupWindowStart: '14:00',
-    pickupWindowEnd: '16:00',
+    pickupWindowStart: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
+    pickupWindowEnd: new Date(Date.now() + 6 * 3600 * 1000).toISOString(),
     status: 'Available',
     value: 28000,
   };
