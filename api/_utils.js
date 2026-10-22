@@ -34,8 +34,26 @@ export function checkRateLimit(req) {
  * Handles CORS headers and OPTIONS pre-flight
  */
 export function setCorsHeaders(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const allowedOrigin =
+    process.env.ALLOWED_ORIGIN ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
+  const requestOrigin = req.headers?.origin;
+
+  if (req.method === 'GET' && !req.headers?.authorization && !req.headers?.cookie) {
+    // Read-only endpoints can safely allow wildcard without credentials
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  } else if (requestOrigin && (requestOrigin === allowedOrigin || !allowedOrigin)) {
+    // Exact matching origin or dev reflection with credentials
+    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  } else if (allowedOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  } else {
+    // Fallback: Wildcard WITHOUT Allow-Credentials to adhere to CORS spec
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
