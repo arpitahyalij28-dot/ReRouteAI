@@ -33,6 +33,10 @@ export default function ExplainabilityPanel({
     if (!shipment || !score) return;
     setIsGeneratingAi(true);
 
+    const weatherImpact = shipment.weatherImpact || score.weatherImpact;
+    const weatherRiskLevel = weatherImpact?.riskLevel || 'low';
+    const weatherPenalty = weatherImpact?.penalty || 0;
+
     const payload = {
       shipmentId: shipment.id,
       matchScore: score.totalScore,
@@ -49,6 +53,8 @@ export default function ExplainabilityPanel({
       etaBufferMinutes: shipment.etaBufferMinutes || 15,
       capacityUtilizationPct: score.factors?.capacity?.rawScore || 80,
       grossYieldInr: shipment.freightOfferInr || shipment.value || 25000,
+      weatherRiskLevel: weatherRiskLevel !== 'low' ? weatherRiskLevel : undefined,
+      weatherPenalty: weatherPenalty > 0 ? weatherPenalty : undefined,
     };
 
     const res = await apiFetch('/api/explain', {
@@ -68,8 +74,9 @@ export default function ExplainabilityPanel({
           : 'Tight dock operation buffer required.';
       const detour = `Detour diversion is +${shipment.detourKm || 10} km from nominal transit corridor.`;
       const yieldSummary = `Gross freight yield is ₹${(shipment.freightOfferInr || shipment.value || 25000).toLocaleString('en-IN')}.`;
+      const weatherSummary = weatherPenalty > 0 ? ` Weather disruption penalty: -${weatherPenalty} pts (${weatherRiskLevel} atmospheric hazard).` : '';
       setAiExplanation({
-        text: `Shipment ${shipment.id} matches at ${score.totalScore}% overall alignment. ${timing} ${detour} ${yieldSummary}`,
+        text: `Shipment ${shipment.id} matches at ${score.totalScore}% overall alignment. ${timing} ${detour} ${yieldSummary}${weatherSummary}`,
         provider: 'Deterministic Multi-Criteria Rules (Offline Fallback)',
       });
     }

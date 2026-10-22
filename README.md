@@ -33,14 +33,14 @@ graph TB
         APIOptimize["/api/optimize (Weighted Multi-Criteria Engine)"]
         APIFleet["/api/optimize-fleet (Kuhn-Munkres Hungarian Solver)"]
         APIRecover["/api/recover (Dynamic Disruption Recovery)"]
-        APIExplain["/api/explain (Anthropic Claude 3.5 Sonnet + Fallback)"]
+        APIExplain["/api/explain (Anthropic Claude 3.5 Haiku + Fallback)"]
     end
 
     subgraph CloudServices ["Cloud Infrastructure & External APIs"]
         SupabaseDB[("Supabase PostgreSQL (RLS & Realtime)")]
         OSRM["OpenStreetMap / OpenRouteService Routing API"]
         Meteo["Open-Meteo Global Weather Archive & Forecast"]
-        Claude["Anthropic Claude 3.5 Sonnet API"]
+        Claude["Anthropic Claude 3.5 Haiku API (via ANTHROPIC_MODEL)"]
     end
 
     UI --> RoleCtx
@@ -120,7 +120,19 @@ In line with enterprise evaluation best practices, every sub-system in ReRoute A
    - **Exact Combinatorial Mathematics**: True Kuhn-Munkres (Hungarian) algorithm running in $O(N^3)$ polynomial time, solving min-cost bipartite matching to maximize fleet-wide profitability and minimize deadhead kilometers across any fleet size (1 to 50+ vehicles).
    - **Conflict Resolution**: When multiple trucks compete for the highest-yielding return consignment, the global solver assigns the load to the highest overall compatibility score and tags competing trucks with explicit "Why Not?" justifications.
 5. **AI Explainability Justification**:
-   - **Dual-Engine Architecture**: Invokes Anthropic Claude 3.5 Haiku via `/api/explain` for natural language operator synthesis. When API keys are absent, instantaneously falls back to deterministic rule-based template summaries with verified mathematical trade-off proofs.
+   - **Dual-Engine Architecture**: Invokes Anthropic Claude 3.5 Haiku via `/api/explain` (configured via `ANTHROPIC_MODEL`, default `claude-3-5-haiku-20241022`) for natural language operator synthesis. When API keys are absent, instantaneously falls back to deterministic rule-based template summaries with verified mathematical trade-off proofs.
+
+### 🌦️ Weather-Aware Scoring Engine
+ReRoute AI 2.0 integrates atmospheric intelligence directly into backhaul evaluation without violating pure engine boundaries:
+- **Zero-Engine Fetch Architecture**: The engine in `src/engine/*` remains 100% pure ES modules without any network fetch. `src/lib/weather.js` handles client-side caching (10-minute TTL, key rounded to 2 coordinate decimals) and in-flight request deduplication.
+- **Engine Setting Propagation**: Atmospheric data is passed cleanly into `settings.weather` in `matching.js` and `eta.js`.
+- **Quantitative Disruption Penalties**: Risk levels convert to penalties on the 6th multi-criteria component (Low Disruption Risk, clamped 5..100):
+  - **Low Risk**: 0 penalty, standard transit conditions.
+  - **Medium Risk**: -15 pts penalty, -10% operating speed slowdown.
+  - **High Risk**: -35 pts penalty, -25% operating speed slowdown.
+- **Deterministic Parity**: If weather data is absent or toggled off in Settings, matching scores and arrival predictions are 100% mathematically identical to nominal conditions.
+- **Explainability & Verification**: Readable weather advisories (e.g. "Kasara Ghat violent showers: disruption score reduced (-35 pts), ETA +22 min") are attached to candidate explainability checklists, displayed on live maps and cards, and passed as non-PII metrics to `/api/explain`.
+- **Simulation Sandbox**: A 1-click **Simulate heavy rain** toggle in the Disruptions page and DisruptionSimulator permits instant offline demonstration of high-risk storm mitigation.
 
 ---
 
@@ -220,7 +232,7 @@ ReRouteAI/
 │   ├── recover.js                 # Disruption recovery endpoint
 │   ├── route.js                   # OSRM / OpenRouteService caching proxy
 │   ├── weather.js                 # Open-Meteo weather disruption risk proxy
-│   └── explain.js                 # Claude 3.5 Sonnet explainability with fallback
+│   └── explain.js                 # Claude 3.5 Haiku explainability (via ANTHROPIC_MODEL) with fallback
 ├── src/
 │   ├── engine/                    # Pure ES Module Mathematical Core
 │   │   ├── distance.js            # Haversine distance & detour calculations
@@ -258,6 +270,32 @@ ReRouteAI/
 ├── SETUP_MANUAL_STEPS.md          # Guide for Supabase & Vercel deployment
 └── vercel.json                    # SPA routing rewrite configuration
 ```
+
+---
+
+## 💬 WhatsApp & Regional Message Load Parser
+
+ReRoute AI includes an NLP consignment parsing engine designed for Indian freight logistics, accepting unstructured transporter broadcasts, broker tenders, and WhatsApp messages in **Hindi, Hinglish, Marathi, and English**.
+
+### Capabilities
+- **Hybrid AI & Deterministic Architecture**: Automatically utilizes Anthropic Claude (`ANTHROPIC_MODEL` or `claude-3-5-haiku-20241022`) via `POST /api/parse-load` with strict JSON schema and confidence scoring. If offline or without an API key, instantly falls back to a deterministic regex engine (`src/engine/loadParser.js`).
+- **City Normalization & Vernacular Aliases**: Resolves colloquial and regional names (e.g., *Bombay/बम्बई* → Mumbai, *Poona/पुणे* → Pune, *Nasik/नाशिक* → Nashik, *Baroda/वडोदरा* → Vadodara, *Aurangabad/औरंगाबाद* → Chhatrapati Sambhajinagar).
+- **Unit & Currency Handling**: Automatically converts kilograms to metric tons (e.g., *5000 kg* → 5t) and parses abbreviated rates (*28k*, *18 hazar*, *₹28,000/-*, *28000 dunga*).
+- **Relative Scheduling**: Resolves relative expressions (*kal subah 6 baje* → tomorrow 06:00, *parso sham 4 baje* → day-after-tomorrow 16:00) into ISO ready timestamps and dock operation windows.
+- **Dispatcher Review UI**: Integrated into `AddShipmentModal` with one-click test sample chips, confidence metrics, and editable form pre-filling.
+
+---
+
+## 🚚 Shipper Truck Marketplace & Reverse Matching (Uber-Style)
+
+ReRoute AI features a bidirectional demand-supply matching engine allowing shippers to discover, evaluate, and lock returning corridor fleet trucks for spot freight consignments.
+
+### Capabilities
+- **Reverse Matching Optimization (`src/engine/reverseMatching.js`)**: Inverts the optimization problem: given a specific consignment tender, evaluates all returning trucks against payload capacity, route detour from return vector, and pickup bay arrival buffers.
+- **Dynamic Backhaul Quotes & Savings**: Automatically computes outbound dedicated hiring price vs discounted return spot rate, highlighting net cost savings (e.g. *Save ₹8,400 (27%) vs dedicated truck*).
+- **10-Minute Soft-Reservation Hold**: Shippers can place a 10-minute hold lock on candidate vehicles (`truck_requests` with `status: 'requested'`), preventing double-booking while drivers review the request.
+- **Driver Portal Dispatch Loop**: Incoming requests appear instantly in the mobile Driver Portal with offered spot rates and a 10-minute timer. Accepting converts the request into an active assignment and dispatches the vehicle.
+- **Dual Mode & RLS Security**: Backed by `LocalDemoAdapter` in-memory / localStorage storage for offline demos and `truck_requests` PostgreSQL table with strict Row-Level Security in Supabase (`20261022000003_shipper_marketplace_requests.sql`).
 
 ---
 

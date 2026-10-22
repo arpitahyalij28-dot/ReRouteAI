@@ -22,9 +22,9 @@ export default function BeforeVsAfterCard({
           <Sparkles className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-[#0F172A]">Fleet Performance Benchmark</h3>
+          <h3 className="text-sm font-bold text-[#0F172A]">Fleet Performance: Before vs After ReRoute AI</h3>
           <p className="text-xs text-[#64748B] mt-1 max-w-md mx-auto">
-            Add a truck to see your savings. Discover how much unloaded diesel, deadhead return miles, and operational expenditure you can recover with predictive backhaul matching.
+            Add a truck or load demo data to see your savings. Discover how much unloaded diesel, deadhead return miles, and operational expenditure you can recover with predictive backhaul matching.
           </p>
         </div>
         <div className="flex items-center justify-center gap-2 pt-1">

@@ -108,6 +108,9 @@ export default function DriverPortal() {
     updateAssignmentStatus,
     recordTelemetry,
     showToast,
+    truckRequests = [],
+    acceptTruckRequest,
+    rejectTruckRequest,
   } = useReRoute();
 
   // Active driver truck: assigned to authenticated user, or first available fleet truck
@@ -118,10 +121,18 @@ export default function DriverPortal() {
     (a) => a.truckId === activeTruck?.id && a.status !== 'Delivered'
   );
 
+  // Incoming shipper marketplace request for this vehicle
+  const incomingRequest = truckRequests.find(
+    (r) => r.truckId === activeTruck?.id && r.status === 'requested'
+  );
+  const requestedShipment = incomingRequest
+    ? shipments.find((s) => s.id === incomingRequest.shipmentId)
+    : null;
+
   // Find assigned shipment
   const assignedShipment = activeAssignment
     ? shipments.find((s) => s.id === activeAssignment.shipmentId)
-    : shipments[0]; // Fallback to candidate load
+    : null;
 
   const [gpsActive, setGpsActive] = useState(true);
   const [lastPingTime, setLastPingTime] = useState(new Date().toLocaleTimeString());
@@ -277,6 +288,61 @@ export default function DriverPortal() {
           <span>Last Ping: {lastPingTime}</span>
         </div>
       </div>
+
+      {/* Incoming Shipper Marketplace Request Banner */}
+      {incomingRequest && requestedShipment && (
+        <div className="bg-gradient-to-br from-blue-900 to-indigo-950 text-white rounded-2xl p-5 border-2 border-blue-400 shadow-xl space-y-3 animate-in fade-in">
+          <div className="flex items-center justify-between border-b border-blue-800/60 pb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="p-1 rounded-md bg-blue-500 text-white shadow-xs">
+                <Package className="w-4 h-4" />
+              </span>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-300 block">
+                  New Shipper Backhaul Offer
+                </span>
+                <strong className="text-sm font-bold text-white">
+                  {requestedShipment.id}: {requestedShipment.name}
+                </strong>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-amber-950">
+              10m Hold Active
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="p-2 rounded-lg bg-blue-800/40 border border-blue-700/50">
+              <span className="text-[10px] text-blue-300 block">Route Corridor</span>
+              <strong className="text-white text-xs">
+                {requestedShipment.origin} → {requestedShipment.destination}
+              </strong>
+            </div>
+            <div className="p-2 rounded-lg bg-blue-800/40 border border-blue-700/50">
+              <span className="text-[10px] text-blue-300 block">Offered Spot Rate</span>
+              <strong className="text-emerald-300 text-xs font-black">
+                ₹{(incomingRequest.offeredRateInr || requestedShipment.freightOfferInr || requestedShipment.value || 0).toLocaleString('en-IN')}
+              </strong>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => acceptTruckRequest?.(incomingRequest.id)}
+              className="flex-1 py-2 text-xs font-black rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Accept & Commit Vehicle</span>
+            </button>
+            <button
+              onClick={() => rejectTruckRequest?.(incomingRequest.id)}
+              className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all cursor-pointer"
+            >
+              Decline
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Active Load Instruction Card */}
       {assignedShipment ? (

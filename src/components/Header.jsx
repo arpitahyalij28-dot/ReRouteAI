@@ -144,6 +144,16 @@ export default function Header({ onOpenDemoGuide, onResetAll }) {
             <span className="md:hidden">Demo</span>
           </button>
 
+          {/* 2-Min Demo Script / Guide Button */}
+          <button
+            onClick={onOpenDemoGuide}
+            className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 min-h-[38px] text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all shadow-xs cursor-pointer"
+            title="2-minute demo guide"
+          >
+            <CircleHelp className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="hidden sm:inline">2-Min Demo Script</span>
+          </button>
+
           {/* "More" Dropdown Menu (Consolidates QR, Guide, and Clear All) */}
           <div className="relative" ref={moreRef}>
             <button

@@ -12,7 +12,9 @@ import {
   LoaderCircle,
   CircleCheck,
   Info,
+  CloudRain,
 } from 'lucide-react';
+import { useReRoute } from '../context/ReRouteContext';
 
 export default function DisruptionSimulator({
   targetShipment,
@@ -63,6 +65,8 @@ export default function DisruptionSimulator({
     else if (onChangeWindowS1) onChangeWindowS1();
   };
 
+  const { simulateHeavyRain, toggleSimulateHeavyRain } = useReRoute();
+
   return (
     <div className="bg-white rounded-[12px] border border-[#E2E8F0] shadow-soft p-4 space-y-3">
       {/* Title & Reset */}
@@ -89,9 +93,12 @@ export default function DisruptionSimulator({
           </div>
         </div>
 
-        {hasActiveDisruption && (
+        {(hasActiveDisruption || simulateHeavyRain) && (
           <button
-            onClick={onReset}
+            onClick={() => {
+              if (simulateHeavyRain) toggleSimulateHeavyRain();
+              onReset?.();
+            }}
             className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 text-[#64748B] hover:text-[#0F172A] bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -100,8 +107,8 @@ export default function DisruptionSimulator({
         )}
       </div>
 
-      {/* 4 Action Buttons */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      {/* 5 Action Buttons */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         {/* Cancel Tender */}
         <button
           onClick={handleCancel}
@@ -150,9 +157,25 @@ export default function DisruptionSimulator({
           <span>{isWindowShifted ? 'Window Shifted' : 'Shift Window'}</span>
         </button>
 
+        {/* Simulate Heavy Rain Toggle */}
+        <button
+          onClick={toggleSimulateHeavyRain}
+          className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer ${
+            simulateHeavyRain
+              ? 'bg-indigo-600 text-white ring-2 ring-indigo-400/50 shadow-md'
+              : 'bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200'
+          }`}
+        >
+          <CloudRain className="w-3.5 h-3.5" />
+          <span>{simulateHeavyRain ? 'Heavy Rain (Active)' : 'Simulate Heavy Rain'}</span>
+        </button>
+
         {/* Restore Baseline */}
         <button
-          onClick={onReset}
+          onClick={() => {
+            if (simulateHeavyRain) toggleSimulateHeavyRain();
+            onReset?.();
+          }}
           disabled={isRecalculating || !hasLoads}
           className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
             !hasLoads
@@ -164,6 +187,24 @@ export default function DisruptionSimulator({
           <span>Restore Baseline</span>
         </button>
       </div>
+
+      {/* Simulated Heavy Rain Banner */}
+      {simulateHeavyRain && (
+        <div className="p-2.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CloudRain className="w-4 h-4 text-indigo-600 shrink-0" />
+            <span>
+              <strong>Simulating Heavy Rain at Kasara Ghat:</strong> High weather risk active (-35 pts disruption penalty, -25% transit speed).
+            </span>
+          </div>
+          <button
+            onClick={toggleSimulateHeavyRain}
+            className="text-[11px] underline text-indigo-700 hover:text-indigo-900 font-bold cursor-pointer"
+          >
+            Turn off
+          </button>
+        </div>
+      )}
 
       {/* Loader during recalculation */}
       {isRecalculating && (

@@ -39,6 +39,12 @@ test.describe('ReRoute AI 2.0 - End-to-End Test Suite', () => {
   test('2. cancelling top load autonomously recovers and promotes next feasible load', async ({ page }) => {
     await page.goto('/');
 
+    // If initial empty state, load demo data so S1 candidate load is present
+    const loadDemoBtn = page.locator('button:has-text("Load Demo Data")').or(page.locator('button:has-text("Demo")'));
+    if (await loadDemoBtn.first().isVisible().catch(() => false)) {
+      await loadDemoBtn.first().click();
+    }
+
     // Verify initial cockpit state with Before vs After summary
     await expect(page.locator('text=Fleet Performance: Before vs After')).toBeVisible();
 

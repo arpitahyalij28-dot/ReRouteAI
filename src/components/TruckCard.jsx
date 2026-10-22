@@ -14,8 +14,10 @@ import {
   Trash2,
 } from 'lucide-react';
 import { formatCountdown } from '../utils/scoring';
-import { apiFetch } from '../lib/api';
 import { useDataContext } from '../context/DataContext';
+import { useReRoute } from '../context/ReRouteContext';
+import { getCorridorWeather } from '../lib/weather';
+import WeatherBadge from './WeatherBadge';
 
 export default function TruckCard({
   truck,
@@ -42,23 +44,26 @@ export default function TruckCard({
     return () => clearInterval(timer);
   }, [truck?.id, truck?.countdownSeconds]);
 
-  // Fetch weather along truck corridor
+  const { corridorWeather, simulateHeavyRain, selectedTruckId } = useReRoute();
+  const [localWeather, setLocalWeather] = useState(null);
+
+  // Fetch or resolve weather along truck corridor
   useEffect(() => {
     if (!truck) return;
+    if (selectedTruckId === truck.id && corridorWeather) {
+      setLocalWeather(corridorWeather);
+      return;
+    }
     let isMounted = true;
-    const lat = truck.currentLat || truck.currentCoords?.[0] || 19.645;
-    const lng = truck.currentLng || truck.currentCoords?.[1] || 73.485;
-
-    apiFetch(`/api/weather?lat=${lat}&lng=${lng}`).then((res) => {
-      if (isMounted && res) {
-        setWeatherData(res);
+    getCorridorWeather(truck, { simulateHeavyRain }).then((res) => {
+      if (isMounted) {
+        setLocalWeather(res);
       }
     });
-
     return () => {
       isMounted = false;
     };
-  }, [truck?.currentLat, truck?.currentLng, truck?.id]);
+  }, [truck?.id, truck?.currentLat, truck?.currentLng, selectedTruckId, corridorWeather, simulateHeavyRain]);
 
   // Empty state handling
   if (!truck) {
@@ -333,26 +338,7 @@ export default function TruckCard({
           </div>
 
           {/* Corridor Weather Telemetry Chip */}
-          <div className="p-2.5 rounded-lg bg-blue-50/60 border border-blue-200/70 flex items-center justify-between text-[11px]">
-            <div className="flex items-center gap-1.5 text-blue-900">
-              <CloudSun className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-              <span className="font-semibold">Weather on Corridor:</span>
-              <span className="text-slate-700">
-                {weatherData?.weather
-                  ? `${weatherData.weather.weatherDesc} (${weatherData.weather.temperatureC}°C, Wind ${weatherData.weather.windSpeedKmh}km/h)`
-                  : 'Clear / Nominal (28°C · Maharashtra)'}
-              </span>
-            </div>
-            <span
-              className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${
-                weatherData && weatherData.disruptionFactorDelta > 5
-                  ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                  : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-              }`}
-            >
-              Risk: {weatherData && weatherData.disruptionFactorDelta > 0 ? `+${weatherData.disruptionFactorDelta}%` : 'Low / Nominal'}
-            </span>
-          </div>
+          <WeatherBadge weather={localWeather || corridorWeather} variant="badge" />
         </div>
       </div>
     </div>

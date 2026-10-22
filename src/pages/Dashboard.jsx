@@ -13,6 +13,7 @@ import SustainabilityDashboard from '../components/SustainabilityDashboard';
 import CorridorMap from '../components/CorridorMap';
 import DemoGuideModal from '../components/DemoGuideModal';
 import BeforeVsAfterCard from '../components/BeforeVsAfterCard';
+import WeatherBadge from '../components/WeatherBadge';
 import { useReRoute, addMinutesToTimeString } from '../context/ReRouteContext';
 import {
   calculateShipmentScore,
@@ -36,6 +37,7 @@ export default function Dashboard() {
     shiftShipmentWindow,
     resetDemo,
     settings,
+    corridorWeather,
     setIsAddTruckOpen,
     setIsAddShipmentOpen,
     handleRequestLoadDemo,
@@ -344,7 +346,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <WeatherBadge weather={corridorWeather} variant="compact" />
+
           <span className="text-[#64748B] hidden md:inline">Optimal Backhaul:</span>
           <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 font-bold border border-blue-200 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" />
