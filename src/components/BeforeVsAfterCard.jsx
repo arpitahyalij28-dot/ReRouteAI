@@ -1,15 +1,54 @@
 // ReRoute AI 2.0 - Before vs After Operational Impact Card
 // Computes real fleet empty-run % and rupees wasted per month WITHOUT ReRoute vs WITH.
-// Uses real corridor fleet parameters and verified Scope 1 GHG formulas.
+// When trucks = 0, displays a friendly empty CTA and hides all calculated savings numbers.
 
 import React, { useState } from 'react';
-import { ArrowDownRight, TrendingDown, DollarSign, Leaf, Info, Sparkles } from 'lucide-react';
+import { ArrowDownRight, TrendingDown, DollarSign, Leaf, Info, Sparkles, Plus } from 'lucide-react';
 
-export default function BeforeVsAfterCard({ trucks = [], assignments = [], settings = {} }) {
+export default function BeforeVsAfterCard({
+  trucks = [],
+  assignments = [],
+  settings = {},
+  onAddTruck,
+  onLoadDemo,
+}) {
   const [showFormula, setShowFormula] = useState(false);
 
+  // Requirement 3: When there are 0 trucks, hide ALL savings numbers
+  if (!trucks || trucks.length === 0) {
+    return (
+      <div className="bg-gradient-to-br from-white via-slate-50 to-blue-50/30 rounded-2xl border border-[#E2E8F0] shadow-soft p-6 text-center space-y-3 relative overflow-hidden">
+        <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-xs">
+          <Sparkles className="w-5 h-5" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-[#0F172A]">Fleet Performance Benchmark</h3>
+          <p className="text-xs text-[#64748B] mt-1 max-w-md mx-auto">
+            Add a truck to see your savings. Discover how much unloaded diesel, deadhead return miles, and operational expenditure you can recover with predictive backhaul matching.
+          </p>
+        </div>
+        <div className="flex items-center justify-center gap-2 pt-1">
+          <button
+            onClick={onAddTruck}
+            className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Truck</span>
+          </button>
+          <button
+            onClick={onLoadDemo}
+            className="px-4 py-2 text-xs font-bold text-[#0F172A] bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+            <span>Load Demo Data</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Corridor baseline parameters
-  const fleetSize = Math.max(trucks.length, 1);
+  const fleetSize = trucks.length;
   const tripsPerMonth = 24; // 24 operating days per vehicle
   const returnLegKm = 160; // Nashik-Mumbai corridor return distance
   const fuelPrice = Number(settings.fuelPrice || 95.0);
@@ -25,11 +64,6 @@ export default function BeforeVsAfterCard({ trucks = [], assignments = [], setti
   // 2. WITH ReRoute: Predictive backhaul assignment matching
   const activeAssignments = (assignments || []).filter((a) => a.status === 'Active' || a.status === 'Completed');
   const matchedTrucksCount = Math.min(activeAssignments.length || 1, fleetSize);
-
-  // Avoided empty-km per matched trip
-  const avgAvoidedKmPerTrip = activeAssignments.length > 0
-    ? activeAssignments.reduce((acc, a) => acc + (a.loadedKm ? Math.max(160 - (a.detourKm || 0), 0) : 150), 0) / activeAssignments.length
-    : 152;
 
   // New empty return % with ReRoute
   const matchedRatio = matchedTrucksCount / fleetSize;

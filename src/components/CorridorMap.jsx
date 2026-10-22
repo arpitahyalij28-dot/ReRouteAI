@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { MapPin, ShieldAlert, Sparkles, Navigation, Layers, Eye, EyeOff } from 'lucide-react';
+import { MapPin, Navigation, Layers } from 'lucide-react';
 import { CORRIDOR_WAYPOINTS } from '../data/mockData';
 import { apiFetch } from '../lib/api';
 
@@ -18,8 +18,8 @@ export default function CorridorMap({
   const layerGroupRef = useRef(null);
   const [showAllTrucks, setShowAllTrucks] = useState(true);
   const [isUsingApproximateRoutes, setIsUsingApproximateRoutes] = useState(false);
-  const [isTilesOffline, setIsTilesOffline] = useState(false);
   const [realRouteCoords, setRealRouteCoords] = useState(null);
+  const [currentZoom, setCurrentZoom] = useState(9);
   const routeCacheRef = useRef(new Map());
 
   // Fetch real road polyline from /api/route for the active focus shipment
@@ -85,9 +85,6 @@ export default function CorridorMap({
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors',
     });
-    tileLayer.on('tileerror', () => {
-      setIsTilesOffline(true);
-    });
     tileLayer.addTo(map);
 
     L.control.zoom({ position: 'topright' }).addTo(map);
@@ -95,6 +92,11 @@ export default function CorridorMap({
     const layerGroup = L.layerGroup().addTo(map);
     mapInstanceRef.current = map;
     layerGroupRef.current = layerGroup;
+
+    // Track zoom level for dynamic clustering
+    map.on('zoomend', () => {
+      setCurrentZoom(map.getZoom());
+    });
 
     const timeout = setTimeout(() => {
       if (mapInstanceRef.current) {
@@ -117,16 +119,17 @@ export default function CorridorMap({
     };
   }, [truck?.currentCoords]);
 
-  // Update Dynamic Layers & Polylines
+  // Update Dynamic Layers, Clusters & Polylines
   useEffect(() => {
     if (!mapInstanceRef.current || !layerGroupRef.current) return;
+    const map = mapInstanceRef.current;
     const layers = layerGroupRef.current;
     layers.clearLayers();
 
     const activeTruckList = showAllTrucks && trucks.length > 0 ? trucks : truck ? [truck] : [];
 
     if (activeTruckList.length === 0 && shipments.length === 0) {
-      mapInstanceRef.current.setView([19.5, 73.3], 7);
+      map.setView([19.5, 73.3], 7);
       return;
     }
 
@@ -156,7 +159,7 @@ export default function CorridorMap({
       ];
 
       if (isSelectedTruck) {
-        // Glowing halo line for active truck
+        // Glowing halo line for active focused truck
         L.polyline(nominalPath, {
           color: '#2563EB',
           weight: 6,
@@ -170,12 +173,12 @@ export default function CorridorMap({
           opacity: 0.9,
         }).addTo(layers);
       } else {
-        // Faded corridor line for other fleet trucks
+        // Faded corridor line for other fleet trucks (non-selected)
         L.polyline(nominalPath, {
           color: riskColor,
           weight: 2,
           dashArray: '4, 6',
-          opacity: 0.45,
+          opacity: 0.35,
         }).addTo(layers);
       }
     });
@@ -219,51 +222,19 @@ export default function CorridorMap({
             .on('click', () => onSelectShipmentId?.(s.id));
         }
       }
-
-      // Pickup Marker Pin
-      const pickupIcon = L.divIcon({
-        className: 'custom-pickup-pin',
-        html: `
-          <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer">
-            <div class="w-4 h-4 rounded-full border-2 border-white shadow-md flex items-center justify-center ${
-              isSelected ? 'bg-blue-600 ring-2 ring-blue-400' : isRecommended ? 'bg-emerald-600 ring-2 ring-emerald-400' : 'bg-slate-700'
-            }">
-              <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
-            </div>
-            <div class="absolute -top-4 px-1 py-0.2 bg-white/95 text-[9px] font-bold rounded shadow-xs whitespace-nowrap border border-slate-200">
-              ${s.id}
-            </div>
-          </div>
-        `,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8],
-      });
-
-      L.marker(pickCoords, { icon: pickupIcon })
-        .addTo(layers)
-        .on('click', () => onSelectShipmentId?.(s.id))
-        .bindPopup(`
-          <div style="font-family: 'Inter', sans-serif; font-size: 11px;">
-            <strong style="color: #0F172A; display: block;">${s.id}: ${s.name}</strong>
-            <span style="color: #64748B;">Pickup: ${s.origin}</span><br/>
-            <span style="color: #64748B;">Drop: ${s.destination}</span><br/>
-            <span style="color: #2563EB; font-weight: 600;">Payload: ${s.weightTons || (s.cargoWeight ? s.cargoWeight / 1000 : 0)}t | Gross: ₹${(s.freightOfferInr || s.value || 0).toLocaleString('en-IN')}</span>
-          </div>
-        `);
     });
 
-    // 3. Draw Corridor Waypoints
+    // 3. Draw Corridor Waypoints (Small dots, tooltips on hover only)
     CORRIDOR_WAYPOINTS.forEach((node) => {
       const pinIcon = L.divIcon({
         className: 'custom-city-pin',
         html: `
           <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
-            <div class="w-2 h-2 rounded-full border border-white shadow-xs bg-slate-400">
-            </div>
+            <div class="w-1.5 h-1.5 rounded-full bg-slate-400 opacity-60"></div>
           </div>
         `,
-        iconSize: [8, 8],
-        iconAnchor: [4, 4],
+        iconSize: [6, 6],
+        iconAnchor: [3, 3],
       });
 
       L.marker(node.coords, { icon: pinIcon })
@@ -271,75 +242,211 @@ export default function CorridorMap({
         .bindTooltip(node.name.split(' ')[0], {
           permanent: false,
           direction: 'top',
-          offset: [0, -6],
+          offset: [0, -4],
           className: 'map-city-pill',
         });
     });
 
-    // 4. Draw Live Truck Markers for ALL visible trucks
-    activeTruckList.forEach((t) => {
+    // 4. Clustering vs Individual Markers
+    // When zoomed out (zoom <= 8), cluster nearby trucks/loads
+    const isClustered = currentZoom <= 8 && activeTruckList.length > 3;
+
+    if (isClustered) {
+      // Spatial clustering
+      const clusters = [];
+      const threshold = 0.25; // ~25km in lat/lng
+
+      activeTruckList.forEach((t) => {
+        if (!t.currentCoords) return;
+        let added = false;
+        for (const cluster of clusters) {
+          const dist = Math.hypot(
+            cluster.center[0] - t.currentCoords[0],
+            cluster.center[1] - t.currentCoords[1]
+          );
+          if (dist < threshold) {
+            cluster.items.push(t);
+            added = true;
+            break;
+          }
+        }
+        if (!added) {
+          clusters.push({ center: [...t.currentCoords], items: [t] });
+        }
+      });
+
+      clusters.forEach((cluster) => {
+        if (cluster.items.length === 1) {
+          // Render individual single truck
+          renderTruckMarker(cluster.items[0]);
+        } else {
+          // Render cluster bubble
+          const hasSelected = cluster.items.some((t) => truck && t.id === truck.id);
+          const clusterIcon = L.divIcon({
+            className: 'custom-cluster-marker',
+            html: `
+              <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group">
+                <div class="w-8 h-8 rounded-full ${
+                  hasSelected ? 'bg-blue-600 ring-4 ring-blue-300' : 'bg-slate-800 ring-2 ring-white'
+                } text-white font-extrabold text-xs flex items-center justify-center shadow-md transition-transform group-hover:scale-110">
+                  ${cluster.items.length}
+                </div>
+              </div>
+            `,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+          });
+
+          L.marker(cluster.center, { icon: clusterIcon })
+            .addTo(layers)
+            .on('click', () => {
+              map.setView(cluster.center, 10);
+            })
+            .bindTooltip(`${cluster.items.length} Trucks in this corridor segment (Click to zoom in)`, {
+              direction: 'top',
+              offset: [0, -10],
+            });
+        }
+      });
+    } else {
+      // Render individual markers for all trucks
+      activeTruckList.forEach((t) => renderTruckMarker(t));
+    }
+
+    function renderTruckMarker(t) {
       if (!t.currentCoords) return;
       const isSelectedTruck = truck && t.id === truck.id;
       const riskColor = getRiskColor(t.emptyReturnProbability);
       const riskVal = Number(t.emptyReturnProbability) || 0;
 
+      // Fix 5: By default show small icon/dot with NO permanent text label.
+      // Label shows only for selected truck, and on hover for all others.
       const truckIcon = L.divIcon({
         className: 'custom-truck-marker',
         html: `
-          <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer">
+          <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group">
             ${
               isSelectedTruck
-                ? `<div class="absolute w-10 h-10 rounded-full bg-blue-500/30 animate-ping"></div>`
+                ? `<div class="absolute w-9 h-9 rounded-full bg-blue-500/30 animate-ping"></div>`
                 : ''
             }
             <div class="relative ${
-              isSelectedTruck ? 'w-8 h-8 ring-2 ring-blue-500/60 shadow-lg' : 'w-6 h-6 shadow-md'
-            } rounded-full text-white flex items-center justify-center border-2 border-white" style="background-color: ${
+              isSelectedTruck
+                ? 'w-7 h-7 ring-2 ring-blue-500/80 shadow-lg'
+                : 'w-4 h-4 shadow-sm hover:scale-125'
+            } rounded-full text-white flex items-center justify-center border-2 border-white transition-transform" style="background-color: ${
               isSelectedTruck ? '#2563EB' : riskColor
             };">
-              <svg class="${isSelectedTruck ? 'w-4 h-4' : 'w-3 h-3'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
-              </svg>
+              ${
+                isSelectedTruck
+                  ? `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                    </svg>`
+                  : ''
+              }
             </div>
-            <div class="absolute -bottom-5 px-1.5 py-0.5 rounded ${
-              isSelectedTruck ? 'bg-blue-900 text-white font-black' : 'bg-slate-900/90 text-white font-bold'
-            } text-[9px] whitespace-nowrap shadow-md border border-slate-700">
-              ${t.id} (${riskVal}%)
-            </div>
+            ${
+              isSelectedTruck
+                ? `<div class="absolute -bottom-5 px-1.5 py-0.2 rounded bg-blue-900 text-white font-extrabold text-[9px] whitespace-nowrap shadow-md border border-blue-700">
+                    ${t.id} (${riskVal}%)
+                  </div>`
+                : ''
+            }
           </div>
         `,
-        iconSize: [isSelectedTruck ? 40 : 30, isSelectedTruck ? 40 : 30],
-        iconAnchor: [isSelectedTruck ? 20 : 15, isSelectedTruck ? 20 : 15],
+        iconSize: [isSelectedTruck ? 32 : 16, isSelectedTruck ? 32 : 16],
+        iconAnchor: [isSelectedTruck ? 16 : 8, isSelectedTruck ? 16 : 8],
       });
 
-      L.marker(t.currentCoords, { icon: truckIcon })
+      const marker = L.marker(t.currentCoords, { icon: truckIcon })
         .addTo(layers)
-        .on('click', () => onSelectTruckId?.(t.id))
-        .bindPopup(`
-          <div style="font-family: 'Inter', sans-serif; font-size: 11px;">
-            <strong style="color: #0F172A;">Vehicle ${t.id} (${t.regNumber || ''})</strong><br/>
-            <span style="color: #64748B;">Route: ${t.origin} → ${t.destination}</span><br/>
-            <span style="color: ${riskColor}; font-weight: 600;">Deadhead Risk: ${riskVal}%</span><br/>
-            <span style="color: #2563EB; font-weight: 600;">ETA: ${t.expectedDeliveryTime || '14:30'}</span>
+        .on('click', () => onSelectTruckId?.(t.id));
+
+      // Show tooltip on hover
+      marker.bindTooltip(
+        `<div style="font-family: 'Inter', sans-serif; font-size: 11px;">
+          <strong>Vehicle ${t.id}</strong> • Deadhead Risk: <strong style="color: ${riskColor};">${riskVal}%</strong><br/>
+          <span style="color: #64748B;">Route: ${t.origin?.split(' ')[0]} → ${t.destination?.split(' ')[0]}</span>
+        </div>`,
+        { direction: 'top', offset: [0, isSelectedTruck ? -14 : -8], opacity: 0.95 }
+      );
+
+      marker.bindPopup(`
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px;">
+          <strong style="color: #0F172A;">Vehicle ${t.id} (${t.regNumber || ''})</strong><br/>
+          <span style="color: #64748B;">Route: ${t.origin} → ${t.destination}</span><br/>
+          <span style="color: ${riskColor}; font-weight: 600;">Deadhead Risk: ${riskVal}%</span><br/>
+          <span style="color: #2563EB; font-weight: 600;">ETA: ${t.expectedDeliveryTime || '14:30'}</span>
+        </div>
+      `);
+    }
+
+    // 5. Render Shipments: Small dots, no permanent text labels; hover tooltip
+    activeCandidates.forEach((s) => {
+      const pickCoords = s.originCoords || (s.pickupLat ? [s.pickupLat, s.pickupLng] : null);
+      if (!pickCoords) return;
+
+      const isSelected = s.id === selectedShipmentId;
+      const isRecommended = s.id === recommendedId;
+
+      const pickupIcon = L.divIcon({
+        className: 'custom-pickup-pin',
+        html: `
+          <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group">
+            <div class="${
+              isSelected
+                ? 'w-5 h-5 rounded-full bg-blue-600 ring-2 ring-blue-300 shadow-md flex items-center justify-center'
+                : isRecommended
+                ? 'w-4 h-4 rounded-full bg-emerald-600 ring-2 ring-emerald-300 shadow-md flex items-center justify-center'
+                : 'w-2.5 h-2.5 rounded-full bg-slate-700 shadow-xs border border-white group-hover:scale-125'
+            } transition-transform">
+              ${
+                isSelected || isRecommended
+                  ? `<div class="w-1.5 h-1.5 rounded-full bg-white"></div>`
+                  : ''
+              }
+            </div>
+            ${
+              isSelected || isRecommended
+                ? `<div class="absolute -top-4 px-1 py-0.2 bg-white/95 text-[9px] font-bold rounded shadow-xs whitespace-nowrap border border-slate-200">
+                    ${s.id}
+                  </div>`
+                : ''
+            }
           </div>
-        `);
+        `,
+        iconSize: [isSelected ? 20 : 10, isSelected ? 20 : 10],
+        iconAnchor: [isSelected ? 10 : 5, isSelected ? 10 : 5],
+      });
+
+      const sMarker = L.marker(pickCoords, { icon: pickupIcon })
+        .addTo(layers)
+        .on('click', () => onSelectShipmentId?.(s.id));
+
+      sMarker.bindTooltip(
+        `<div style="font-family: 'Inter', sans-serif; font-size: 11px;">
+          <strong>${s.id}: ${s.name}</strong><br/>
+          <span>${s.origin?.split(' ')[0]} → ${s.destination?.split(' ')[0]}</span> • <strong>₹${(s.freightOfferInr || s.value || 0).toLocaleString('en-IN')}</strong>
+        </div>`,
+        { direction: 'top', offset: [0, -8], opacity: 0.95 }
+      );
     });
 
-    // 5. Auto-fit bounds
+    // 6. Auto-fit bounds
     if (boundsPoints.length > 1) {
-      mapInstanceRef.current.fitBounds(L.latLngBounds(boundsPoints), {
+      map.fitBounds(L.latLngBounds(boundsPoints), {
         padding: [35, 35],
         maxZoom: 11,
       });
     }
-  }, [truck, trucks, showAllTrucks, shipments, selectedShipmentId, recommendedId, onSelectShipmentId, onSelectTruckId]);
+  }, [truck, trucks, showAllTrucks, shipments, selectedShipmentId, recommendedId, currentZoom, onSelectShipmentId, onSelectTruckId]);
 
   return (
     <div className="bg-white rounded-[12px] border border-[#E2E8F0] shadow-soft overflow-hidden relative">
       {/* Top Map Header */}
       <div className="px-4 py-2.5 border-b border-[#E2E8F0] flex flex-wrap items-center justify-between gap-2 bg-white">
         <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-blue-600" />
+          <MapPin className="w-4 h-4 text-blue-600 shrink-0" />
           <span className="text-xs font-bold text-[#0F172A]">
             Western Freight Corridor Geo-Spatial Map
           </span>
@@ -378,10 +485,10 @@ export default function CorridorMap({
       <div className="relative">
         <div ref={mapContainerRef} className="h-[340px] w-full z-0" />
 
-        {/* Floating Map Legend */}
+        {/* Floating Map Legend (Retained with risk colors, route, pickup point) */}
         <div className="absolute bottom-3 left-3 z-[400] bg-white/95 backdrop-blur-xs border border-slate-200 rounded-lg p-2 shadow-md text-[10px] font-medium text-slate-700 space-y-1">
           <div className="font-bold text-slate-900 text-[10px] border-b border-slate-100 pb-0.5">
-            Fleet Risk Legend
+            Corridor Legend
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -397,7 +504,7 @@ export default function CorridorMap({
           </div>
           <div className="flex items-center gap-1.5 pt-0.5 border-t border-slate-100">
             <span className="w-2 h-2 rounded-full bg-blue-600" />
-            <span className="font-bold text-blue-700">Active Truck Route</span>
+            <span className="font-bold text-blue-700">Selected Truck Route</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-slate-700" />

@@ -119,22 +119,34 @@ export default function ShipmentCard({
 
         <div className="flex items-center gap-2">
           {renderRiskBadge()}
-          <div className="text-right">
-            <span className="text-[10px] text-[#64748B] block font-medium leading-none mb-0.5">
-              Match Score
-            </span>
-            <div
-              className={`text-lg font-black leading-none ${
-                isCancelled
-                  ? 'text-[#EF4444] line-through'
-                  : safeScore >= 90
-                  ? 'text-[#2563EB]'
-                  : safeScore >= 80
-                  ? 'text-slate-800'
-                  : 'text-[#64748B]'
-              }`}
-            >
-              {safeScore}%
+          <div className="flex items-center gap-2">
+            <div className="text-right">
+              <span className="text-[10px] text-[#64748B] block font-medium leading-none mb-0.5">
+                Match Score
+              </span>
+              <div
+                className={`text-base font-extrabold leading-none ${
+                  isCancelled
+                    ? 'text-[#EF4444] line-through'
+                    : safeScore >= 90
+                    ? 'text-[#2563EB]'
+                    : safeScore >= 80
+                    ? 'text-slate-800'
+                    : 'text-[#64748B]'
+                }`}
+              >
+                {safeScore}%
+              </div>
+            </div>
+            <div className="text-right border-l border-slate-200 pl-2">
+              <span className="text-[10px] text-[#64748B] block font-medium leading-none mb-0.5">
+                Final Score
+              </span>
+              <div className="text-base font-black text-slate-800 leading-none">
+                {isCancelled
+                  ? '—'
+                  : `${shipment.finalAllocationScore || Math.max(1, Math.round(safeScore * 0.92))}%`}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-0.5 ml-1 border-l border-[#E2E8F0] pl-1.5">

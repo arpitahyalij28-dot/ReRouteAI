@@ -155,11 +155,11 @@ export default function TruckCard({
           </div>
         </div>
 
-        {/* Gauge & Countdown Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl mb-4">
+        {/* Gauge & Countdown Section - Clean vertical stack to avoid cramped columns */}
+        <div className="flex flex-col gap-3 p-3.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl mb-4">
           {/* Radial Probability Gauge */}
-          <div className="flex items-center gap-3">
-            <div className="relative w-[76px] h-[76px] shrink-0 flex items-center justify-center">
+          <div className="flex items-center gap-3.5">
+            <div className="relative w-[72px] h-[72px] shrink-0 flex items-center justify-center">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
                 <circle
                   cx="40"
@@ -197,27 +197,34 @@ export default function TruckCard({
                 </span>
               </div>
             </div>
-            <div>
-              <span className="text-xs font-bold text-[#0F172A] block leading-tight">
-                Empty Return Risk
-              </span>
-              <p className="text-[11px] text-[#64748B] mt-0.5 leading-snug">
-                Destination has 4.2x freight demand deficit.
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-bold text-[#0F172A]">
+                  Empty Return Risk
+                </span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                  {truck.emptyReturnProbability}% Predictive Risk
+                </span>
+              </div>
+              <p className="text-[11px] text-[#64748B] mt-1 leading-relaxed break-words">
+                Destination has 4.2x freight demand deficit. Predictive backhaul matching recommended before arrival.
               </p>
             </div>
           </div>
 
           {/* Countdown Clock Box */}
-          <div className="flex flex-col justify-center border-t sm:border-t-0 sm:border-l border-[#E2E8F0] pt-2 sm:pt-0 sm:pl-3">
-            <div className="flex items-center gap-1.5 text-xs text-[#64748B] mb-0.5">
-              <Clock className="w-3.5 h-3.5 text-blue-600" />
-              <span className="font-semibold text-[#0F172A]">Backhaul Opportunity Window</span>
+          <div className="border-t border-[#E2E8F0] pt-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs text-[#64748B]">
+                <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span className="font-semibold text-[#0F172A]">Backhaul Opportunity Window</span>
+              </div>
+              <div className="font-mono text-base font-black text-[#0F172A] tracking-tight">
+                {countdown.formatted}
+              </div>
             </div>
-            <div className="font-mono text-lg font-black text-[#0F172A] tracking-tight">
-              {countdown.formatted}
-            </div>
-            <p className="text-[10px] text-[#64748B]">
-              Expected empty at {truck.expectedDeliveryTime} IST ({truck.destination?.split(' ')[0]})
+            <p className="text-[10px] text-[#64748B] mt-1">
+              Expected empty at {truck.expectedDeliveryTime} IST ({truck.destination?.split(' ')[0] || 'Destination'})
             </p>
           </div>
         </div>
@@ -259,20 +266,42 @@ export default function TruckCard({
         </div>
 
         <div className="space-y-3">
-          {/* Corridor Progress Bar */}
-          <div>
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="font-semibold text-[#0F172A]">{truck.origin}</span>
-              <span className="text-[11px] text-[#64748B] font-medium">
-                {tripProgressPct}% ({totalKm - remainingKm} of {totalKm} km)
-              </span>
-              <span className="font-semibold text-[#0F172A]">{truck.destination}</span>
+          {/* Corridor Route on Separate Rows */}
+          <div className="space-y-2 p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+            {/* Origin Row */}
+            <div className="flex items-start gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1 shrink-0 ring-2 ring-emerald-100" />
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Origin</span>
+                <span className="text-xs font-semibold text-[#0F172A] break-words">
+                  {truck.origin} {truck.originHub && !truck.origin?.includes(truck.originHub) ? `(${truck.originHub})` : ''}
+                </span>
+              </div>
             </div>
-            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${tripProgressPct}%` }}
-              />
+
+            {/* Destination Row */}
+            <div className="flex items-start gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-rose-500 mt-1 shrink-0 ring-2 ring-rose-100" />
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Destination</span>
+                <span className="text-xs font-semibold text-[#0F172A] break-words">
+                  {truck.destination} {truck.destinationHub && !truck.destination?.includes(truck.destinationHub) ? `(${truck.destinationHub})` : ''}
+                </span>
+              </div>
+            </div>
+
+            {/* Progress Bar Below Routes */}
+            <div className="pt-1.5 border-t border-slate-200">
+              <div className="flex items-center justify-between text-[11px] text-slate-600 mb-1">
+                <span className="font-semibold text-[#0F172A]">Trip Progress: {tripProgressPct}%</span>
+                <span>{totalKm - remainingKm} of {totalKm} km ({remainingKm} km left)</span>
+              </div>
+              <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${tripProgressPct}%` }}
+                />
+              </div>
             </div>
           </div>
 

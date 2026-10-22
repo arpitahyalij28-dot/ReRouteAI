@@ -5,8 +5,8 @@ export const STAGES = [
   { id: 'predict', label: 'Predict', tagline: 'Early empty probability', icon: Eye },
   { id: 'warn', label: 'Warn', tagline: 'Real-time alert & countdown', icon: TriangleAlert },
   { id: 'match', label: 'Match', tagline: 'Candidate corridor discovery', icon: GitMerge },
-  { id: 'optimize', label: 'Optimize', tagline: 'Multi-criteria scoring', icon: Cpu },
-  { id: 'explain', label: 'Explain', tagline: 'Why / Why Not? factors', icon: CircleHelp },
+  { id: 'optimize', label: 'Optimize', tagline: 'Scored on 6 factors', icon: Cpu },
+  { id: 'explain', label: 'Explain', tagline: 'Why this match?', icon: CircleHelp },
   { id: 'recover', label: 'Recover', tagline: 'Autonomous disruption fix', icon: RefreshCw },
   { id: 'measure', label: 'Measure', tagline: 'Carbon & INR sustainability', icon: Leaf },
 ];

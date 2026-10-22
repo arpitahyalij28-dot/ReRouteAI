@@ -2,7 +2,7 @@
 // 100% data-driven, reactive to multi-truck fleet optimization, disruption injection, and candidate evaluation.
 
 import React, { useState, useMemo } from 'react';
-import { Sparkles, Package, Plus, AlertCircle } from 'lucide-react';
+import { Sparkles, Package, Plus, AlertCircle, Info } from 'lucide-react';
 import FleetOverview from '../components/FleetOverview';
 import PipelineStages from '../components/PipelineStages';
 import TruckCard from '../components/TruckCard';
@@ -277,6 +277,8 @@ export default function Dashboard() {
         trucks={trucks}
         assignments={assignments}
         settings={settings}
+        onAddTruck={() => setIsAddTruckOpen(true)}
+        onLoadDemo={handleRequestLoadDemo}
       />
 
       {/* 2. Pipeline Stages Indicator */}
@@ -412,8 +414,14 @@ export default function Dashboard() {
                     {shipments.filter((s) => !s.isCancelled).length} candidate loads
                   </span>
                 </h3>
-                <p className="text-[11px] text-[#64748B]">
-                  Scored via Multi-Criteria Decision Analysis + Kuhn-Munkres global fleet allocation
+                <p className="text-[11px] text-[#64748B] flex items-center gap-1.5 flex-wrap">
+                  <span>Scored on 6 factors • Best truck-to-load pairing across your whole fleet</span>
+                  <span className="group relative inline-flex items-center cursor-help" title="Algorithm Details">
+                    <Info className="w-3 h-3 text-slate-400 hover:text-blue-600" />
+                    <span className="pointer-events-none absolute left-0 bottom-full mb-1 hidden group-hover:block w-56 rounded-md bg-slate-900 px-2.5 py-1.5 text-[10px] text-white shadow-md z-30 font-normal">
+                      Multi-Criteria Decision Analysis (6 factors) paired with Kuhn-Munkres global fleet allocation solver.
+                    </span>
+                  </span>
                 </p>
               </div>
               <div className="text-[11px] text-[#64748B] flex items-center gap-1">

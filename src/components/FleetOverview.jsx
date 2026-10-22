@@ -15,6 +15,7 @@ import {
   RefreshCw,
   TrendingDown,
   Navigation,
+  Info,
 } from 'lucide-react';
 import { formatCountdown } from '../utils/scoring';
 
@@ -167,8 +168,14 @@ export default function FleetOverview({
                 {totalTrucks} Vehicles Active
               </span>
             </div>
-            <p className="text-xs text-[#64748B] mt-1">
-              Real-time corridor telemetry, Hungarian assignment status, and empty-return risk monitoring.
+            <p className="text-xs text-[#64748B] mt-1 flex items-center gap-1.5">
+              <span>Real-time corridor telemetry, fleet-wide best match status, and empty-return risk monitoring.</span>
+              <span className="group relative inline-flex items-center cursor-help" title="Algorithm Details">
+                <Info className="w-3 h-3 text-slate-400 hover:text-blue-600" />
+                <span className="pointer-events-none absolute left-0 bottom-full mb-1 hidden group-hover:block w-52 rounded-md bg-slate-900 px-2 py-1 text-[10px] text-white shadow-md z-30 font-normal">
+                  Fleet optimization solved via Kuhn-Munkres bipartite matching algorithm.
+                </span>
+              </span>
             </p>
           </div>
 
@@ -212,7 +219,7 @@ export default function FleetOverview({
             <div className="text-lg font-black text-emerald-700 mt-1">
               {matchedTrucksCount} <span className="text-xs font-semibold text-slate-400">/ {totalTrucks}</span>
             </div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Allocated via Hungarian solver</div>
+            <div className="text-[10px] text-slate-500 mt-0.5">Fleet-wide best match allocated</div>
           </div>
 
           <div className="bg-white p-3 rounded-xl border border-amber-100 shadow-xs">

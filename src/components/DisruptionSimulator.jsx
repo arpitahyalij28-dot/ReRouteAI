@@ -11,6 +11,7 @@ import {
   CalendarClock,
   LoaderCircle,
   CircleCheck,
+  Info,
 } from 'lucide-react';
 
 export default function DisruptionSimulator({
@@ -203,10 +204,16 @@ export default function DisruptionSimulator({
               <div className="flex items-center justify-between font-bold text-slate-800">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-                  <span>Fleet Combinatorial Reassignment Audit</span>
+                  <span>Fleet Reassignment Audit</span>
                 </span>
-                <span className="text-[10px] text-slate-500 font-normal">
-                  Kuhn-Munkres Bipartite Reallocation
+                <span className="text-[10px] text-slate-500 font-normal flex items-center gap-1">
+                  <span>Fleet-wide best match</span>
+                  <span className="group relative inline-flex items-center cursor-help" title="Algorithm Details">
+                    <Info className="w-3 h-3 text-slate-400 hover:text-blue-600" />
+                    <span className="pointer-events-none absolute right-0 bottom-full mb-1 hidden group-hover:block w-52 rounded-md bg-slate-900 px-2 py-1 text-[10px] text-white shadow-md z-30 font-normal">
+                      Combinatorial optimization via Kuhn-Munkres bipartite reallocation.
+                    </span>
+                  </span>
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">

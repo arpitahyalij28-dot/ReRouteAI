@@ -2,9 +2,10 @@
 // Validates truck parameters, resolves cities to coordinates, and updates fleet state.
 
 import React, { useState, useEffect } from 'react';
-import { X, Truck, AlertCircle, Check } from 'lucide-react';
+import { X, Truck, AlertCircle, Check, ChevronDown, Sparkles } from 'lucide-react';
 import { CITIES } from '../data/cities';
 import { useDataContext } from '../context/DataContext';
+import { calculateDeadheadRisk } from '../utils/scoring';
 
 const VEHICLE_TYPES = [
   '10T Heavy Commercial Vehicle',
@@ -18,8 +19,18 @@ const VEHICLE_TYPES = [
 
 const STATUS_OPTIONS = ['In-Transit', 'Available', 'Delayed'];
 
+function getNextFreeTruckId(existingTrucks = []) {
+  const ids = new Set((existingTrucks || []).map((t) => t.id?.trim()));
+  let num = 101;
+  while (ids.has(`T${num}`)) {
+    num++;
+  }
+  return `T${num}`;
+}
+
 export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) {
-  const { addTruck, updateTruck, trucks } = useDataContext();
+  const { addTruck, updateTruck, trucks, shipments } = useDataContext();
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const [formData, setFormData] = useState({
     id: '',
@@ -34,7 +45,6 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
     departureTime: '08:00',
     expectedDeliveryTime: '14:15',
     status: 'In-Transit',
-    emptyReturnProbability: 85,
     speedKmH: 52,
   });
 
@@ -55,14 +65,13 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
         departureTime: editingTruck.departureTime || '08:00',
         expectedDeliveryTime: editingTruck.expectedDeliveryTime || '14:15',
         status: editingTruck.status || 'In-Transit',
-        emptyReturnProbability: editingTruck.emptyReturnProbability || 85,
         speedKmH: editingTruck.speedKmH || 52,
       });
     } else {
-      // Auto-suggest next truck ID
-      const nextNum = trucks.length + 101;
+      // Auto-generate the next free Truck ID (T101, T102, T103...)
+      const autoId = getNextFreeTruckId(trucks);
       setFormData({
-        id: `T${nextNum}`,
+        id: autoId,
         regNumber: `MH-15-AB-${Math.floor(1000 + Math.random() * 9000)}`,
         driverName: '',
         driverPhone: '+91 98',
@@ -74,18 +83,34 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
         departureTime: '08:00',
         expectedDeliveryTime: '14:15',
         status: 'In-Transit',
-        emptyReturnProbability: 85,
         speedKmH: 52,
       });
     }
     setErrors({});
-  }, [editingTruck, isOpen, trucks.length]);
+    setShowAdvanced(false);
+  }, [editingTruck, isOpen, trucks]);
 
   if (!isOpen) return null;
 
   const validate = () => {
     const errs = {};
-    if (!formData.id?.trim()) errs.id = 'Truck ID is required';
+    const trimmedId = formData.id?.trim();
+    if (!trimmedId) {
+      errs.id = 'Truck ID is required';
+    } else if (
+      !editingTruck &&
+      trucks.some((t) => t.id?.toLowerCase() === trimmedId.toLowerCase())
+    ) {
+      errs.id = `Truck ID "${trimmedId}" already exists. Please choose a unique ID.`;
+    } else if (
+      editingTruck &&
+      trucks.some(
+        (t) => t.id?.toLowerCase() === trimmedId.toLowerCase() && t.id !== editingTruck.id
+      )
+    ) {
+      errs.id = `Truck ID "${trimmedId}" is already taken by another vehicle.`;
+    }
+
     if (!formData.driverName?.trim()) errs.driverName = 'Driver name is required';
     if (!formData.origin) errs.origin = 'Origin city is required';
     if (!formData.destination) errs.destination = 'Destination city is required';
@@ -112,10 +137,17 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
     e.preventDefault();
     if (!validate()) return;
 
+    // Automatically calculate predictive empty-return risk
+    const computedRisk = calculateDeadheadRisk(formData, shipments);
+    const truckPayload = {
+      ...formData,
+      emptyReturnProbability: computedRisk,
+    };
+
     if (editingTruck) {
-      updateTruck(editingTruck.id, formData);
+      updateTruck(editingTruck.id, truckPayload);
     } else {
-      addTruck(formData);
+      addTruck(truckPayload);
     }
     onClose();
   };
@@ -131,10 +163,10 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
             </div>
             <div>
               <h3 className="text-base font-bold text-[#0F172A]">
-                {editingTruck ? `Edit Vehicle ${editingTruck.id}` : 'Add Corridor Fleet Truck'}
+                {editingTruck ? `Edit Vehicle ${editingTruck.id}` : 'Add Commercial Fleet Vehicle'}
               </h3>
               <p className="text-xs text-[#64748B]">
-                Configure telemetry and capacity parameters for early empty-return prediction
+                Configure telemetry and capacity parameters; empty-return risk will be predicted automatically
               </p>
             </div>
           </div>
@@ -148,23 +180,29 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
-          {/* Row 1: Truck ID & Reg Number */}
+          {/* Row 1: Truck ID (Auto-generated & Editable) & Reg Number */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-[#0F172A] mb-1">
-                Truck ID <span className="text-rose-500">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-[#0F172A]">
+                  Truck ID <span className="text-rose-500">*</span>
+                </label>
+                <span className="text-[10px] text-blue-600 font-semibold">Auto-generated</span>
+              </div>
               <input
                 type="text"
-                disabled={!!editingTruck}
                 value={formData.id}
-                onChange={(e) => setFormData({ ...formData, id: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, id: e.target.value.toUpperCase() })}
                 placeholder="e.g. T101"
-                className={`w-full px-3 py-2 text-xs rounded-xl border bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
-                  errors.id ? 'border-rose-400' : 'border-[#E2E8F0]'
-                } ${editingTruck ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
+                className={`w-full px-3 py-2 text-xs rounded-xl border bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono font-bold ${
+                  errors.id ? 'border-rose-400 ring-2 ring-rose-200' : 'border-[#E2E8F0]'
+                }`}
               />
-              {errors.id && <p className="text-[10px] text-rose-500 mt-0.5">{errors.id}</p>}
+              {errors.id ? (
+                <p className="text-[10px] text-rose-500 mt-1 font-medium">{errors.id}</p>
+              ) : (
+                <p className="text-[10px] text-slate-400 mt-0.5">Editable unique identifier</p>
+              )}
             </div>
 
             <div>
@@ -176,7 +214,7 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
                 value={formData.regNumber}
                 onChange={(e) => setFormData({ ...formData, regNumber: e.target.value })}
                 placeholder="e.g. MH-15-EG-4921"
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono"
               />
             </div>
           </div>
@@ -210,7 +248,7 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
                 value={formData.driverPhone}
                 onChange={(e) => setFormData({ ...formData, driverPhone: e.target.value })}
                 placeholder="+91 98230 45812"
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono"
               />
             </div>
           </div>
@@ -219,16 +257,16 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-[#0F172A] mb-1">
-                Vehicle Type
+                Vehicle Classification
               </label>
               <select
                 value={formData.vehicleType}
                 onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
                 className="w-full px-3 py-2 text-xs rounded-xl border border-[#E2E8F0] bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
               >
-                {VEHICLE_TYPES.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
+                {VEHICLE_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
                   </option>
                 ))}
               </select>
@@ -236,27 +274,27 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
 
             <div>
               <label className="block text-xs font-bold text-[#0F172A] mb-1">
-                Status
+                Current Status
               </label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#E2E8F0] bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-[#E2E8F0] bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer font-semibold"
               >
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
+                {STATUS_OPTIONS.map((st) => (
+                  <option key={st} value={st}>
+                    {st}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Row 4: Origin & Destination (City Dropdowns) */}
+          {/* Row 4: Origin & Destination */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-[#0F172A] mb-1">
-                Origin City <span className="text-rose-500">*</span>
+                Origin Hub <span className="text-rose-500">*</span>
               </label>
               <select
                 value={formData.origin}
@@ -267,7 +305,7 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
               >
                 {CITIES.map((c) => (
                   <option key={c.name} value={c.name}>
-                    {c.name} ({c.state})
+                    {c.name} ({c.hub})
                   </option>
                 ))}
               </select>
@@ -276,7 +314,7 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
 
             <div>
               <label className="block text-xs font-bold text-[#0F172A] mb-1">
-                Destination City <span className="text-rose-500">*</span>
+                Destination Hub <span className="text-rose-500">*</span>
               </label>
               <select
                 value={formData.destination}
@@ -287,7 +325,7 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
               >
                 {CITIES.map((c) => (
                   <option key={c.name} value={c.name}>
-                    {c.name} ({c.state})
+                    {c.name} ({c.hub})
                   </option>
                 ))}
               </select>
@@ -376,39 +414,53 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
             </div>
           </div>
 
-          {/* Row 7: Empty Return Risk % & Avg Speed */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-[#0F172A] mb-1">
-                Deadhead Probability ({formData.emptyReturnProbability}%)
-              </label>
-              <input
-                type="range"
-                min="10"
-                max="99"
-                value={formData.emptyReturnProbability}
-                onChange={(e) =>
-                  setFormData({ ...formData, emptyReturnProbability: Number(e.target.value) })
-                }
-                className="w-full accent-blue-600 cursor-pointer"
-              />
+          {/* Predictive Empty Return Risk Notice */}
+          <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl text-xs flex items-start gap-2.5">
+            <Sparkles className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+            <div className="text-slate-700 leading-snug">
+              <span className="font-bold text-blue-900 block">Predictive Deadhead Risk Engine</span>
+              <span>
+                Empty-return probability is automatically computed based on freight demand deficit at{' '}
+                <strong>{formData.destination}</strong>, unassigned backhaul pool, and ETA buffer.
+              </span>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-xs font-bold text-[#0F172A] mb-1">
-                Highway Speed ({formData.speedKmH} km/h)
-              </label>
-              <input
-                type="range"
-                min="30"
-                max="80"
-                value={formData.speedKmH}
-                onChange={(e) =>
-                  setFormData({ ...formData, speedKmH: Number(e.target.value) })
-                }
-                className="w-full accent-blue-600 cursor-pointer"
+          {/* Collapsible Advanced Settings (Highway Speed) */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-xs font-bold text-slate-700 transition-colors cursor-pointer"
+            >
+              <span>Advanced Corridor Settings</span>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-500 transition-transform ${
+                  showAdvanced ? 'rotate-180' : ''
+                }`}
               />
-            </div>
+            </button>
+            {showAdvanced && (
+              <div className="p-4 space-y-2 bg-white animate-in fade-in duration-150">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                  <span>Corridor Cruise Speed:</span>
+                  <span className="font-mono font-bold text-blue-600">{formData.speedKmH} km/h</span>
+                </div>
+                <input
+                  type="range"
+                  min="30"
+                  max="80"
+                  value={formData.speedKmH}
+                  onChange={(e) =>
+                    setFormData({ ...formData, speedKmH: Number(e.target.value) })
+                  }
+                  className="w-full accent-blue-600 cursor-pointer"
+                />
+                <p className="text-[10px] text-slate-400">
+                  Calibrated for NH 160 Kasara Ghat terrain profile (default: 52 km/h).
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Footer Actions */}
@@ -424,8 +476,8 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
               type="submit"
               className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              <Check className="w-4 h-4" />
-              <span>{editingTruck ? 'Save Vehicle' : 'Add Vehicle'}</span>
+              <Check className="w-3.5 h-3.5" />
+              <span>{editingTruck ? 'Update Vehicle' : 'Register Vehicle'}</span>
             </button>
           </div>
         </form>

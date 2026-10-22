@@ -118,7 +118,7 @@ export default function Fleet() {
             }`}
           >
             <Cpu className="w-4 h-4" />
-            <span>{isSolving ? 'Solving Global Matrix...' : 'Optimize Whole Fleet (Hungarian Solver)'}</span>
+            <span>{isSolving ? 'Pairing Fleet Loads...' : 'Fleet-Wide Best Match (All Trucks)'}</span>
           </button>
         </div>
       </div>
