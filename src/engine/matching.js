@@ -14,6 +14,12 @@ export const DEFAULT_WEIGHTS = {
   disruption: 10
 };
 
+export const DEFAULT_WEATHER_PENALTIES = {
+  low: 0,
+  medium: 15,
+  high: 35,
+};
+
 /**
  * Normalizes weight keys to sum to 100
  */
@@ -65,6 +71,17 @@ export function evaluateShipments(truck, shipments = [], settings = {}) {
   const mileage = Number(truck.mileage || truck.vehicleMileageKmPerL) || 4.0;
   const emissionFactor = Number(settings.co2Factor || truck.emissionFactorKgPerL) || 2.68;
 
+  // Weather configuration (optional, defaults to no weather impact)
+  const weather = settings.weather;
+  const weatherEnabled = settings.weatherEnabled !== false && weather?.enabled !== false;
+  const weatherPenalties = settings.weatherPenalties || DEFAULT_WEATHER_PENALTIES;
+  const weatherRisk = (weather && weatherEnabled)
+    ? (weather.disruptionImpact?.riskLevel || weather.riskLevel || 'low')
+    : 'low';
+  const weatherPenalty = (weatherEnabled && weatherPenalties[weatherRisk] != null)
+    ? Number(weatherPenalties[weatherRisk])
+    : 0;
+
   // Normalize truck capacity in kg
   let truckMaxCap = Number(truck.maxCapacity);
   if (isNaN(truckMaxCap) || truckMaxCap <= 0) {
@@ -87,8 +104,8 @@ export function evaluateShipments(truck, shipments = [], settings = {}) {
     const loadedKm = route.isValid ? route.loadedBackhaulKm : 0;
     const detourKm = route.isValid ? route.detourKm : (Number(shipment.detourKm) || 0);
 
-    // 2. ETA calculations
-    const eta = calculateETA(truck, shipment, deadheadKm, speed, 20);
+    // 2. ETA calculations (with weather slowdown when weather data exists)
+    const eta = calculateETA(truck, shipment, deadheadKm, speed, 20, weatherEnabled ? weather : null);
 
     // 3. Feasibility Analysis
     let cargoWeight = Number(shipment.cargoWeight);
@@ -214,6 +231,11 @@ export function evaluateShipments(truck, shipments = [], settings = {}) {
       disruptionRiskScore = shipment.rawFactors.disruption || shipment.rawFactors.risk;
     }
 
+    // Weather-aware disruption penalty (clamped 5..100)
+    if (weatherPenalty > 0) {
+      disruptionRiskScore = Math.max(5, Math.min(100, disruptionRiskScore - weatherPenalty));
+    }
+
     const rawScore =
       (routeCompScore * weights.route +
         timeCompScore * weights.time +
@@ -302,6 +324,19 @@ export function evaluateShipments(truck, shipments = [], settings = {}) {
           description: `Yields ₹${sustainability.netEconomicGain.toLocaleString('en-IN')} net margin above detour fuel cost.`,
         });
       }
+
+      if (weatherPenalty > 0) {
+        const weatherCondition = weather?.currentWeather?.condition || weather?.condition || 'Adverse corridor weather';
+        const locationName = weather?.location?.name || truck.currentLocationName || 'Corridor transit route';
+        const delayMins = eta.weatherSlowdownMins || 0;
+        const etaText = delayMins > 0 ? `, ETA +${delayMins} min` : '';
+
+        whyReasons.push({
+          type: weatherRisk === 'high' ? 'warning' : 'info',
+          title: weatherRisk === 'high' ? 'Adverse weather hazard' : 'Weather slowdown advisory',
+          description: `${weatherCondition} near ${locationName}: disruption score reduced (-${weatherPenalty} pts)${etaText}.`,
+        });
+      }
     } else {
       infeasibleReasons.forEach((reason) => {
         whyReasons.push({
@@ -368,7 +403,9 @@ export function evaluateShipments(truck, shipments = [], settings = {}) {
         weightedScore: Number(((disruptionRiskScore * weights.disruption) / totalWeight).toFixed(1)),
         label: 'Low Disruption Risk',
         weightPctLabel: `${Math.round(weights.disruption)}%`,
-        detail: `${disruptionRiskScore}/100 stability score`,
+        detail: weatherPenalty > 0
+          ? `${disruptionRiskScore}/100 stability score (-${weatherPenalty} weather penalty: ${weatherRisk})`
+          : `${disruptionRiskScore}/100 stability score`,
       },
     };
 
@@ -417,6 +454,13 @@ export function evaluateShipments(truck, shipments = [], settings = {}) {
       detourKm,
       eta,
       sustainability,
+      weatherImpact: weatherPenalty > 0 ? {
+        riskLevel: weatherRisk,
+        penalty: weatherPenalty,
+        condition: weather?.currentWeather?.condition || weather?.condition || 'Adverse weather',
+        slowdownMins: eta.weatherSlowdownMins || 0,
+        isSimulated: Boolean(weather?.isSimulated),
+      } : null,
     };
   });
 

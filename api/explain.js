@@ -24,10 +24,24 @@ const ExplainSchema = z.object({
   etaBufferMinutes: z.number().optional().default(15),
   capacityUtilizationPct: z.number().optional().default(80),
   grossYieldInr: z.number().optional().default(25000),
+  weatherRiskLevel: z.enum(['low', 'medium', 'high']).optional(),
+  weatherPenalty: z.number().optional().default(0),
+  weatherDisruptionDelta: z.number().optional().default(0),
 });
 
 function generateDeterministicExplanation(data) {
-  const { shipmentId, matchScore, isFeasible, factors = {}, detourKm, etaBufferMinutes, capacityUtilizationPct, grossYieldInr } = data;
+  const {
+    shipmentId,
+    matchScore,
+    isFeasible,
+    factors = {},
+    detourKm,
+    etaBufferMinutes,
+    capacityUtilizationPct,
+    grossYieldInr,
+    weatherRiskLevel,
+    weatherPenalty,
+  } = data;
 
   if (!isFeasible) {
     return `Shipment ${shipmentId} was disqualified by the optimization engine because it breaches core physical or timing feasibility limits. The required payload or schedule cannot be safely accommodated by the vehicle's remaining corridor capacity. Dispatchers should keep this vehicle committed to compliant candidates.`;
@@ -47,7 +61,12 @@ function generateDeterministicExplanation(data) {
 
   const yieldPhrase = `The backhaul delivers ${capacityUtilizationPct}% payload utilization and ₹${grossYieldInr.toLocaleString('en-IN')} gross spot yield.`;
 
-  return `Shipment ${shipmentId} ranks at ${matchScore}% overall compatibility based on multi-criteria analysis. ${timingPhrase} ${detourPhrase} ${yieldPhrase}`;
+  const weatherPhrase =
+    weatherPenalty > 0 || (weatherRiskLevel && weatherRiskLevel !== 'low')
+      ? ` Corridor atmospheric conditions indicate ${weatherRiskLevel || 'moderate'} weather risk with a -${weatherPenalty || 15} pt disruption penalty.`
+      : '';
+
+  return `Shipment ${shipmentId} ranks at ${matchScore}% overall compatibility based on multi-criteria analysis. ${timingPhrase} ${detourPhrase} ${yieldPhrase}${weatherPhrase}`;
 }
 
 export default async function handler(req, res) {
@@ -78,7 +97,7 @@ export default async function handler(req, res) {
       const timeout = setTimeout(() => controller.abort(), 3500);
 
       const prompt = `You are an AI logistics assistant for freight dispatchers. In exactly 3 professional, concise sentences, explain why shipment ${data.shipmentId} achieved a match score of ${data.matchScore}% (${data.isFeasible ? 'FEASIBLE' : 'INFEASIBLE'}).
-Factors: Route ${data.factors?.route}/100, Time ${data.factors?.time}/100 (buffer: ${data.etaBufferMinutes}m), Capacity ${data.factors?.capacity}/100 (${data.capacityUtilizationPct}% full), Detour ${data.factors?.detour}/100 (+${data.detourKm}km), Cost ${data.factors?.cost}/100 (₹${data.grossYieldInr}), Disruption ${data.factors?.disruption}/100.
+Factors: Route ${data.factors?.route}/100, Time ${data.factors?.time}/100 (buffer: ${data.etaBufferMinutes}m), Capacity ${data.factors?.capacity}/100 (${data.capacityUtilizationPct}% full), Detour ${data.factors?.detour}/100 (+${data.detourKm}km), Cost ${data.factors?.cost}/100 (₹${data.grossYieldInr}), Disruption ${data.factors?.disruption}/100${data.weatherPenalty ? `, Weather Penalty: -${data.weatherPenalty}pts (${data.weatherRiskLevel || 'high'})` : ''}.
 Do not include headings, bullet points, or markdown. Output only the 3 sentences.`;
 
       const response = await fetch('https://api.anthropic.com/v1/messages', {

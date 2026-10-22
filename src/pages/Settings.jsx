@@ -2,9 +2,9 @@
 // Multi-attribute weight tuning with auto-normalization and live +/-10 pt sensitivity matrix.
 
 import React, { useState, useMemo } from 'react';
-import { Sliders, CheckCircle2, RotateCcw, Activity, ShieldCheck, Info } from 'lucide-react';
+import { Sliders, CheckCircle2, RotateCcw, Activity, ShieldCheck, Info, CloudRain } from 'lucide-react';
 import { useReRoute } from '../context/ReRouteContext';
-import { normalizeWeights, evaluateShipments } from '../engine/index';
+import { normalizeWeights, evaluateShipments, DEFAULT_WEATHER_PENALTIES } from '../engine/index';
 import { FACTOR_WEIGHTS } from '../data/mockData';
 
 export default function Settings() {
@@ -13,6 +13,10 @@ export default function Settings() {
   const [speedKmH, setSpeedKmH] = useState(settings?.speedKmH || 45);
   const [maxDetourKm, setMaxDetourKm] = useState(settings?.maxDetourKm || 80);
   const [fuelPrice, setFuelPrice] = useState(settings?.fuelPrice || 95.0);
+  const [weatherEnabled, setWeatherEnabled] = useState(settings?.weatherEnabled !== false);
+  const [weatherPenalties, setWeatherPenalties] = useState(
+    settings?.weatherPenalties || DEFAULT_WEATHER_PENALTIES
+  );
   const [isSaved, setIsSaved] = useState(false);
 
   const activeTruck = trucks[0];
@@ -30,6 +34,8 @@ export default function Settings() {
     setSpeedKmH(45);
     setMaxDetourKm(80);
     setFuelPrice(95.0);
+    setWeatherEnabled(true);
+    setWeatherPenalties({ ...DEFAULT_WEATHER_PENALTIES });
     setIsSaved(false);
   };
 
@@ -39,16 +45,25 @@ export default function Settings() {
       speedKmH: Number(speedKmH),
       maxDetourKm: Number(maxDetourKm),
       fuelPrice: Number(fuelPrice),
+      weatherEnabled,
+      weatherPenalties,
     });
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };
 
-  // Base ranking with current weights
+  // Base ranking with current weights & weather
   const baseEvaluated = useMemo(() => {
     if (!activeTruck || shipments.length === 0) return [];
-    return evaluateShipments(activeTruck, shipments, { weights, speedKmH, maxDetourKm });
-  }, [activeTruck, shipments, weights, speedKmH, maxDetourKm]);
+    return evaluateShipments(activeTruck, shipments, {
+      weights,
+      speedKmH,
+      maxDetourKm,
+      weather: settings?.weather,
+      weatherEnabled,
+      weatherPenalties,
+    });
+  }, [activeTruck, shipments, weights, speedKmH, maxDetourKm, settings?.weather, weatherEnabled, weatherPenalties]);
 
   const baseTopPick = baseEvaluated.find((e) => e.isFeasible)?.shipmentId || 'None';
 
@@ -201,6 +216,95 @@ export default function Settings() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Weather-Aware Scoring Tuners */}
+          <div className="bg-white rounded-[12px] border border-[#E2E8F0] shadow-soft p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+              <div className="flex items-center gap-2">
+                <span className="p-1 rounded-md bg-indigo-50 text-indigo-600">
+                  <CloudRain className="w-4 h-4" />
+                </span>
+                <div>
+                  <h2 className="text-sm font-bold text-[#0F172A]">Weather-Aware Scoring</h2>
+                  <p className="text-[11px] text-[#64748B]">
+                    Convert atmospheric precipitation and wind risk into disruption score penalties and transit slowdowns.
+                  </p>
+                </div>
+              </div>
+
+              {/* Weather Enable/Disable Switch */}
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={weatherEnabled}
+                  onChange={(e) => setWeatherEnabled(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                <span className="ml-2 text-xs font-bold text-[#0F172A]">
+                  {weatherEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </label>
+            </div>
+
+            {weatherEnabled ? (
+              <div className="space-y-3 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-amber-900 block mb-1">
+                      Medium Weather Penalty (pts)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={weatherPenalties.medium ?? 15}
+                      onChange={(e) =>
+                        setWeatherPenalties((prev) => ({
+                          ...prev,
+                          medium: Number(e.target.value),
+                        }))
+                      }
+                      className="w-full px-2.5 py-1.5 rounded border border-amber-200 bg-amber-50/40 text-xs font-bold text-amber-950"
+                    />
+                    <span className="text-[10px] text-[#64748B] mt-0.5 block">
+                      Light/moderate rain (-10% transit speed)
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-rose-900 block mb-1">
+                      High Weather Penalty (pts)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="70"
+                      value={weatherPenalties.high ?? 35}
+                      onChange={(e) =>
+                        setWeatherPenalties((prev) => ({
+                          ...prev,
+                          high: Number(e.target.value),
+                        }))
+                      }
+                      className="w-full px-2.5 py-1.5 rounded border border-rose-200 bg-rose-50/40 text-xs font-bold text-rose-950"
+                    />
+                    <span className="text-[10px] text-[#64748B] mt-0.5 block">
+                      Violent rain & storms (-25% transit speed)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-[#64748B]">
+                  <strong>Atmospheric Model:</strong> Live forecasts from Open-Meteo. Penalties apply directly to the 6th multi-criteria component (Low Disruption Risk, clamped 5..100).
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-slate-50 rounded-lg text-xs text-[#64748B]">
+                Weather-aware scoring is currently disabled. Disruption calculations rely solely on schedule buffer margins.
+              </div>
+            )}
           </div>
         </div>
 

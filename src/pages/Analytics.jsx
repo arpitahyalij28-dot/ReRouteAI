@@ -23,10 +23,10 @@ export default function Analytics() {
       a.truckId,
       a.shipmentId,
       a.matchScore,
-      a.sustainability?.emptyKmAvoided || 131,
-      a.sustainability?.fuelSavedLitres || 32.8,
-      a.sustainability?.costSavedInr || a.costGain || 3116,
-      a.sustainability?.co2ReducedKg || 87.9,
+      a.sustainability?.emptyKmAvoided ?? 0,
+      a.sustainability?.fuelSavedLitres ?? 0,
+      a.sustainability?.costSavedInr ?? a.costGain ?? 0,
+      a.sustainability?.co2ReducedKg ?? 0,
       a.assignedAt || new Date().toISOString(),
     ]);
 
@@ -56,7 +56,7 @@ export default function Analytics() {
             <h1 className="text-lg font-bold text-[#0F172A]">Carbon-Aware ESG Scope 1 Sustainability Analytics</h1>
           </div>
           <p className="text-xs text-[#64748B] mt-1">
-            Certified Scope 1 greenhouse gas emissions reductions and freight deadhead prevention audits.
+            Model-based estimate of Scope 1 greenhouse gas emissions reductions and freight deadhead prevention audits.
           </p>
         </div>
 
@@ -89,7 +89,7 @@ export default function Analytics() {
             </span>
           </div>
           <div className="text-2xl font-black text-[#0F172A]">
-            {fleetMetrics.totalEmptyKmAvoided || 131.0} <span className="text-xs font-medium text-[#64748B]">km</span>
+            {fleetMetrics.totalEmptyKmAvoided || 0} <span className="text-xs font-medium text-[#64748B]">km</span>
           </div>
           <p className="text-[11px] text-[#64748B]">
             Eliminated unladen transit miles across return legs
@@ -105,7 +105,7 @@ export default function Analytics() {
             </span>
           </div>
           <div className="text-2xl font-black text-[#0F172A]">
-            {fleetMetrics.totalFuelSavedLitres || 32.8} <span className="text-xs font-medium text-[#64748B]">litres</span>
+            {fleetMetrics.totalFuelSavedLitres || 0} <span className="text-xs font-medium text-[#64748B]">litres</span>
           </div>
           <p className="text-[11px] text-[#64748B]">
             Based on heavy vehicle efficiency average (4.0 km/L)
@@ -121,7 +121,7 @@ export default function Analytics() {
             </span>
           </div>
           <div className="text-2xl font-black text-[#059669]">
-            ₹{(fleetMetrics.totalCostImpact || 3116).toLocaleString('en-IN')}
+            ₹{(fleetMetrics.totalCostImpact || 0).toLocaleString('en-IN')}
           </div>
           <p className="text-[11px] text-[#64748B]">
             Direct diesel expenditure saved at ₹95.00/L
@@ -137,7 +137,7 @@ export default function Analytics() {
             </span>
           </div>
           <div className="text-2xl font-black text-[#059669]">
-            {fleetMetrics.totalCo2AvoidedKg || 87.9} <span className="text-xs font-medium text-[#64748B]">kg CO₂e</span>
+            {fleetMetrics.totalCo2AvoidedKg || 0} <span className="text-xs font-medium text-[#64748B]">kg CO₂e</span>
           </div>
           <p className="text-[11px] text-[#64748B]">
             Calculated at 2.68 kg CO₂ per litre diesel combustion

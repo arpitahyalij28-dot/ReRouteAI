@@ -28,8 +28,9 @@ function parseTimeString(timeStr, baseDateMs = Date.now()) {
  * @param {number} pickupDeadheadKm - Distance from truck dest to shipment pickup
  * @param {number} speedKmH - Average operating speed
  * @param {number} driverBufferMins - Mandatory buffer / rest in minutes
+ * @param {Object} [weather] - Optional weather conditions (riskLevel, condition)
  */
-export function calculateETA(truck, shipment, pickupDeadheadKm, speedKmH = 45, driverBufferMins = 20) {
+export function calculateETA(truck, shipment, pickupDeadheadKm, speedKmH = 45, driverBufferMins = 20, weather = null) {
   if (!truck || !shipment || pickupDeadheadKm === null || pickupDeadheadKm === undefined) {
     return {
       isValid: false,
@@ -53,9 +54,34 @@ export function calculateETA(truck, shipment, pickupDeadheadKm, speedKmH = 45, d
     restMins = Math.max(restMins, 90); // 1.5h rest if rest required
   }
 
+  // Base travel speed
+  const baseSpeed = Math.max(15, Number(speedKmH) || 45);
+  let effectiveSpeed = baseSpeed;
+  let weatherSlowdownMins = 0;
+  let weatherExplanation = '';
+
+  const weatherRisk = weather?.disruptionImpact?.riskLevel || weather?.riskLevel;
+  if (weather && weather.enabled !== false && (weatherRisk === 'medium' || weatherRisk === 'high')) {
+    const baseTravelMins = Math.round((pickupDeadheadKm / baseSpeed) * 60);
+    if (weatherRisk === 'high') {
+      // 25% speed slowdown under high-risk weather (e.g. violent rain, ghat fog)
+      effectiveSpeed = Math.max(12, baseSpeed * 0.75);
+      const slowedTravelMins = Math.round((pickupDeadheadKm / effectiveSpeed) * 60);
+      weatherSlowdownMins = Math.max(0, slowedTravelMins - baseTravelMins);
+      const conditionName = weather?.currentWeather?.condition || weather?.condition || 'severe weather';
+      weatherExplanation = ` (Weather slowdown: -25% speed, +${weatherSlowdownMins} min due to ${conditionName})`;
+    } else if (weatherRisk === 'medium') {
+      // 10% speed slowdown under medium-risk weather (e.g. moderate rain, slick surface)
+      effectiveSpeed = Math.max(12, baseSpeed * 0.90);
+      const slowedTravelMins = Math.round((pickupDeadheadKm / effectiveSpeed) * 60);
+      weatherSlowdownMins = Math.max(0, slowedTravelMins - baseTravelMins);
+      const conditionName = weather?.currentWeather?.condition || weather?.condition || 'moderate rain';
+      weatherExplanation = ` (Weather slowdown: -10% speed, +${weatherSlowdownMins} min due to ${conditionName})`;
+    }
+  }
+
   // Travel time to pickup
-  const speed = Math.max(15, Number(speedKmH) || 45);
-  const travelTimeHours = pickupDeadheadKm / speed;
+  const travelTimeHours = pickupDeadheadKm / effectiveSpeed;
   const travelTimeMins = Math.round(travelTimeHours * 60);
 
   // Predicted arrival timestamp
@@ -89,22 +115,22 @@ export function calculateETA(truck, shipment, pickupDeadheadKm, speedKmH = 45, d
     // Arrives more than 60 mins after window closes
     status = "INFEASIBLE";
     delayRisk = 95;
-    explanation = `Pickup window closes ${Math.abs(marginToCloseMins)} mins before vehicle can arrive.`;
+    explanation = `Pickup window closes ${Math.abs(marginToCloseMins)} mins before vehicle can arrive.${weatherExplanation}`;
   } else if (marginToCloseMins < 0) {
     // Arrives between 0 and 60 mins late
     status = "LIKELY DELAYED";
     delayRisk = 75;
-    explanation = `Vehicle predicted to arrive ${Math.abs(marginToCloseMins)} mins after pickup window closes.`;
+    explanation = `Vehicle predicted to arrive ${Math.abs(marginToCloseMins)} mins after pickup window closes.${weatherExplanation}`;
   } else if (marginToCloseMins <= 30) {
     // Tight margin: arrives within 30 mins of window closing
     status = "AT RISK";
     delayRisk = 50;
-    explanation = `Tight window margin: Only ${marginToCloseMins} mins buffer before pickup closes.`;
+    explanation = `Tight window margin: Only ${marginToCloseMins} mins buffer before pickup closes.${weatherExplanation}`;
   } else {
     // Arrives on time with healthy buffer
     status = "ON TIME";
     delayRisk = Math.max(5, Math.min(25, Math.round(30 - (marginToCloseMins / 10))));
-    explanation = `Healthy buffer: Arrives ${marginToCloseMins} mins before window closes.`;
+    explanation = `Healthy buffer: Arrives ${marginToCloseMins} mins before window closes.${weatherExplanation}`;
   }
 
   const formatTime = (date) => {
@@ -124,6 +150,8 @@ export function calculateETA(truck, shipment, pickupDeadheadKm, speedKmH = 45, d
     restBufferMins: restMins,
     status,
     delayRisk, // 0 - 100 score
-    explanation
+    explanation,
+    weatherSlowdownMins,
+    effectiveSpeed,
   };
 }

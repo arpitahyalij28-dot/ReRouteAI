@@ -3,6 +3,8 @@ import L from 'leaflet';
 import { MapPin, Navigation, Layers } from 'lucide-react';
 import { CORRIDOR_WAYPOINTS } from '../data/mockData';
 import { apiFetch } from '../lib/api';
+import { useReRoute } from '../context/ReRouteContext';
+import WeatherBadge from './WeatherBadge';
 
 export default function CorridorMap({
   truck,
@@ -13,6 +15,7 @@ export default function CorridorMap({
   onSelectShipmentId,
   onSelectTruckId,
 }) {
+  const { corridorWeather } = useReRoute();
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const layerGroupRef = useRef(null);
@@ -226,6 +229,38 @@ export default function CorridorMap({
 
     // 3. Draw Corridor Waypoints (Small dots, tooltips on hover only)
     CORRIDOR_WAYPOINTS.forEach((node) => {
+      const isKasaraGhat = node.id === 'W3';
+      const wRisk = (corridorWeather?.disruptionImpact?.riskLevel || corridorWeather?.riskLevel || 'low').toLowerCase();
+
+      if (isKasaraGhat) {
+        // High visibility weather pin on Kasara Ghat
+        const ghatColor = wRisk === 'high' ? '#E11D48' : wRisk === 'medium' ? '#D97706' : '#059669';
+        const weatherGhatIcon = L.divIcon({
+          className: 'custom-weather-ghat-pin',
+          html: `
+            <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer">
+              <div class="px-2 py-0.5 rounded-full text-[9px] font-black text-white shadow-md flex items-center gap-1 border-2 border-white" style="background-color: ${ghatColor};">
+                <span>🌧️ Kasara Ghat (${wRisk.toUpperCase()})</span>
+              </div>
+            </div>
+          `,
+          iconSize: [110, 20],
+          iconAnchor: [55, 10],
+        });
+
+        L.marker(node.coords, { icon: weatherGhatIcon })
+          .addTo(layers)
+          .bindPopup(`
+            <div style="font-family: 'Inter', sans-serif; font-size: 11px;">
+              <strong style="color: #0F172A;">${node.name}</strong><br/>
+              <span style="color: #64748B;">Condition: ${corridorWeather?.currentWeather?.condition || corridorWeather?.condition || 'Clear sky'}</span><br/>
+              <span style="color: ${ghatColor}; font-weight: bold;">Weather Hazard: ${wRisk.toUpperCase()}</span><br/>
+              <span style="color: #475569; font-size: 10px;">${corridorWeather?.isFallback ? 'Fallback estimate' : corridorWeather?.isSimulated ? 'Simulated Heavy Rain' : 'Live (Open-Meteo)'}</span>
+            </div>
+          `);
+        return;
+      }
+
       const pinIcon = L.divIcon({
         className: 'custom-city-pin',
         html: `
@@ -484,6 +519,11 @@ export default function CorridorMap({
       {/* Map Canvas */}
       <div className="relative">
         <div ref={mapContainerRef} className="h-[340px] w-full z-0" />
+
+        {/* Floating Weather Indicator near Ghat/Corridor */}
+        <div className="absolute top-3 right-3 z-[400] max-w-[250px]">
+          <WeatherBadge weather={corridorWeather} variant="map" />
+        </div>
 
         {/* Floating Map Legend (Retained with risk colors, route, pickup point) */}
         <div className="absolute bottom-3 left-3 z-[400] bg-white/95 backdrop-blur-xs border border-slate-200 rounded-lg p-2 shadow-md text-[10px] font-medium text-slate-700 space-y-1">

@@ -2,11 +2,21 @@
 // Monitors live operational disruptions and audits autonomous recovery performance.
 
 import React, { useState } from 'react';
-import { Zap, AlertTriangle, Clock, RefreshCw, XCircle, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Zap, AlertTriangle, Clock, RefreshCw, XCircle, ShieldAlert, CheckCircle2, CloudRain } from 'lucide-react';
 import { useReRoute } from '../context/ReRouteContext';
 
 export default function Disruptions() {
-  const { disruptions, shipments, trucks, cancelShipment, delayShipment, shiftShipmentWindow, resetDemo } = useReRoute();
+  const {
+    disruptions,
+    shipments,
+    trucks,
+    cancelShipment,
+    delayShipment,
+    shiftShipmentWindow,
+    resetDemo,
+    simulateHeavyRain,
+    toggleSimulateHeavyRain,
+  } = useReRoute();
   const [selectedTargetId, setSelectedTargetId] = useState(shipments[0]?.id || '');
   const [activeMessage, setActiveMessage] = useState(null);
 
@@ -81,10 +91,10 @@ export default function Disruptions() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <button
             onClick={handleTriggerCancel}
-            className="p-3 rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100/70 text-left transition-colors flex items-start gap-3"
+            className="p-3 rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100/70 text-left transition-colors flex items-start gap-3 cursor-pointer"
           >
             <XCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
             <div>
@@ -95,7 +105,7 @@ export default function Disruptions() {
 
           <button
             onClick={handleTriggerDelay}
-            className="p-3 rounded-xl border border-amber-200 bg-amber-50/50 hover:bg-amber-100/70 text-left transition-colors flex items-start gap-3"
+            className="p-3 rounded-xl border border-amber-200 bg-amber-50/50 hover:bg-amber-100/70 text-left transition-colors flex items-start gap-3 cursor-pointer"
           >
             <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
@@ -106,12 +116,40 @@ export default function Disruptions() {
 
           <button
             onClick={handleTriggerShift}
-            className="p-3 rounded-xl border border-blue-200 bg-blue-50/50 hover:bg-blue-100/70 text-left transition-colors flex items-start gap-3"
+            className="p-3 rounded-xl border border-blue-200 bg-blue-50/50 hover:bg-blue-100/70 text-left transition-colors flex items-start gap-3 cursor-pointer"
           >
             <RefreshCw className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
             <div>
               <strong className="text-xs font-bold text-blue-900 block">Shift Pickup Window</strong>
               <span className="text-[11px] text-blue-700">Extend receiving dock schedule window.</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => {
+              toggleSimulateHeavyRain();
+              setActiveMessage(
+                !simulateHeavyRain
+                  ? 'Simulating heavy rain near Kasara Ghat: disruption penalty (-35 pts) & speed slowdown (-25%) injected.'
+                  : 'Heavy rain simulation disabled. Normal corridor weather restored.'
+              );
+            }}
+            className={`p-3 rounded-xl border text-left transition-colors flex items-start gap-3 cursor-pointer ${
+              simulateHeavyRain
+                ? 'border-indigo-300 bg-indigo-100/80 ring-2 ring-indigo-400/30'
+                : 'border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100/70'
+            }`}
+          >
+            <CloudRain className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+            <div>
+              <strong className="text-xs font-bold text-indigo-900 block">
+                {simulateHeavyRain ? 'Heavy Rain (Active)' : 'Simulate Heavy Rain'}
+              </strong>
+              <span className="text-[11px] text-indigo-700">
+                {simulateHeavyRain
+                  ? 'High risk active: -35 pts disruption, -25% speed.'
+                  : 'Inject high-risk monsoon storm at Kasara Ghat.'}
+              </span>
             </div>
           </button>
         </div>

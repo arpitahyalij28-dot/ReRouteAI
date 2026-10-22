@@ -14,6 +14,7 @@ import React, {
 import { createRepository } from '../data/repository.js';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient.js';
 import { DEFAULT_SETTINGS } from '../data/mockData.js';
+import { getCorridorWeather, SIMULATED_HEAVY_RAIN } from '../lib/weather.js';
 import AuthContext from './AuthContext';
 import DataContext from './DataContext';
 
@@ -141,6 +142,63 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
       localStorage.setItem('reroute_judge_mode', String(val));
     } catch {}
   }, []);
+
+  // Weather Intelligence State & Heavy Rain Simulation
+  const [simulateHeavyRain, setSimulateHeavyRainState] = useState(() => {
+    try {
+      return localStorage.getItem('reroute_simulate_heavy_rain') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [corridorWeather, setCorridorWeather] = useState(null);
+
+  const setSimulateHeavyRain = useCallback((val) => {
+    setSimulateHeavyRainState(val);
+    try {
+      localStorage.setItem('reroute_simulate_heavy_rain', String(val));
+    } catch {}
+  }, []);
+
+  const toggleSimulateHeavyRain = useCallback(() => {
+    setSimulateHeavyRainState((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('reroute_simulate_heavy_rain', String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadWeather() {
+      try {
+        const w = await getCorridorWeather(selectedTruck, { simulateHeavyRain });
+        if (isMounted) {
+          setCorridorWeather(w);
+        }
+      } catch {
+        if (isMounted) {
+          setCorridorWeather(null);
+        }
+      }
+    }
+    loadWeather();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedTruck?.id, selectedTruck?.currentLat, selectedTruck?.currentLng, simulateHeavyRain]);
+
+  const effectiveSettings = useMemo(() => {
+    return {
+      ...settings,
+      weather: corridorWeather,
+      weatherEnabled: settings.weatherEnabled !== false,
+      weatherPenalties: settings.weatherPenalties || { low: 0, medium: 15, high: 35 },
+    };
+  }, [settings, corridorWeather]);
 
   // Fetch settings & assignments
   const loadData = useCallback(async (isBackground = false) => {
@@ -454,6 +512,7 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
   };
 
   const resetDemo = async () => {
+    setSimulateHeavyRain(false);
     if (dataCtx?.loadDemoData) {
       dataCtx.loadDemoData('replace');
     } else {
@@ -478,7 +537,12 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     trucks,
     shipments,
     assignments,
-    settings,
+    settings: effectiveSettings,
+    rawSettings: settings,
+    corridorWeather,
+    simulateHeavyRain,
+    setSimulateHeavyRain,
+    toggleSimulateHeavyRain,
     disruptions,
     selectedTruckId,
     setSelectedTruckId,
