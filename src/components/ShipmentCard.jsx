@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   CircleX,
   CircleCheck,
@@ -10,8 +10,10 @@ import {
   ChevronRight,
   Edit2,
   Trash2,
+  MessageSquare,
 } from 'lucide-react';
 import { useDataContext } from '../context/DataContext';
+import WhatsAppShareModal from './WhatsAppShareModal';
 
 export default function ShipmentCard({
   shipment,
@@ -22,6 +24,7 @@ export default function ShipmentCard({
   onSelect,
 }) {
   const { setIsAddShipmentOpen, setEditingShipment, deleteShipment } = useDataContext();
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   const isCancelled = shipment.isCancelled;
 
   const handleEdit = (e) => {
@@ -151,15 +154,25 @@ export default function ShipmentCard({
           </div>
           <div className="flex items-center gap-0.5 ml-1 border-l border-[#E2E8F0] pl-1.5">
             <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsWhatsAppOpen(true);
+              }}
+              className="p-1 rounded-md text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
+              title="Share WhatsApp Dispatch Voucher"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+            </button>
+            <button
               onClick={handleEdit}
-              className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+              className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
               title="Edit load specifications"
             >
               <Edit2 className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={handleDelete}
-              className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+              className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
               title="Delete load"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -268,6 +281,14 @@ export default function ShipmentCard({
           )}
         </p>
       </div>
+
+      {/* WhatsApp Dispatch Voucher Modal */}
+      <WhatsAppShareModal
+        isOpen={isWhatsAppOpen}
+        onClose={() => setIsWhatsAppOpen(false)}
+        shipment={shipment}
+        matchScore={safeScore}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { validateShipment } from '../engine/validation';
 import { apiFetch } from '../lib/api';
 import ShipperMarketplaceModal from '../components/ShipperMarketplaceModal';
+import QuickWhatsAppIngest from '../components/QuickWhatsAppIngest';
 
 export default function Loads() {
   const {
@@ -179,6 +180,9 @@ export default function Loads() {
           </button>
         </div>
       )}
+
+      {/* Quick WhatsApp / Regional Message Ingest Dropzone */}
+      <QuickWhatsAppIngest />
 
       {/* Filter and Search Bar */}
       <div className="bg-white p-3.5 rounded-[12px] border border-[#E2E8F0] shadow-soft flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { MapPin, Navigation, Layers } from 'lucide-react';
+import { MapPin, Navigation, Layers, Play, Pause, RotateCcw, Gauge } from 'lucide-react';
 import { CORRIDOR_WAYPOINTS } from '../data/mockData';
 import { apiFetch } from '../lib/api';
 import { useReRoute } from '../context/ReRouteContext';
@@ -24,6 +24,11 @@ export default function CorridorMap({
   const [realRouteCoords, setRealRouteCoords] = useState(null);
   const [currentZoom, setCurrentZoom] = useState(9);
   const routeCacheRef = useRef(new Map());
+
+  // Transit Route Simulation State (P0.2)
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simProgress, setSimProgress] = useState(0); // 0 to 100%
+  const [simSpeed, setSimSpeed] = useState(2); // 1x, 2x, 5x
 
   // Fetch real road polyline from /api/route for the active focus shipment
   useEffect(() => {
@@ -122,6 +127,48 @@ export default function CorridorMap({
     };
   }, [truck?.currentCoords]);
 
+  // Simulation Timer Interval (P0.2)
+  useEffect(() => {
+    if (!isSimulating) return;
+    const interval = setInterval(() => {
+      setSimProgress((prev) => {
+        const step = simSpeed * 0.75;
+        if (prev + step >= 100) {
+          setIsSimulating(false);
+          return 100;
+        }
+        return prev + step;
+      });
+    }, 150);
+
+    return () => clearInterval(interval);
+  }, [isSimulating, simSpeed]);
+
+  const getMilestoneName = (progress) => {
+    if (progress <= 5) return 'Origin Terminal (Nashik Satpur)';
+    if (progress < 25) return 'NH 160 Corridor (Igatpuri Toll)';
+    if (progress < 60) return 'Kasara Ghat Hairpins (580m Summit)';
+    if (progress < 85) return 'Asangaon Industrial Depot';
+    if (progress < 100) return 'Approaching Bhiwandi Depot';
+    return 'Arrived at Bhiwandi (Unloading Ready)';
+  };
+
+  const getInterpolatedPoint = (coords, progress) => {
+    if (!coords || coords.length === 0) return null;
+    if (coords.length === 1) return coords[0];
+    const t = Math.max(0, Math.min(100, progress)) / 100;
+    const totalSegs = coords.length - 1;
+    const rawIndex = t * totalSegs;
+    const idx = Math.min(Math.floor(rawIndex), totalSegs - 1);
+    const frac = rawIndex - idx;
+    const p1 = coords[idx];
+    const p2 = coords[idx + 1];
+    return [
+      p1[0] + (p2[0] - p1[0]) * frac,
+      p1[1] + (p2[1] - p1[1]) * frac,
+    ];
+  };
+
   // Update Dynamic Layers, Clusters & Polylines
   useEffect(() => {
     if (!mapInstanceRef.current || !layerGroupRef.current) return;
@@ -147,6 +194,7 @@ export default function CorridorMap({
     };
 
     // 1. Draw Routes for Trucks
+    let currentSimCoords = null;
     activeTruckList.forEach((t) => {
       const isSelectedTruck = truck && t.id === truck.id;
       const riskColor = getRiskColor(t.emptyReturnProbability);
@@ -155,6 +203,16 @@ export default function CorridorMap({
       if (t.originCoords) boundsPoints.push(t.originCoords);
       if (t.destinationCoords) boundsPoints.push(t.destinationCoords);
 
+      const transitPath = [
+        t.originCoords || [19.9575, 73.742],
+        [19.78, 73.61],
+        [19.645, 73.485],
+        [19.52, 73.38],
+        [19.435, 73.305],
+        [19.36, 73.18],
+        t.destinationCoords || [19.2967, 73.0631],
+      ];
+
       const nominalPath = [
         t.originCoords || [19.9575, 73.742],
         t.currentCoords || [19.645, 73.485],
@@ -162,6 +220,29 @@ export default function CorridorMap({
       ];
 
       if (isSelectedTruck) {
+        if (simProgress > 0) {
+          currentSimCoords = getInterpolatedPoint(transitPath, simProgress);
+          if (currentSimCoords) boundsPoints.push(currentSimCoords);
+
+          // Render active traveled green trail
+          const traveled = [];
+          const tFrac = simProgress / 100;
+          const totalSegs = transitPath.length - 1;
+          const maxIdx = Math.floor(tFrac * totalSegs);
+          for (let i = 0; i <= maxIdx; i++) {
+            traveled.push(transitPath[i]);
+          }
+          if (currentSimCoords) traveled.push(currentSimCoords);
+
+          if (traveled.length > 1) {
+            L.polyline(traveled, {
+              color: '#10B981',
+              weight: 4.5,
+              opacity: 0.95,
+            }).addTo(layers);
+          }
+        }
+
         // Glowing halo line for active focused truck
         L.polyline(nominalPath, {
           color: '#2563EB',
@@ -351,10 +432,14 @@ export default function CorridorMap({
     function renderTruckMarker(t) {
       if (!t.currentCoords) return;
       const isSelectedTruck = truck && t.id === truck.id;
+      const isSimulatingThisTruck = isSelectedTruck && simProgress > 0;
+      const activeCoords = isSimulatingThisTruck && currentSimCoords ? currentSimCoords : t.currentCoords;
+      if (!activeCoords) return;
+
       const riskColor = getRiskColor(t.emptyReturnProbability);
       const riskVal = Number(t.emptyReturnProbability) || 0;
 
-      // Fix 5: By default show small icon/dot with NO permanent text label.
+      // By default show small icon/dot with NO permanent text label.
       // Label shows only for selected truck, and on hover for all others.
       const truckIcon = L.divIcon({
         className: 'custom-truck-marker',
@@ -362,7 +447,7 @@ export default function CorridorMap({
           <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group">
             ${
               isSelectedTruck
-                ? `<div class="absolute w-9 h-9 rounded-full bg-blue-500/30 animate-ping"></div>`
+                ? `<div class="absolute w-9 h-9 rounded-full ${isSimulatingThisTruck ? 'bg-emerald-500/40' : 'bg-blue-500/30'} animate-ping"></div>`
                 : ''
             }
             <div class="relative ${
@@ -370,7 +455,7 @@ export default function CorridorMap({
                 ? 'w-7 h-7 ring-2 ring-blue-500/80 shadow-lg'
                 : 'w-4 h-4 shadow-sm hover:scale-125'
             } rounded-full text-white flex items-center justify-center border-2 border-white transition-transform" style="background-color: ${
-              isSelectedTruck ? '#2563EB' : riskColor
+              isSelectedTruck ? (isSimulatingThisTruck ? '#059669' : '#2563EB') : riskColor
             };">
               ${
                 isSelectedTruck
@@ -382,8 +467,8 @@ export default function CorridorMap({
             </div>
             ${
               isSelectedTruck
-                ? `<div class="absolute -bottom-5 px-1.5 py-0.2 rounded bg-blue-900 text-white font-extrabold text-[9px] whitespace-nowrap shadow-md border border-blue-700">
-                    ${t.id} (${riskVal}%)
+                ? `<div class="absolute -bottom-5 px-1.5 py-0.2 rounded ${isSimulatingThisTruck ? 'bg-emerald-900 border-emerald-600' : 'bg-blue-900 border-blue-700'} text-white font-extrabold text-[9px] whitespace-nowrap shadow-md border">
+                    ${t.id} ${isSimulatingThisTruck ? `(${Math.round(simProgress)}% In Transit)` : `(${riskVal}%)`}
                   </div>`
                 : ''
             }
@@ -393,14 +478,14 @@ export default function CorridorMap({
         iconAnchor: [isSelectedTruck ? 16 : 8, isSelectedTruck ? 16 : 8],
       });
 
-      const marker = L.marker(t.currentCoords, { icon: truckIcon })
+      const marker = L.marker(activeCoords, { icon: truckIcon })
         .addTo(layers)
         .on('click', () => onSelectTruckId?.(t.id));
 
       // Show tooltip on hover
       marker.bindTooltip(
         `<div style="font-family: 'Inter', sans-serif; font-size: 11px;">
-          <strong>Vehicle ${t.id}</strong> • Deadhead Risk: <strong style="color: ${riskColor};">${riskVal}%</strong><br/>
+          <strong>Vehicle ${t.id}</strong> • ${isSimulatingThisTruck ? `<strong style="color: #059669;">${getMilestoneName(simProgress)}</strong>` : `Deadhead Risk: <strong style="color: ${riskColor};">${riskVal}%</strong>`}<br/>
           <span style="color: #64748B;">Route: ${t.origin?.split(' ')[0]} → ${t.destination?.split(' ')[0]}</span>
         </div>`,
         { direction: 'top', offset: [0, isSelectedTruck ? -14 : -8], opacity: 0.95 }
@@ -467,14 +552,14 @@ export default function CorridorMap({
       );
     });
 
-    // 6. Auto-fit bounds
-    if (boundsPoints.length > 1) {
+    // 6. Auto-fit bounds (only when not actively animating transit)
+    if (boundsPoints.length > 1 && simProgress === 0) {
       map.fitBounds(L.latLngBounds(boundsPoints), {
         padding: [35, 35],
         maxZoom: 11,
       });
     }
-  }, [truck, trucks, showAllTrucks, shipments, selectedShipmentId, recommendedId, currentZoom, onSelectShipmentId, onSelectTruckId]);
+  }, [truck, trucks, showAllTrucks, shipments, selectedShipmentId, recommendedId, currentZoom, onSelectShipmentId, onSelectTruckId, simProgress, isSimulating]);
 
   return (
     <div className="bg-white rounded-[12px] border border-[#E2E8F0] shadow-soft overflow-hidden relative">
@@ -491,6 +576,26 @@ export default function CorridorMap({
         </div>
 
         <div className="flex items-center gap-2 text-xs">
+          {/* Transit Simulation Toggle (P0.2) */}
+          {truck && (
+            <button
+              type="button"
+              onClick={() => {
+                if (simProgress >= 100) setSimProgress(0);
+                setIsSimulating((prev) => !prev);
+              }}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-bold border flex items-center gap-1.5 transition-all cursor-pointer ${
+                isSimulating
+                  ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
+                  : 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100'
+              }`}
+              title="Simulate live corridor transit for selected vehicle"
+            >
+              {isSimulating ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 text-blue-600" />}
+              <span>{isSimulating ? 'Pause Transit' : simProgress > 0 ? 'Resume Transit' : '▶ Simulate Transit'}</span>
+            </button>
+          )}
+
           {/* Toggle All vs Selected */}
           {trucks.length > 1 && (
             <button
@@ -551,6 +656,69 @@ export default function CorridorMap({
             <span>Load Pickup Point</span>
           </div>
         </div>
+
+        {/* Floating Live Transit Simulation HUD (P0.2) */}
+        {(isSimulating || simProgress > 0) && (
+          <div className="absolute bottom-3 right-3 z-[400] bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl p-3 shadow-xl text-white max-w-[270px] w-full text-xs space-y-2 animate-in fade-in">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-bold text-emerald-400 text-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>Transit Simulator</span>
+              </div>
+              <div className="flex items-center gap-1">
+                {[1, 2, 5].map((spd) => (
+                  <button
+                    key={spd}
+                    type="button"
+                    onClick={() => setSimSpeed(spd)}
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-colors cursor-pointer ${
+                      simSpeed === spd ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {spd}x
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSimulating(false);
+                    setSimProgress(0);
+                  }}
+                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Reset simulation"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                <span className="truncate max-w-[190px]">{getMilestoneName(simProgress)}</span>
+                <span className="font-bold text-slate-200">{Math.round(simProgress)}%</span>
+              </div>
+              <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 transition-all duration-150"
+                  style={{ width: `${simProgress}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-[10px] text-slate-300">
+              <div className="flex items-center gap-1">
+                <Gauge className="w-3 h-3 text-blue-400" />
+                <span>{simProgress >= 100 ? 'At Dock' : `${Math.round(48 + ((simProgress * 3) % 15))} km/h`}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-slate-400">Dock ETA: </span>
+                <span className="font-bold text-white">
+                  {simProgress >= 100 ? 'Arrived' : `+${Math.max(2, Math.round((100 - simProgress) * 0.45))} min`}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

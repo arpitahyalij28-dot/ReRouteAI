@@ -14,6 +14,7 @@ import CorridorMap from '../components/CorridorMap';
 import DemoGuideModal from '../components/DemoGuideModal';
 import BeforeVsAfterCard from '../components/BeforeVsAfterCard';
 import WeatherBadge from '../components/WeatherBadge';
+import QuickWhatsAppIngest from '../components/QuickWhatsAppIngest';
 import { useReRoute, addMinutesToTimeString } from '../context/ReRouteContext';
 import {
   calculateShipmentScore,
@@ -407,6 +408,9 @@ export default function Dashboard() {
             measuredLatencyMs={measuredRecoveryLatency || fleetPlan.latencyMs}
             reassignmentAudit={reassignmentAudit}
           />
+
+          {/* Quick Regional / WhatsApp Message Ingestion Dropzone */}
+          <QuickWhatsAppIngest />
 
           {/* Ranked Shipments List for Focused Truck */}
           <div className="space-y-3">

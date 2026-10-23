@@ -450,3 +450,5 @@ export function parseLoadText(rawText, options = {}) {
     rawText: text,
   };
 }
+
+export { parseLoadText as parseUnstructuredLoadMessage };

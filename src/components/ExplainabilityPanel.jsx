@@ -8,8 +8,10 @@ import {
   Info,
   Sparkles,
   ChevronDown,
+  MessageSquare,
 } from 'lucide-react';
 import { apiFetch } from '../lib/api';
+import WhatsAppShareModal from './WhatsAppShareModal';
 
 export default function ExplainabilityPanel({
   shipment,
@@ -24,6 +26,7 @@ export default function ExplainabilityPanel({
   const [aiExplanation, setAiExplanation] = useState(null);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [isViewAllOpen, setIsViewAllOpen] = useState(false);
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
 
   useEffect(() => {
     setAiExplanation(null);
@@ -367,18 +370,29 @@ export default function ExplainabilityPanel({
       {activeTab === 'whywhynot' && (
         <div className="space-y-3">
           {/* Action Row */}
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
               Algorithmic Feasibility Checklist
             </span>
-            <button
-              onClick={handleGenerateAiExplanation}
-              disabled={isGeneratingAi}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-all cursor-pointer shadow-xs disabled:opacity-60"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
-              <span>{isGeneratingAi ? 'Synthesizing Explanation...' : 'Explain in plain words'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsWhatsAppOpen(true)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-all cursor-pointer shadow-xs"
+                title="Generate WhatsApp Dispatch Order"
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                <span>WhatsApp Voucher</span>
+              </button>
+              <button
+                onClick={handleGenerateAiExplanation}
+                disabled={isGeneratingAi}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-all cursor-pointer shadow-xs disabled:opacity-60"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+                <span>{isGeneratingAi ? 'Synthesizing...' : 'Explain in plain words'}</span>
+              </button>
+            </div>
           </div>
 
           {/* AI Explanation Card (when generated) */}
@@ -525,6 +539,14 @@ export default function ExplainabilityPanel({
           </div>
         </div>
       )}
+
+      {/* WhatsApp Dispatch Voucher Modal */}
+      <WhatsAppShareModal
+        isOpen={isWhatsAppOpen}
+        onClose={() => setIsWhatsAppOpen(false)}
+        shipment={shipment}
+        matchScore={score.totalScore}
+      />
     </div>
   );
 }
