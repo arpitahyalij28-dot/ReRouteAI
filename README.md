@@ -10,7 +10,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38b2ac.svg)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-3ecf8e.svg)](https://supabase.com/)
 
-Live Deployment: [https://reroute-ai-2.vercel.app/](https://reroute-ai-2.vercel.app/)
+Live Deployment: [https://reroute-fleet.vercel.app/](https://reroute-fleet.vercel.app/)
 
 ---
 

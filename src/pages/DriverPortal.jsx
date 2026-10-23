@@ -200,7 +200,7 @@ export default function DriverPortal() {
     `• Dropoff: ${assignedShipment?.destination || 'Nashik'}\n` +
     `• Cargo: ${assignedShipment?.weightTons || 10}T (${assignedShipment?.cargoType || 'Industrial'})\n` +
     `• Freight: ₹${assignedShipment?.freightOfferInr?.toLocaleString('en-IN') || '28,000'}\n` +
-    `• Live Track: https://reroute-ai-2.vercel.app/driver`
+    `• Live Track: https://reroute-fleet.vercel.app/driver`
   );
   const waUrl = `https://wa.me/?text=${waText}`;
 

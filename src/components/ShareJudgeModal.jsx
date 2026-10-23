@@ -7,7 +7,7 @@ import { useReRoute } from '../context/ReRouteContext';
 
 export default function ShareJudgeModal({ isOpen, onClose }) {
   const { isJudgeMode, setIsJudgeMode, showToast } = useReRoute();
-  const liveUrl = 'https://reroute-ai-2.vercel.app/';
+  const liveUrl = 'https://reroute-fleet.vercel.app/';
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(liveUrl)}`;
 
   if (!isOpen) return null;

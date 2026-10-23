@@ -4,7 +4,7 @@
 **Status:** Approved & Under Active Implementation  
 **Product:** ReRoute AI 2.0 – Predictive Backhaul & Empty-Return Elimination Platform  
 **Target Market:** High-Density Freight Corridors (Mumbai – Nashik – Pune – Gujarat Golden Quadrangle)  
-**Deployment:** Vercel Production ([reroute-ai-2.vercel.app](https://reroute-ai-2.vercel.app)) + Localhost Development  
+**Deployment:** Vercel Production ([reroute-fleet.vercel.app](https://reroute-fleet.vercel.app)) + Localhost Development  
 
 ---
 

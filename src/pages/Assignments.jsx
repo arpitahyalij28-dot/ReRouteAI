@@ -119,7 +119,7 @@ export default function Assignments() {
                               `• Load: ${a.shipmentId} - ${shipment?.name || 'Cargo'}\n` +
                               `• Detour: +${a.detourKm} km | Loaded: ${a.loadedKm || 140} km\n` +
                               `• Margin: ₹${(a.costGain || 24000).toLocaleString('en-IN')}\n` +
-                              `• Dispatch Portal: https://reroute-ai-2.vercel.app/driver`
+                              `• Dispatch Portal: https://reroute-fleet.vercel.app/driver`
                             )}`}
                             target="_blank"
                             rel="noopener noreferrer"
