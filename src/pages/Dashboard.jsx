@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import SupplyNetworkMap from '../components/SupplyNetworkMap';
 import NetworkEntityModal from '../components/NetworkEntityModal';
+import ControlTower from '../components/ControlTower';
 import { ClearDataConfirmModal } from '../components/ConfirmModal';
 import { useReRoute } from '../context/ReRouteContext';
 import {
@@ -58,6 +59,9 @@ export default function Dashboard() {
     deleteVehicle,
     loadDemoData,
     clearAllData,
+    trucks = [],
+    shipments = [],
+    assignments = [],
   } = useReRoute();
 
   const {
@@ -202,6 +206,14 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {/* Control Tower: Executive Report Card */}
+      <ControlTower
+        network={network}
+        trucks={trucks}
+        shipments={shipments}
+        assignments={assignments}
+      />
 
       {/* 2. Key Metrics Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
