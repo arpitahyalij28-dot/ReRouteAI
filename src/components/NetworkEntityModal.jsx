@@ -12,6 +12,11 @@ import {
   ROUTE_STATUS,
   BUYER_PRIORITY,
 } from '../engine/network.js';
+import {
+  VEHICLE_TYPES,
+  DEFAULT_VEHICLE_TYPE,
+  getVehicleType,
+} from '../data/vehicleTypes.js';
 
 export default function NetworkEntityModal({
   isOpen,
@@ -89,14 +94,15 @@ export default function NetworkEntityModal({
           maxWeightTons: 25,
         });
       } else if (type === 'vehicle') {
+        const defaultCfg = getVehicleType(DEFAULT_VEHICLE_TYPE) || VEHICLE_TYPES[2];
         setFormData({
           id: `veh-${Date.now().toString().slice(-4)}`,
-          type: 'Medium Commercial (8T)',
-          capacity: 150,
+          type: defaultCfg.value,
+          capacity: defaultCfg.capacity,
           availableFrom: warehouses[0]?.id || 'wh-satpur',
           availability: 1,
-          costPerKm: 28,
-          weightTons: 8,
+          costPerKm: defaultCfg.costPerKm,
+          weightTons: defaultCfg.weightTons,
         });
       }
     }
@@ -105,8 +111,31 @@ export default function NetworkEntityModal({
 
   if (!isOpen) return null;
 
+  const isCustomVehicleType =
+    type === 'vehicle' &&
+    Boolean(formData.type) &&
+    !VEHICLE_TYPES.some((vt) => vt.value === formData.type);
+
   const handleChange = (field, val) => {
     setFormData((prev) => ({ ...prev, [field]: val }));
+  };
+
+  const handleVehicleTypeChange = (selectedTypeValue) => {
+    const config = getVehicleType(selectedTypeValue);
+    if (config) {
+      setFormData((prev) => ({
+        ...prev,
+        type: selectedTypeValue,
+        weightTons: config.weightTons,
+        capacity: config.capacity,
+        costPerKm: config.costPerKm,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        type: selectedTypeValue,
+      }));
+    }
   };
 
   const handleSubmit = (e) => {
@@ -169,14 +198,30 @@ export default function NetworkEntityModal({
           riskScore: Number(formData.riskScore || 0.1),
         });
       } else if (type === 'vehicle') {
+        if (!formData.type || !String(formData.type).trim()) {
+          throw new Error('Vehicle Type is required.');
+        }
+        const cap = Number(formData.capacity);
+        if (isNaN(cap) || cap <= 0) {
+          throw new Error('Units Capacity per Trip must be a positive number greater than 0.');
+        }
+        const cost = Number(formData.costPerKm);
+        if (isNaN(cost) || cost <= 0) {
+          throw new Error('Cost per Km must be a positive number greater than 0.');
+        }
+        const weight = Number(formData.weightTons);
+        if (isNaN(weight) || weight <= 0) {
+          throw new Error('Weight (Tons) must be a positive number greater than 0.');
+        }
+
         created = createVehicle({
           id: formData.id,
           type: formData.type,
-          capacity: Number(formData.capacity),
+          capacity: cap,
           availableFrom: formData.availableFrom,
-          availability: Number(formData.availability),
-          costPerKm: Number(formData.costPerKm),
-          weightTons: Number(formData.weightTons || 8),
+          availability: Math.max(1, Number(formData.availability || 1)),
+          costPerKm: cost,
+          weightTons: weight,
         });
       }
 
@@ -238,31 +283,56 @@ export default function NetworkEntityModal({
           )}
 
           {/* Common ID & Name */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 items-start">
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Entity ID</label>
+              <label className="block font-bold text-slate-700 mb-1" htmlFor="entity-id-input">
+                Entity ID
+              </label>
               <input
+                id="entity-id-input"
                 type="text"
                 value={formData.id || ''}
                 disabled={isEdit}
                 onChange={(e) => handleChange('id', e.target.value)}
                 required
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                className={`w-full px-3 py-2 border border-slate-200 rounded-xl font-mono text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 ${
+                  type === 'vehicle' ? 'min-h-[48px]' : ''
+                }`}
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-700 mb-1">
-                {type === 'vehicle' ? 'Vehicle Type / Model' : 'Name / Title'}
+              <label className="block font-bold text-slate-700 mb-1" htmlFor="entity-name-or-type">
+                {type === 'vehicle' ? 'Vehicle Type' : 'Name / Title'}
               </label>
-              <input
-                type="text"
-                value={formData.name || formData.type || ''}
-                onChange={(e) =>
-                  handleChange(type === 'vehicle' ? 'type' : 'name', e.target.value)
-                }
-                required
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500"
-              />
+              {type === 'vehicle' ? (
+                <select
+                  id="entity-name-or-type"
+                  value={formData.type || DEFAULT_VEHICLE_TYPE}
+                  onChange={(e) => handleVehicleTypeChange(e.target.value)}
+                  required
+                  className="w-full min-h-[48px] px-3 py-2 border border-slate-200 rounded-xl text-base font-medium text-slate-800 bg-white focus:bg-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                >
+                  {VEHICLE_TYPES.map((vt) => (
+                    <option key={vt.value} value={vt.value} className="text-base py-1">
+                      {vt.label}
+                    </option>
+                  ))}
+                  {isCustomVehicleType && (
+                    <option value={formData.type} className="text-base py-1">
+                      Custom: {formData.type}
+                    </option>
+                  )}
+                </select>
+              ) : (
+                <input
+                  id="entity-name-or-type"
+                  type="text"
+                  value={formData.name || ''}
+                  onChange={(e) => handleChange('name', e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500"
+                />
+              )}
             </div>
           </div>
 
@@ -521,9 +591,10 @@ export default function NetworkEntityModal({
                   </label>
                   <input
                     type="number"
-                    min="10"
-                    value={formData.capacity || ''}
+                    min="1"
+                    value={formData.capacity ?? ''}
                     onChange={(e) => handleChange('capacity', e.target.value)}
+                    required
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"
                   />
                 </div>
@@ -535,7 +606,7 @@ export default function NetworkEntityModal({
                   <input
                     type="number"
                     min="1"
-                    value={formData.availability || 1}
+                    value={formData.availability ?? 1}
                     onChange={(e) => handleChange('availability', e.target.value)}
                     className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs"
                   />
@@ -544,9 +615,10 @@ export default function NetworkEntityModal({
                   <label className="text-[10px] text-slate-500 font-bold">Cost per Km (₹)</label>
                   <input
                     type="number"
-                    min="5"
-                    value={formData.costPerKm || 25}
+                    min="1"
+                    value={formData.costPerKm ?? ''}
                     onChange={(e) => handleChange('costPerKm', e.target.value)}
+                    required
                     className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs"
                   />
                 </div>
@@ -554,9 +626,11 @@ export default function NetworkEntityModal({
                   <label className="text-[10px] text-slate-500 font-bold">Weight (Tons)</label>
                   <input
                     type="number"
-                    min="1"
-                    value={formData.weightTons || 8}
+                    step="0.1"
+                    min="0.1"
+                    value={formData.weightTons ?? ''}
                     onChange={(e) => handleChange('weightTons', e.target.value)}
+                    required
                     className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs"
                   />
                 </div>
