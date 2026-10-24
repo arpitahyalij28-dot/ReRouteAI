@@ -9,6 +9,7 @@ import {
   INITIAL_SHIPMENTS,
   DEFAULT_SETTINGS,
 } from './mockData.js';
+import { getDemoNetwork } from './networkDemo.js';
 
 // --- Snake_case <-> camelCase Mappers ---
 
@@ -242,17 +243,21 @@ export class LocalDemoAdapter {
       const storedAssignments = localStorage.getItem(`${this.storageKeyPrefix}assignments`);
       const storedSettings = localStorage.getItem(`${this.storageKeyPrefix}settings`);
       const storedDisruptions = localStorage.getItem(`${this.storageKeyPrefix}disruptions`);
+      const storedNetwork = localStorage.getItem(`${this.storageKeyPrefix}network`);
+
       this.trucks = storedTrucks ? JSON.parse(storedTrucks) : JSON.parse(JSON.stringify(INITIAL_TRUCKS));
       this.shipments = storedShipments ? JSON.parse(storedShipments) : JSON.parse(JSON.stringify(INITIAL_SHIPMENTS));
       this.assignments = storedAssignments ? JSON.parse(storedAssignments) : [];
       this.settings = storedSettings ? JSON.parse(storedSettings) : JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
       this.disruptions = storedDisruptions ? JSON.parse(storedDisruptions) : [];
+      this.network = storedNetwork ? JSON.parse(storedNetwork) : getDemoNetwork();
     } catch {
       this.trucks = JSON.parse(JSON.stringify(INITIAL_TRUCKS));
       this.shipments = JSON.parse(JSON.stringify(INITIAL_SHIPMENTS));
       this.assignments = [];
       this.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
       this.disruptions = [];
+      this.network = getDemoNetwork();
     }
   }
 
@@ -263,9 +268,20 @@ export class LocalDemoAdapter {
       localStorage.setItem(`${this.storageKeyPrefix}assignments`, JSON.stringify(this.assignments));
       localStorage.setItem(`${this.storageKeyPrefix}settings`, JSON.stringify(this.settings));
       localStorage.setItem(`${this.storageKeyPrefix}disruptions`, JSON.stringify(this.disruptions));
+      localStorage.setItem(`${this.storageKeyPrefix}network`, JSON.stringify(this.network));
     } catch {
       // Local storage quota or unavailable in certain test environments
     }
+  }
+
+  async getNetwork() {
+    return JSON.parse(JSON.stringify(this.network));
+  }
+
+  async saveNetwork(network) {
+    this.network = JSON.parse(JSON.stringify(network));
+    this._save();
+    return this.network;
   }
 
   async getTrucks() {
@@ -375,6 +391,7 @@ export class LocalDemoAdapter {
     this.assignments = [];
     this.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
     this.disruptions = [];
+    this.network = getDemoNetwork();
     this._save();
     return { success: true };
   }
@@ -387,6 +404,16 @@ export class SupabaseAdapter {
     this.name = 'SupabaseAdapter';
     this.client = client;
     this.orgId = orgId;
+  }
+
+  // TODO: Supabase remote schema migration for multi-tier network (Track 3-05)
+  // Currently falls back to local demo network until migration is applied.
+  async getNetwork() {
+    return getDemoNetwork();
+  }
+
+  async saveNetwork(network) {
+    return network;
   }
 
   async getTrucks() {

@@ -85,7 +85,7 @@ export default function Header({ onOpenDemoGuide, onResetAll }) {
               )}
             </div>
             <p className="text-xs text-[#64748B] hidden sm:block font-medium truncate">
-              Disruption-aware regional supply network twin
+              Disruption-Aware Logistics Twin for Regional Supply Networks (Track 3-05)
             </p>
           </div>
         </div>
@@ -93,17 +93,17 @@ export default function Header({ onOpenDemoGuide, onResetAll }) {
         {/* Clean Corridor Telemetry Pill - Cleanly truncated with hover tooltip */}
         <div
           className="hidden xl:flex items-center gap-2 px-3.5 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-full text-xs max-w-sm min-w-0 cursor-default"
-          title="Corridor: Maharashtra & Western Express Corridor (Nashik - Mumbai - Pune - Gujarat)"
+          title="Regional Network: Nashik - Mumbai - Pune Western Maharashtra Corridor"
         >
           <Activity className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-          <span className="text-[#64748B] font-medium shrink-0">Corridor:</span>
+          <span className="text-[#64748B] font-medium shrink-0">Twin:</span>
           <span className="text-[#0F172A] font-semibold truncate">
-            Maharashtra & Western Express
+            Nashik–Mumbai–Pune Corridor
           </span>
           <span className="text-[#CBD5E1] shrink-0">|</span>
-          <span className="text-[#64748B] shrink-0">Active:</span>
+          <span className="text-[#64748B] shrink-0">Network:</span>
           <span className="text-blue-600 font-bold shrink-0">
-            {activeCount} {activeCount === 1 ? 'Truck' : 'Trucks'}
+            3 Depots · 6 Buyers · 22 Corridors
           </span>
         </div>
 

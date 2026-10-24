@@ -539,6 +539,36 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     refreshData: loadData,
 
 
+    // Logistics Twin Regional Supply Network state (Track 3-05)
+    network: dataCtx?.network,
+    setNetwork: dataCtx?.setNetwork,
+    isDemoData: dataCtx?.isDemoData,
+    setIsDemoData: dataCtx?.setIsDemoData,
+    addSupplier: dataCtx?.addSupplier,
+    updateSupplier: dataCtx?.updateSupplier,
+    deleteSupplier: dataCtx?.deleteSupplier,
+    addWarehouse: dataCtx?.addWarehouse,
+    updateWarehouse: dataCtx?.updateWarehouse,
+    deleteWarehouse: dataCtx?.deleteWarehouse,
+    addBuyer: dataCtx?.addBuyer,
+    updateBuyer: dataCtx?.updateBuyer,
+    deleteBuyer: dataCtx?.deleteBuyer,
+    addRoute: dataCtx?.addRoute,
+    updateRoute: dataCtx?.updateRoute,
+    deleteRoute: dataCtx?.deleteRoute,
+    addVehicle: dataCtx?.addVehicle,
+    updateVehicle: dataCtx?.updateVehicle,
+    deleteVehicle: dataCtx?.deleteVehicle,
+    updateScenarioSettings: dataCtx?.updateScenarioSettings,
+
+    // Disruption Simulator (Track 3-05)
+    disruptionsConfig: dataCtx?.disruptionsConfig,
+    setDisruptionsConfig: dataCtx?.setDisruptionsConfig,
+    scenarioResult: dataCtx?.scenarioResult,
+    isScenarioSimulated: dataCtx?.isScenarioSimulated,
+    applyDisruptions: dataCtx?.applyDisruptions,
+    clearDisruptions: dataCtx?.clearDisruptions,
+
     // Data layer CRUD from DataContext
     addTruck: dataCtx?.addTruck,
     updateTruck: dataCtx?.updateTruck,

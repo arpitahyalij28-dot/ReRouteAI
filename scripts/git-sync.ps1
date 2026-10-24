@@ -27,13 +27,17 @@ if (-not [string]::IsNullOrWhiteSpace($incoming)) {
     Write-Host $incoming
     Write-Host "==> Rebase-pulling team commits..." -ForegroundColor Cyan
     Invoke-Expression "$gitCmd pull --rebase origin main"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "==> Conflict detected during rebase! Please resolve conflicts before pushing." -ForegroundColor Red
+        exit 1
+    }
 } else {
     Write-Host "==> Local branch is already up-to-date with team remote." -ForegroundColor Green
 }
 
 $status = Invoke-Expression "$gitCmd status --porcelain"
 if ([string]::IsNullOrWhiteSpace($status)) {
-    Write-Host "No local changes to commit. Everything clean!" -ForegroundColor Green
+    Write-Host "No local changes to commit. Everything up to date!" -ForegroundColor Green
     exit 0
 }
 
@@ -50,11 +54,11 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-Write-Host "==> Pushing safely to origin main..." -ForegroundColor Cyan
-Invoke-Expression "$gitCmd push origin main"
+Write-Host "==> Pushing safely to origin..." -ForegroundColor Cyan
+Invoke-Expression "$gitCmd push origin HEAD"
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "==> Successfully pushed to origin main!" -ForegroundColor Green
+    Write-Host "==> Successfully pushed to origin!" -ForegroundColor Green
 } else {
     Write-Host "==> Push failed with exit code $LASTEXITCODE" -ForegroundColor Red
     exit $LASTEXITCODE

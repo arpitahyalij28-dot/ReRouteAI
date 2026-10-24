@@ -22,6 +22,7 @@ import Loads from './pages/Loads';
 import Assignments from './pages/Assignments';
 import Disruptions from './pages/Disruptions';
 import Settings from './pages/Settings';
+import Analytics from './pages/Analytics';
 import DataManagement from './pages/DataManagement';
 import { AuthProvider } from './context/AuthContext';
 
@@ -262,6 +263,7 @@ function AppContent() {
           <Route path="/loads" element={<Loads />} />
           <Route path="/assignments" element={<Assignments />} />
           <Route path="/disruptions" element={<Disruptions />} />
+          <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/data" element={<DataManagement />} />
           <Route path="*" element={<Navigate to="/" replace />} />

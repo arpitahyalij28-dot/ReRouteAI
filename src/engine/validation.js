@@ -299,3 +299,197 @@ export function parseAndValidateCSV(csvText, type, existingRecords = []) {
     errors
   };
 }
+
+/**
+ * Validates a Dispatch Plan against all regional supply network hard constraints.
+ * Implements live validator checklist:
+ * 1. Stock limit OK
+ * 2. Warehouse storage OK
+ * 3. Vehicle capacity OK
+ * 4. Road restrictions OK
+ * 5. No double allocation OK
+ * 6. Demand not exceeded OK
+ */
+export function validateDispatchPlan(plan, network) {
+  if (!plan || !network) {
+    return {
+      isValid: false,
+      checklist: [],
+      violations: ['Plan or network payload is null'],
+    };
+  }
+
+  const allocations = plan.allocations || [];
+  const warehouses = network.warehouses || [];
+  const buyers = network.buyers || [];
+  const routes = network.routes || [];
+  const vehicles = network.vehicles || [];
+
+  const violations = [];
+
+  // 1. Stock Limit Check (Outflow <= available stock)
+  const whOutflows = {};
+  allocations.forEach((a) => {
+    whOutflows[a.warehouseId] = (whOutflows[a.warehouseId] || 0) + a.quantity;
+  });
+
+  const stockLimitViolations = [];
+  Object.keys(whOutflows).forEach((whId) => {
+    const wh = warehouses.find((w) => w.id === whId);
+    if (!wh) {
+      const msg = `Allocation references unknown warehouse ID: ${whId}.`;
+      stockLimitViolations.push(msg);
+      violations.push(msg);
+    }
+  });
+  warehouses.forEach((wh) => {
+    const outflow = whOutflows[wh.id] || 0;
+    if (outflow > wh.stock) {
+      const msg = `Depot ${wh.name} (${wh.id}) outflow (${outflow}u) exceeds available stock (${wh.stock}u).`;
+      stockLimitViolations.push(msg);
+      violations.push(msg);
+    }
+  });
+  const stockLimitOk = stockLimitViolations.length === 0;
+
+  // 2. Warehouse Storage Capacity Check (Total stock within storageLimit)
+  const storageViolations = [];
+  warehouses.forEach((wh) => {
+    if (wh.stock > wh.storageLimit) {
+      const msg = `Depot ${wh.name} (${wh.id}) stock (${wh.stock}u) exceeds max storage limit (${wh.storageLimit}u).`;
+      storageViolations.push(msg);
+      violations.push(msg);
+    }
+  });
+  const warehouseStorageOk = storageViolations.length === 0;
+
+  // 3. Vehicle Capacity & Discrete Trips Check
+  const vehCapacityViolations = [];
+  allocations.forEach((a) => {
+    const veh = vehicles.find((v) => v.id === a.vehicleId);
+    if (veh) {
+      const maxCarried = veh.capacity * (a.trips || 1);
+      if (a.quantity > maxCarried) {
+        const msg = `Allocation ${a.id}: Shipped quantity (${a.quantity}u) exceeds capacity of ${veh.type} (${maxCarried}u in ${a.trips} trip).`;
+        vehCapacityViolations.push(msg);
+        violations.push(msg);
+      }
+    }
+  });
+  const vehicleCapacityOk = vehCapacityViolations.length === 0;
+
+  // 4. Road Restrictions & Closures Check
+  const roadViolations = [];
+  allocations.forEach((a) => {
+    const pathEdges = Array.isArray(a.path) ? a.path : [];
+    pathEdges.forEach((edgeId) => {
+      const edge = routes.find((r) => r.id === edgeId);
+      if (edge) {
+        if (edge.status === 'closed') {
+          const msg = `Allocation ${a.id} attempted to traverse CLOSED corridor: ${edge.name || edge.id}.`;
+          roadViolations.push(msg);
+          violations.push(msg);
+        }
+        const veh = vehicles.find((v) => v.id === a.vehicleId);
+        if (veh && edge.restrictions?.maxVehicleWeightTons && veh.weightTons) {
+          if (veh.weightTons > edge.restrictions.maxVehicleWeightTons) {
+            const msg = `Allocation ${a.id}: Vehicle weight (${veh.weightTons}T) exceeds corridor limit (${edge.restrictions.maxVehicleWeightTons}T) on ${edge.name || edge.id}.`;
+            roadViolations.push(msg);
+            violations.push(msg);
+          }
+        }
+      }
+    });
+  });
+  const roadRestrictionsOk = roadViolations.length === 0;
+
+  // 5. No Double Resource Allocation Check
+  const doubleAllocViolations = [];
+  const vehicleTripsUsed = {};
+  allocations.forEach((a) => {
+    vehicleTripsUsed[a.vehicleId] = (vehicleTripsUsed[a.vehicleId] || 0) + (a.trips || 1);
+  });
+  vehicles.forEach((v) => {
+    const used = vehicleTripsUsed[v.id] || 0;
+    const allowed = v.availability || 1;
+    if (used > allowed) {
+      const msg = `Vehicle ${v.id} (${v.type}) over-allocated: ${used} trips assigned vs ${allowed} available.`;
+      doubleAllocViolations.push(msg);
+      violations.push(msg);
+    }
+  });
+  const noDoubleAllocationOk = doubleAllocViolations.length === 0;
+
+  // 6. Demand Upper Bound Check
+  const demandViolations = [];
+  const buyerDeliveries = {};
+  allocations.forEach((a) => {
+    buyerDeliveries[a.buyerId] = (buyerDeliveries[a.buyerId] || 0) + a.quantity;
+  });
+  buyers.forEach((b) => {
+    const delivered = buyerDeliveries[b.id] || 0;
+    if (delivered > b.demandQty) {
+      const msg = `Buyer ${b.name} (${b.id}) received ${delivered}u, exceeding order demand (${b.demandQty}u).`;
+      demandViolations.push(msg);
+      violations.push(msg);
+    }
+  });
+  const demandNotExceededOk = demandViolations.length === 0;
+
+  const checklist = [
+    {
+      id: 'stockLimit',
+      name: 'Warehouse Stock Limit',
+      passed: stockLimitOk,
+      details: stockLimitOk
+        ? 'All depot shipments strictly within available inventory'
+        : stockLimitViolations.join(' | '),
+    },
+    {
+      id: 'storageLimit',
+      name: 'Warehouse Storage Capacity',
+      passed: warehouseStorageOk,
+      details: warehouseStorageOk
+        ? 'Depot inventory levels within physical capacity limits'
+        : storageViolations.join(' | '),
+    },
+    {
+      id: 'vehicleCapacity',
+      name: 'Vehicle Capacity & Discrete Trips',
+      passed: vehicleCapacityOk,
+      details: vehicleCapacityOk
+        ? 'Cargo weights bounded by vehicle capacity per trip'
+        : vehCapacityViolations.join(' | '),
+    },
+    {
+      id: 'roadRestrictions',
+      name: 'Road Restrictions & Closures',
+      passed: roadRestrictionsOk,
+      details: roadRestrictionsOk
+        ? 'Zero closed routes traversed; road weight limits respected'
+        : roadViolations.join(' | '),
+    },
+    {
+      id: 'noDoubleAllocation',
+      name: 'No Double Resource Allocation',
+      passed: noDoubleAllocationOk,
+      details: noDoubleAllocationOk
+        ? 'No vehicle or stock unit allocated multiple times'
+        : doubleAllocViolations.join(' | '),
+    },
+    {
+      id: 'demandNotExceeded',
+      name: 'Buyer Demand Upper Bounds',
+      passed: demandNotExceededOk,
+      details: demandNotExceededOk
+        ? 'No buyer receives more than demanded quantity'
+        : demandViolations.join(' | '),
+    },
+  ];
+
+  return {
+    isValid: violations.length === 0,
+    checklist,
+    violations,
+  };
+}
