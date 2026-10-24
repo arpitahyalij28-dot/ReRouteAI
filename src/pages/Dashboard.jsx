@@ -14,7 +14,6 @@ import CorridorMap from '../components/CorridorMap';
 import DemoGuideModal from '../components/DemoGuideModal';
 import BeforeVsAfterCard from '../components/BeforeVsAfterCard';
 import WeatherBadge from '../components/WeatherBadge';
-import QuickWhatsAppIngest from '../components/QuickWhatsAppIngest';
 import { useReRoute, addMinutesToTimeString } from '../context/ReRouteContext';
 import {
   calculateShipmentScore,
@@ -350,7 +349,7 @@ export default function Dashboard() {
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <WeatherBadge weather={corridorWeather} variant="compact" />
 
-          <span className="text-[#64748B] hidden md:inline">Optimal Backhaul:</span>
+          <span className="text-[#64748B] hidden md:inline">Optimal Match:</span>
           <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 font-bold border border-blue-200 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" />
             <span>
@@ -409,15 +408,13 @@ export default function Dashboard() {
             reassignmentAudit={reassignmentAudit}
           />
 
-          {/* Quick Regional / WhatsApp Message Ingestion Dropzone */}
-          <QuickWhatsAppIngest />
 
           {/* Ranked Shipments List for Focused Truck */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-[#0F172A] flex items-center gap-1.5">
-                  <span>Candidate Backhaul Matches</span>
+                  <span>Candidate Consignment Matches</span>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-[#64748B] font-medium">
                     {shipments.filter((s) => !s.isCancelled).length} candidate loads
                   </span>

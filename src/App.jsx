@@ -21,11 +21,8 @@ import Fleet from './pages/Fleet';
 import Loads from './pages/Loads';
 import Assignments from './pages/Assignments';
 import Disruptions from './pages/Disruptions';
-import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import DataManagement from './pages/DataManagement';
-import DriverPortal from './pages/DriverPortal';
-import Login from './pages/Login';
 import { AuthProvider } from './context/AuthContext';
 
 function AppContent() {
@@ -80,8 +77,8 @@ function AppContent() {
     },
     {
       stage: 2,
-      title: 'Warn: Early Backhaul Window Countdown',
-      caption: 'Stage 2 of 7 — Estimated delivery triggers proactive backhaul matching window while truck is still in transit.',
+      title: 'Warn: Early Opportunity Window Countdown',
+      caption: 'Stage 2 of 7 — Estimated arrival triggers proactive assignment window while vehicle is still in transit.',
       action: async () => {
         if (primaryTruckId) setSelectedTruckId(primaryTruckId);
         navigate('/');
@@ -100,7 +97,7 @@ function AppContent() {
     {
       stage: 4,
       title: 'Optimize: Kuhn-Munkres Fleet Assignment',
-      caption: 'Stage 4 of 7 — Hungarian combinatorial solver matches fleet loads globally, eliminating empty return km.',
+      caption: 'Stage 4 of 7 — Hungarian combinatorial solver matches fleet loads globally, eliminating unassigned return km.',
       action: async () => {
         navigate('/fleet');
       },
@@ -158,7 +155,7 @@ function AppContent() {
         navigate('/');
         break;
       case 4:
-        navigate('/analytics');
+        navigate('/');
         break;
       case 5:
         navigate('/');
@@ -263,13 +260,10 @@ function AppContent() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/fleet" element={<Fleet />} />
           <Route path="/loads" element={<Loads />} />
-          <Route path="/driver" element={<DriverPortal />} />
           <Route path="/assignments" element={<Assignments />} />
           <Route path="/disruptions" element={<Disruptions />} />
-          <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/data" element={<DataManagement />} />
-          <Route path="/login" element={<Login />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
@@ -282,7 +276,7 @@ function AppContent() {
               R
             </div>
             <span className="font-semibold text-[#0F172A]">
-              ReRoute AI 2.0 • Predictive Backhaul Intelligence Platform
+              Logistics Twin • Disruption-Aware Regional Supply Network
             </span>
             <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-200">
               {isDemoMode ? 'Local sandbox' : 'Cloud Sync Active'}

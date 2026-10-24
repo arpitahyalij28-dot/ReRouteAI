@@ -21,10 +21,8 @@ const NAV_ITEMS = [
   { path: '/', label: 'Cockpit', icon: LayoutDashboard },
   { path: '/fleet', label: 'Fleet Optimizer', icon: Truck },
   { path: '/loads', label: 'Loads Pool', icon: Package },
-  { path: '/driver', label: 'Driver Portal', icon: Smartphone },
   { path: '/assignments', label: 'Assignments', icon: Layers },
   { path: '/disruptions', label: 'Disruptions', icon: Zap },
-  { path: '/analytics', label: 'ESG Analytics', icon: Leaf },
   { path: '/settings', label: 'Settings', icon: Sliders },
   { path: '/data', label: 'Data Gateway', icon: Database },
 ];

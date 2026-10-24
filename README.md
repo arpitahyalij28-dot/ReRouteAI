@@ -1,9 +1,9 @@
-# ReRoute AI 2.0 — Predictive Backhaul Intelligence Platform
+# Disruption-Aware Logistics Twin for Regional Supply Networks
 
-> **Predictive • Proactive • Explainable • Resilient • Sustainable**  
-> Enterprise-grade autonomous backhaul intelligence platform designed to eliminate empty return miles (deadhead logistics) across high-density freight corridors.
+> **Predictive • Proactive • Explainable • Resilient • Coordinated**  
+> Enterprise-grade regional logistics twin platform designed for real-time corridor optimization, multi-criteria freight matching, combinatorial fleet assignment, and dynamic disruption recovery across regional commercial networks.
 
-[![ReRoute AI CI](https://github.com/arpitahyalij28-dot/ReRouteAI/actions/workflows/ci.yml/badge.svg)](https://github.com/arpitahyalij28-dot/ReRouteAI/actions/workflows/ci.yml)
+[![Logistics Twin CI](https://github.com/arpitahyalij28-dot/ReRouteAI/actions/workflows/ci.yml/badge.svg)](https://github.com/arpitahyalij28-dot/ReRouteAI/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![React](https://img.shields.io/badge/React-18.3-61dafb.svg)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-5.4-646cff.svg)](https://vitejs.dev/)
@@ -16,13 +16,13 @@ Live Deployment: [https://reroute-fleet.vercel.app/](https://reroute-fleet.verce
 
 ## 🏗 System Architecture
 
-ReRoute AI 2.0 is built on a decoupled, resilient architecture supporting both zero-configuration offline demonstration and secure multi-tenant cloud operations:
+The Logistics Twin is built on a decoupled, resilient architecture supporting both zero-configuration offline demonstration and secure multi-tenant cloud operations:
 
 ```mermaid
 graph TB
     subgraph Client ["Client Browser (React 18 + Vite SPA)"]
-        UI["Multi-Page UI (Cockpit, Fleet, Loads, Driver Portal, Disruptions, Analytics)"]
-        RoleCtx["AuthContext (Dispatcher / Shipper / Driver / Admin)"]
+        UI["Multi-Page UI (Cockpit, Fleet, Loads, Assignments, Disruptions, Settings)"]
+        PlannerCtx["AuthContext (Default Planner Persona - Direct Access)"]
         DataCtx["ReRouteContext (Optimistic Updates & Realtime Sync)"]
         LocalRepo["LocalDemoAdapter (In-Memory & LocalStorage Cache)"]
     end
@@ -43,7 +43,7 @@ graph TB
         Claude["Anthropic Claude 3.5 Haiku API (via ANTHROPIC_MODEL)"]
     end
 
-    UI --> RoleCtx
+    UI --> PlannerCtx
     UI --> DataCtx
     DataCtx --> LocalRepo
     DataCtx -.->|"When VITE_SUPABASE_URL set"| SupabaseDB
@@ -63,20 +63,20 @@ graph TB
 
 ## ⚡ Empty-First Dynamic Architecture & Data Modes
 
-ReRoute AI 2.0 operates with a client-first, empty-by-default architecture:
-- **Clean Slate on Fresh Launch**: The application initializes with zero default records, enabling dispatchers and freight operators to input their real-world vehicles and backhaul loads immediately.
+The platform operates with a client-first, empty-by-default architecture:
+- **Clean Slate on Fresh Launch**: The application initializes with zero default records, enabling supply network planners to input their real-world vehicles and regional consignments immediately.
 - **On-Demand Demo Loading**: At any time, operators can click **"Load Demo Data"** in the header or empty states. If data is already present, the system prompts whether to **Replace** or **Merge** with existing consignments.
 - **Client Persistence**: All added trucks, shipments, assignments, and model overrides persist in browser `localStorage` across page reloads.
-- **Instant Reset**: A single **"Clear All Data"** action (with confirmation safeguard) returns the platform to the initial empty state.
+- **Instant Reset**: A single **"Clear All Data"** action (with confirmation safeguard) returns the platform to the initial clean state.
 
 | Feature | Dynamic Client Mode (Default) | Cloud Sync Mode |
 |---|---|---|
-| **Initial App State** | Clean slate (empty trucks & loads) | Connects to Supabase Database |
+| **Initial App State** | Clean slate (empty vehicles & consignments) | Connects to Supabase Database |
 | **Demo Data Injection** | On-demand via "Load Demo Data" button | Database migration seeds |
 | **Data Entry** | Interactive modals (+ Add Truck, + Add Load) | Database CRUD / UI forms |
 | **Storage Engine** | Browser `localStorage` + Memory | Multi-Tenant PostgreSQL (Supabase) |
 | **Zero Env Vars Required** | ✅ Yes (100% offline & local ready) | Requires Supabase credentials |
-| **Role Personas** | Switch instantly via UI header pill | Authenticated via Supabase Magic Links |
+| **User Access** | Single Planner persona (no login required) | Direct Dashboard access |
 | **Algorithmic Evaluation** | Client pure ES Modules (`src/engine/`) | Serverless Endpoints (`/api/*`) + Fallback |
 | **AI Explainability** | Deterministic rule-based template engine | Claude 3.5 Haiku + Fallback |
 
@@ -86,9 +86,9 @@ ReRoute AI 2.0 operates with a client-first, empty-by-default architecture:
 
 ### 1. Adding a Vehicle (Truck)
 1. Click **"+ Add Truck"** in the header navigation or the empty fleet prompt.
-2. Enter the **Truck ID** (e.g. `T-202`), **Driver Name**, **Vehicle Type** (Open Body, Container, Trailer, Tanker), **Total Capacity**, **Current Load**, and select **Origin** and **Destination** cities from the Maharashtra hub directory (Nashik, Mumbai, Pune, Thane, Bhiwandi, Surat, etc.).
-3. Choose status (*In-Transit*, *Available*, *Returning Empty*).
-4. Save the vehicle. The Corridor Map immediately plots the route, and the deadhead risk countdown begins live.
+2. Enter the **Truck ID** (e.g. `T-202`), **Driver Name**, **Vehicle Type** (Open Body, Container, Trailer, Tanker), **Total Capacity**, **Current Load**, and select **Origin** and **Destination** cities from the regional hub directory (Nashik, Mumbai, Pune, Thane, Bhiwandi, Surat, etc.).
+3. Choose status (*In-Transit*, *Available*, *Returning*).
+4. Save the vehicle. The Corridor Map immediately plots the route, and the transit opportunity window begins live.
 
 ### 2. Adding a Shipment / Consignment Load
 1. Click **"+ Add Load"** in the header navigation or the empty loads pool prompt.
@@ -106,24 +106,24 @@ ReRoute AI 2.0 operates with a client-first, empty-by-default architecture:
 
 ## 🔍 Operational Transparency: Real vs. Heuristic Systems
 
-In line with enterprise evaluation best practices, every sub-system in ReRoute AI 2.0 is categorized transparently:
+Every sub-system in the Logistics Twin is categorized transparently:
 
 1. **Vehicle Telemetry & Tracking**:
-   - **Demo Mode**: Simulated GPS coordinates and speed progressions along the NH 160 corridor (Nashik Ambad ↔ Bhiwandi via Kasara Ghat).
-   - **Cloud Mode**: Real-time telemetry ingestion into PostgreSQL `telemetry_points` table via Driver Portal or hardware telematics webhooks.
+   - **Demo Mode**: Simulated GPS coordinates and speed progressions along the corridor (Nashik Ambad ↔ Bhiwandi via Kasara Ghat).
+   - **Cloud Mode**: Telemetry state managed in PostgreSQL repository.
 2. **Weather & Road Routing**:
    - **Real External APIs**: Live routing coordinates fetched from `/api/route` (OpenRouteService / OSRM API). If offline or rate-limited, gracefully falls back to Haversine with a 1.25x road winding tortuosity factor.
    - **Live Weather**: Weather metrics fetched from `/api/weather` (Open-Meteo API) evaluating actual precipitation, wind speed, and temperature disruption risk deltas along the corridor.
 3. **Multi-Criteria Optimization & Scoring**:
    - **Deterministic Heuristic Algorithms**: Evaluates candidate matches using configurable Multi-Criteria Decision Analysis (MCDA) heuristics (Route Alignment 25%, Detour 15%, Time Window 20%, Capacity 20%, Freight Yield 10%, Disruption/Risk 10%). The weights are human-tunable heuristics rather than black-box learned neural weights, allowing full explainability and zero hallucinations.
 4. **Fleet Optimization (Multi-Criteria Weighted Scoring + Global Assignment)**:
-   - **Exact Combinatorial Mathematics**: True Kuhn-Munkres (Hungarian) algorithm running in $O(N^3)$ polynomial time, solving min-cost bipartite matching to maximize fleet-wide profitability and minimize deadhead kilometers across any fleet size (1 to 50+ vehicles).
-   - **Conflict Resolution**: When multiple trucks compete for the highest-yielding return consignment, the global solver assigns the load to the highest overall compatibility score and tags competing trucks with explicit "Why Not?" justifications.
+   - **Exact Combinatorial Mathematics**: True Kuhn-Munkres (Hungarian) algorithm running in $O(N^3)$ polynomial time, solving min-cost bipartite matching to maximize fleet-wide operational efficiency and minimize unassigned transit kilometers across any fleet size (1 to 50+ vehicles).
+   - **Conflict Resolution**: When multiple trucks compete for the highest-yielding consignment, the global solver assigns the load to the highest overall compatibility score and tags competing trucks with explicit "Why Not?" justifications.
 5. **AI Explainability Justification**:
    - **Dual-Engine Architecture**: Invokes Anthropic Claude 3.5 Haiku via `/api/explain` (configured via `ANTHROPIC_MODEL`, default `claude-3-5-haiku-20241022`) for natural language operator synthesis. When API keys are absent, instantaneously falls back to deterministic rule-based template summaries with verified mathematical trade-off proofs.
 
 ### 🌦️ Weather-Aware Scoring Engine
-ReRoute AI 2.0 integrates atmospheric intelligence directly into backhaul evaluation without violating pure engine boundaries:
+The platform integrates atmospheric intelligence directly into candidate evaluation without violating pure engine boundaries:
 - **Zero-Engine Fetch Architecture**: The engine in `src/engine/*` remains 100% pure ES modules without any network fetch. `src/lib/weather.js` handles client-side caching (10-minute TTL, key rounded to 2 coordinate decimals) and in-flight request deduplication.
 - **Engine Setting Propagation**: Atmospheric data is passed cleanly into `settings.weather` in `matching.js` and `eta.js`.
 - **Quantitative Disruption Penalties**: Risk levels convert to penalties on the 6th multi-criteria component (Low Disruption Risk, clamped 5..100):
@@ -138,113 +138,55 @@ ReRoute AI 2.0 integrates atmospheric intelligence directly into backhaul evalua
 
 ## 📐 How the Algorithms & Math Work
 
-### 1. Single-Truck Ranking: Multi-Criteria Weighted Scoring
-For a given truck $T$ and candidate backhaul shipment $L$, the engine first validates four strict feasibility constraints:
-1. **Status Feasibility**: $L.\text{status} \in \{\text{'Available'}, \text{'New'}\} \land \neg L.\text{isCancelled}$
-2. **Payload Capacity Constraint**: $L.\text{cargoWeight} \le T.\text{availableCapacity}$
-3. **Vehicle Compatibility**: $L.\text{requiredVehicleType} \in \{\text{'Any'}, T.\text{vehicleType}\}$
-4. **SLA Window Feasibility**: $T.\text{predictedEta} \le L.\text{pickupWindowEnd}$
+### 1. Multi-Criteria Decision Analysis (MCDA) Compatibility Score
 
-If feasible, the overall match score $S(T, L) \in [0, 100]$ is computed as:
-$$S(T, L) = \frac{\sum_{i=1}^k w_i \cdot f_i(T, L)}{\sum_{i=1}^k w_i}$$
+The compatibility score between vehicle $T$ and consignment $S$ is computed on a scale of $0$ to $100$:
 
-Where the 6 default factors are:
-- **Route Alignment ($f_{\text{route}}$, 25%)**: Vector dot product and deadhead distance penalty from current return leg.
-- **Time Compatibility ($f_{\text{time}}$, 20%)**: Margin between predicted vehicle ETA and shipper tender cutoff.
-- **Payload Capacity Fit ($f_{\text{capacity}}$, 20%)**: Cargo mass utilization ratio relative to gross vehicle weight rating.
-- **Detour Efficiency ($f_{\text{detour}}$, 15%)**: Linear penalty on additional kilometers diverted from nominal corridor.
-- **Freight Cost Yield ($f_{\text{cost}}$, 10%)**: Net operational margin remaining after deducting detour diesel expenses.
-- **Disruption Stability ($f_{\text{risk}}$, 10%)**: Resistance against corridor delays and toll bottleneck risks.
+$$\text{Score}(T, S) = \sum_{i=1}^{6} w_i \cdot f_i(T, S)$$
 
-### 2. Multi-Truck Fleet Optimization: Global Combinatorial Assignment
-When allocating multiple trucks $T_1, \dots, T_n$ to multiple candidate loads $L_1, \dots, L_m$, greedy matching yields suboptimal fleet-wide deadhead miles and conflicts. ReRoute AI uses an exact $O(N^3)$ implementation of the **Hungarian (Kuhn-Munkres) Combinatorial Solver** (`src/utils/fleetOptimizer.js` & `src/engine/hungarian.js`):
-$$\min \sum_{i=1}^n \sum_{j=1}^m C_{ij} \cdot X_{ij} \quad \text{s.t.} \quad \sum_{j} X_{ij} \le 1, \; \sum_{i} X_{ij} \le 1$$
-Where the assignment cost matrix is $C_{ij} = (\max S + 10) - S(T_i, L_j)$ for feasible pairings and a penalty cost for infeasible pairings.
+Where $\sum w_i = 100$:
+- **Route Alignment ($w_1 = 25$)**: Penalizes deviations from the truck's destination hub.
+- **Detour Tolerance ($w_2 = 15$)**: Computed using haversine detour distance over maximum driver tolerance.
+- **Pickup Arrival Buffer ($w_3 = 20$)**: Evaluates predicted arrival against the shipper dock window.
+- **Payload Capacity Fit ($w_4 = 20$)**: $100 \times \frac{\text{Weight}(S)}{\text{Capacity}(T)}$, penalizing under-utilization or vehicle type mismatch.
+- **Economic Freight Gain ($w_5 = 10$)**: Normalized revenue contribution after incremental fuel costs.
+- **Corridor & Weather Risk ($w_6 = 10$)**: Open-Meteo precipitation and wind penalties.
 
-Key properties:
-- **Conflict-Free**: No shipment is assigned as primary to two trucks simultaneously.
-- **Explainable Why Not**: Competing vehicles receive clear rationale for losing contentious loads to winning haulers.
-- **Multi-Load Consolidation**: Trucks with spare capacity are evaluated for complementary secondary shipments.
+### 2. Autonomous Disruption Recovery (Under 400ms)
 
-### 3. Self-Healing Disruption Recovery
-When a committed tender is cancelled or delayed:
-1. The system flags the affected assignment and releases highway reservations.
-2. The remaining available corridor demand is filtered and scored in real-time.
-3. The Hungarian solver reallocates the fleet, measuring latency via `performance.now()` (typically $<15\text{ms}$, well below the 450ms target).
-4. An explainable decision audit log records the root cause, before/after reallocations, and promoted alternate loads.
+When a disruption event occurs (e.g., sudden shipper cancellation or severe storm warning):
+1. **Event Interception**: The platform marks the affected assignment as `Cancelled` or `Delayed`.
+2. **Immediate Re-Evaluation**: The engine scans all remaining unallocated loads.
+3. **Promotion of Runner-Up**: The next highest-scoring feasible candidate is automatically recommended to the operator with a breakdown of why it was selected.
 
 ---
 
-## 👥 Role-Based Portals
-
-- **Dispatcher Cockpit (`/`)**: Full corridor visualization, real-time vehicle radar, empty-return risk countdown, and manual dispatch overrides.
-- **Fleet Optimizer (`/fleet`)**: Multi-truck combinatorial assignment matrix solved globally via Hungarian algorithm.
-- **Loads Pool (`/loads`)**: Freight demand catalog with search, filtering, and validated load posting.
-- **Shipper Portal**: Shippers can post consignments and cancel their tenders directly with multi-tenant data isolation.
-- **Driver Mobile Experience (`/driver`)**: Mobile-first portal showing assigned cargo, turn-by-turn Google Maps link, milestone check-ins (*Arrived at Pickup*, *Cargo Loaded*, *Delivered*), and a 10s background GPS telemetry transmitter.
-
----
-
-## 🚀 Quickstart & Local Development
-
-### Prerequisites
-- Node.js 18.x or 20.x+
-- npm or yarn
-
-### Installation
-```bash
-# Clone the repository
-git clone https://github.com/arpitahyalij28-dot/ReRouteAI.git
-cd ReRouteAI
-
-# Install dependencies
-npm install
-
-# Start development server (Offline Demo Mode, 0 env vars required)
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) to view the cockpit.
-
-> [!TIP]
-> **Serverless Backend Simulation**: `npm run dev` runs the Vite frontend with automatic, graceful fallback to client-side pure mathematical solvers whenever `/api/*` is unreachable. To run the full-stack serverless functions locally alongside the frontend, run `npx vercel dev`.
-
-### Run Quality & Test Suite
-```bash
-# Run Vitest unit & E2E smoke tests (35 tests)
-npm test
-
-# Run production build and verify bundle chunk sizes
-npm run build
-```
-
----
-
-## 📦 Project Structure
+## 📁 Project Structure
 
 ```
-ReRouteAI/
-├── .github/workflows/ci.yml       # Automated GitHub Actions test & build workflow
 ├── api/                           # Vercel Serverless Functions
-│   ├── _utils.js                  # CORS headers & in-memory rate limiting
-│   ├── health.js                  # Health check & system status
-│   ├── optimize.js                # Single truck MCDA ranking endpoint
-│   ├── optimize-fleet.js          # Kuhn-Munkres combinatorial fleet matching
-│   ├── recover.js                 # Disruption recovery endpoint
-│   ├── route.js                   # OSRM / OpenRouteService caching proxy
-│   ├── weather.js                 # Open-Meteo weather disruption risk proxy
-│   └── explain.js                 # Claude 3.5 Haiku explainability (via ANTHROPIC_MODEL) with fallback
+│   ├── _utils.js                  # Shared CORS, headers & error handling
+│   ├── explain.js                 # Claude 3.5 Haiku natural language explanation
+│   ├── geocode.js                 # Free regional geocoder with cache
+│   ├── health.js                  # Liveness and readiness probe
+│   ├── optimize-fleet.js          # Hungarian fleet assignment endpoint
+│   ├── optimize.js                # Single-truck multi-criteria matching
+│   ├── recover.js                 # Disruption re-allocation endpoint
+│   ├── route.js                   # OSRM road geometry proxy
+│   └── weather.js                 # Open-Meteo corridor weather endpoint
 ├── src/
-│   ├── engine/                    # Pure ES Module Mathematical Core
-│   │   ├── distance.js            # Haversine distance & detour calculations
-│   │   ├── eta.js                 # Velocity profiles & pickup window buffers
-│   │   ├── risk.js                # Empty return probability calculations
+│   ├── engine/                    # Pure, deterministic mathematical modules (0 external dependencies)
+│   │   ├── distance.js            # Haversine distance & detour tortuosity
+│   │   ├── eta.js                 # Speed, time windows, & weather delays
+│   │   ├── risk.js                # Opportunity risk calculations
 │   │   ├── matching.js            # Weighted Multi-Criteria Decision Analysis
 │   │   ├── hungarian.js           # Exact Kuhn-Munkres O(N^3) assignment solver
 │   │   ├── recovery.js            # Self-healing disruption recovery state machine
-│   │   ├── sustainability.js      # Diesel liters, CO2 kg, & cost savings
-│   │   └── validation.js          # Zod-style runtime constraint validation
+│   │   ├── sustainability.js      # Fuel and emissions metrics
+│   │   └── validation.js          # Runtime constraint validation
 │   ├── context/
-│   │   ├── AuthContext.jsx        # Supabase Auth & Demo Role Switcher
+│   │   ├── AuthContext.jsx        # Simplified default Planner persona
+│   │   ├── DataContext.jsx        # Vehicle and load state persistence
 │   │   └── ReRouteContext.jsx     # Optimistic state manager & Realtime listener
 │   ├── data/
 │   │   ├── mockData.js            # Comprehensive seed data (6 trucks, 15 loads)
@@ -253,49 +195,20 @@ ReRouteAI/
 │   │   ├── Dashboard.jsx          # Live Cockpit & corridor map
 │   │   ├── Fleet.jsx              # Combinatorial Fleet Optimizer
 │   │   ├── Loads.jsx              # Freight Demand Pool & Load Posting
-│   │   ├── DriverPortal.jsx       # Mobile-first driver dispatch view
-│   │   ├── Assignments.jsx        # Committed load tracking
+│   │   ├── Assignments.jsx        # Committed fleet load tracking
 │   │   ├── Disruptions.jsx        # Scenario simulator
-│   │   ├── Analytics.jsx          # ESG Scope 1 metrics & reports
 │   │   ├── Settings.jsx           # Model weights & corridor coefficients
-│   │   ├── DataManagement.jsx     # Cloud sync & database status
-│   │   └── Login.jsx              # Magic link auth & demo access
+│   │   └── DataManagement.jsx     # Cloud sync & database status
 │   └── components/                # Modular UI components
 ├── supabase/
 │   ├── migrations/                # Idempotent PostgreSQL schema with RLS
 │   └── seed.sql                   # Multi-tenant demonstration seed script
 ├── tests/
-│   ├── demo-flow.test.js          # 7-stage automated smoke test
+│   ├── demo-flow.test.js          # Automated smoke test suite
 │   └── demo-flow.spec.js          # Playwright E2E browser specification
 ├── SETUP_MANUAL_STEPS.md          # Guide for Supabase & Vercel deployment
 └── vercel.json                    # SPA routing rewrite configuration
 ```
-
----
-
-## 💬 WhatsApp & Regional Message Load Parser
-
-ReRoute AI includes an NLP consignment parsing engine designed for Indian freight logistics, accepting unstructured transporter broadcasts, broker tenders, and WhatsApp messages in **Hindi, Hinglish, Marathi, and English**.
-
-### Capabilities
-- **Hybrid AI & Deterministic Architecture**: Automatically utilizes Anthropic Claude (`ANTHROPIC_MODEL` or `claude-3-5-haiku-20241022`) via `POST /api/parse-load` with strict JSON schema and confidence scoring. If offline or without an API key, instantly falls back to a deterministic regex engine (`src/engine/loadParser.js`).
-- **City Normalization & Vernacular Aliases**: Resolves colloquial and regional names (e.g., *Bombay/बम्बई* → Mumbai, *Poona/पुणे* → Pune, *Nasik/नाशिक* → Nashik, *Baroda/वडोदरा* → Vadodara, *Aurangabad/औरंगाबाद* → Chhatrapati Sambhajinagar).
-- **Unit & Currency Handling**: Automatically converts kilograms to metric tons (e.g., *5000 kg* → 5t) and parses abbreviated rates (*28k*, *18 hazar*, *₹28,000/-*, *28000 dunga*).
-- **Relative Scheduling**: Resolves relative expressions (*kal subah 6 baje* → tomorrow 06:00, *parso sham 4 baje* → day-after-tomorrow 16:00) into ISO ready timestamps and dock operation windows.
-- **Dispatcher Review UI**: Integrated into `AddShipmentModal` with one-click test sample chips, confidence metrics, and editable form pre-filling.
-
----
-
-## 🚚 Shipper Truck Marketplace & Reverse Matching (Uber-Style)
-
-ReRoute AI features a bidirectional demand-supply matching engine allowing shippers to discover, evaluate, and lock returning corridor fleet trucks for spot freight consignments.
-
-### Capabilities
-- **Reverse Matching Optimization (`src/engine/reverseMatching.js`)**: Inverts the optimization problem: given a specific consignment tender, evaluates all returning trucks against payload capacity, route detour from return vector, and pickup bay arrival buffers.
-- **Dynamic Backhaul Quotes & Savings**: Automatically computes outbound dedicated hiring price vs discounted return spot rate, highlighting net cost savings (e.g. *Save ₹8,400 (27%) vs dedicated truck*).
-- **10-Minute Soft-Reservation Hold**: Shippers can place a 10-minute hold lock on candidate vehicles (`truck_requests` with `status: 'requested'`), preventing double-booking while drivers review the request.
-- **Driver Portal Dispatch Loop**: Incoming requests appear instantly in the mobile Driver Portal with offered spot rates and a 10-minute timer. Accepting converts the request into an active assignment and dispatches the vehicle.
-- **Dual Mode & RLS Security**: Backed by `LocalDemoAdapter` in-memory / localStorage storage for offline demos and `truck_requests` PostgreSQL table with strict Row-Level Security in Supabase (`20261022000003_shipper_marketplace_requests.sql`).
 
 ---
 
@@ -304,9 +217,8 @@ ReRoute AI features a bidirectional demand-supply matching engine allowing shipp
 1. **OSRM Public Routing API**: The public OSRM demo server has community rate limits. In production, provide an `OPENROUTESERVICE_API_KEY` or self-host an OSRM instance. If the external routing service is unreachable or rate-limited, the system falls back seamlessly to Great-Circle Haversine distance with a corridor winding coefficient (1.25x).
 2. **Hungarian Solver Scaling**: The Kuhn-Munkres algorithm runs in $O(N^3)$ computational complexity. For real-time browser interactions, batches are capped at 100 trucks $\times$ 100 loads. Larger fleets should be processed via asynchronous batch jobs or spatial corridor clustering.
 3. **Weather Disruption Proxies**: Open-Meteo provides hourly precipitation and wind estimates. Localized flash road closures (e.g. landslides in the Kasara Ghat) require integration with highway authority FASTag/toll APIs.
-4. **Driver GPS in Demo Mode**: In offline demo mode, driver GPS coordinates simulate transit along predefined waypoints between Nashik and Bhiwandi at 10-second intervals.
 
 ---
 
 ## 📄 License
-MIT License. Copyright © 2026 ReRoute AI Contributors.
+MIT License. Copyright © 2026 Logistics Twin Contributors.

@@ -91,7 +91,6 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
   const [assignments, setAssignments] = useState([]);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [disruptions, setDisruptions] = useState([]);
-  const [truckRequests, setTruckRequests] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -211,17 +210,15 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
       fetchCountRef.current += 1;
       setFetchCount(fetchCountRef.current);
 
-      const [aList, sSettings, dList, rList] = await Promise.all([
+      const [aList, sSettings, dList] = await Promise.all([
         repository.getAssignments(),
         repository.getModelSettings(),
         repository.getDisruptionEvents(),
-        repository.getTruckRequests ? repository.getTruckRequests() : Promise.resolve([]),
       ]);
 
       setAssignments(aList || []);
       if (sSettings) setSettings(sSettings);
       if (dList) setDisruptions(dList);
-      if (rList) setTruckRequests(rList);
 
       // In Supabase cloud mode, sync trucks & shipments from Postgres
       if (repository.name === 'SupabaseAdapter') {
@@ -564,56 +561,6 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     resetDemo,
     refreshData: loadData,
 
-    // Shipper Marketplace Request Actions
-    truckRequests,
-    requestTruck: async (truckId, shipmentId, details = {}) => {
-      try {
-        const created = await repoRef.current.createTruckRequest({
-          truckId,
-          shipmentId,
-          offeredRateInr: details.offeredRateInr || details.quoteInr || 20000,
-          quoteInr: details.quoteInr || 20000,
-          savingsInr: details.savingsInr || 0,
-          detourKm: details.detourKm || 0,
-          etaBufferMinutes: details.etaBufferMinutes || 0,
-        });
-        setTruckRequests((prev) => [created, ...prev]);
-        showToast(`Requested truck ${details.regNumber || truckId} (10m soft hold active)`, 'success');
-        await loadData(true);
-        return created;
-      } catch (err) {
-        showToast(`Request failed: ${err.message}`, 'error');
-        throw err;
-      }
-    },
-    acceptTruckRequest: async (requestId) => {
-      try {
-        const updated = await repoRef.current.updateTruckRequestStatus(requestId, 'accepted');
-        setTruckRequests((prev) =>
-          prev.map((r) => (r.id === requestId ? updated : r))
-        );
-        showToast('Truck request accepted! Consignment assigned.', 'success');
-        await loadData(true);
-        return updated;
-      } catch (err) {
-        showToast(`Accept failed: ${err.message}`, 'error');
-        throw err;
-      }
-    },
-    rejectTruckRequest: async (requestId) => {
-      try {
-        const updated = await repoRef.current.updateTruckRequestStatus(requestId, 'rejected');
-        setTruckRequests((prev) =>
-          prev.map((r) => (r.id === requestId ? updated : r))
-        );
-        showToast('Truck request declined. Vehicle returned to pool.', 'info');
-        await loadData(true);
-        return updated;
-      } catch (err) {
-        showToast(`Decline failed: ${err.message}`, 'error');
-        throw err;
-      }
-    },
 
     // Data layer CRUD from DataContext
     addTruck: dataCtx?.addTruck,

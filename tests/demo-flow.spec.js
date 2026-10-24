@@ -46,7 +46,7 @@ test.describe('ReRoute AI 2.0 - End-to-End Test Suite', () => {
     }
 
     // Verify initial cockpit state with Before vs After summary
-    await expect(page.locator('text=Fleet Performance: Before vs After')).toBeVisible();
+    await expect(page.locator('text=Before vs After')).toBeVisible();
 
     // Locate Disruption Simulator
     const cancelBtn = page.locator('button:has-text("Cancel"), button:has-text("Cancel S1 Load")').first();
@@ -96,7 +96,7 @@ test.describe('ReRoute AI 2.0 - End-to-End Test Suite', () => {
       }
     });
 
-    const routes = ['/', '/fleet', '/loads', '/driver', '/assignments', '/disruptions', '/analytics', '/settings'];
+    const routes = ['/', '/fleet', '/loads', '/assignments', '/disruptions', '/settings'];
     for (const r of routes) {
       await page.goto(r);
       await page.waitForLoadState('domcontentloaded');

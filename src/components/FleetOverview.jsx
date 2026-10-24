@@ -208,7 +208,7 @@ export default function FleetOverview({
               <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
             </div>
             <div className="text-lg font-black text-red-600 mt-1">{trucksAtRisk}</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">&gt;60% deadhead probability</div>
+            <div className="text-[10px] text-slate-500 mt-0.5">&gt;60% transit risk probability</div>
           </div>
 
           <div className="bg-white p-3 rounded-xl border border-emerald-100 shadow-xs">

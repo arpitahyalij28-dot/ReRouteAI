@@ -75,7 +75,7 @@ export default function TruckCard({
         <div>
           <h3 className="text-sm font-bold text-[#0F172A]">No trucks added yet</h3>
           <p className="text-xs text-[#64748B] mt-1 max-w-xs mx-auto">
-            Add your first vehicle or load the demonstration dataset to start predictive backhaul matching.
+            Add your first vehicle or load the demonstration dataset to start predictive corridor optimization.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
@@ -198,21 +198,21 @@ export default function TruckCard({
                   {truck.emptyReturnProbability}%
                 </span>
                 <span className="block text-[8px] text-[#64748B] font-semibold uppercase">
-                  Deadhead
+                  Risk
                 </span>
               </div>
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-xs font-bold text-[#0F172A]">
-                  Empty Return Risk
+                  Transit Re-Route Risk
                 </span>
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                   {truck.emptyReturnProbability}% Predictive Risk
                 </span>
               </div>
               <p className="text-[11px] text-[#64748B] mt-1 leading-relaxed break-words">
-                Destination has 4.2x freight demand deficit. Predictive backhaul matching recommended before arrival.
+                Destination has freight demand deficit. Proactive corridor assignment recommended before arrival.
               </p>
             </div>
           </div>
@@ -222,7 +222,7 @@ export default function TruckCard({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-xs text-[#64748B]">
                 <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span className="font-semibold text-[#0F172A]">Backhaul Opportunity Window</span>
+                <span className="font-semibold text-[#0F172A]">Re-Route Opportunity Window</span>
               </div>
               <div className="font-mono text-base font-black text-[#0F172A] tracking-tight">
                 {countdown.formatted}
@@ -241,7 +241,7 @@ export default function TruckCard({
             className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-[#2563EB] hover:bg-blue-700 active:bg-blue-800 transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
           >
             <Search className="w-4 h-4" />
-            <span>Find Backhaul Loads Now ({activeShipmentCount} Consignments Available)</span>
+            <span>Find Optimal Loads ({activeShipmentCount} Consignments Available)</span>
             <ArrowRight className="w-4 h-4" />
           </button>
           <div className="flex items-center justify-between text-[11px] text-[#64748B] px-1">

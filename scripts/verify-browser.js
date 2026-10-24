@@ -48,13 +48,6 @@ async function testBrowser() {
   const tourBarText = await page.locator('text=Stage 1 of 7').first().innerText();
   console.log('Tour Bar rendered:', tourBarText);
 
-  // 1.1 Verify Login page and quick-fill buttons
-  await page.goto('http://localhost:4173/login', { waitUntil: 'networkidle' });
-  const dispatcherBtn = page.locator('[data-testid="fill-dispatcher"]');
-  await dispatcherBtn.click();
-  const emailVal = await page.locator('input[type="email"]').inputValue();
-  const passVal = await page.locator('input[type="password"]').inputValue();
-  console.log(`Login page quick fill: email=${emailVal}, passLength=${passVal.length}`);
 
   // 2. Test Responsive Viewports (360px, 390px, 768px, 1440px)
   const viewports = [360, 390, 768, 1440];
