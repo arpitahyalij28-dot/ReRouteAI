@@ -637,6 +637,14 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     deleteVehicle: dataCtx?.deleteVehicle,
     updateScenarioSettings: dataCtx?.updateScenarioSettings,
 
+    // Disruption Simulator (Track 3-05)
+    disruptionsConfig: dataCtx?.disruptionsConfig,
+    setDisruptionsConfig: dataCtx?.setDisruptionsConfig,
+    scenarioResult: dataCtx?.scenarioResult,
+    isScenarioSimulated: dataCtx?.isScenarioSimulated,
+    applyDisruptions: dataCtx?.applyDisruptions,
+    clearDisruptions: dataCtx?.clearDisruptions,
+
     // Data layer CRUD from DataContext
     addTruck: dataCtx?.addTruck,
     updateTruck: dataCtx?.updateTruck,

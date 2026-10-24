@@ -21,6 +21,10 @@ import {
   createVehicle,
   createScenarioSettings,
 } from '../engine/network.js';
+import {
+  DEFAULT_DISRUPTIONS,
+  applyDisruptionScenario,
+} from '../engine/disruptions.js';
 
 export const DataContext = createContext(null);
 
@@ -31,6 +35,8 @@ const STORAGE_KEYS = {
   SELECTED_SHIPMENT: 'reroute_selected_shipment_id',
   NETWORK: 'logistics_twin_network',
   IS_DEMO: 'logistics_twin_is_demo',
+  DISRUPTIONS_CONFIG: 'logistics_twin_disruptions_config',
+  SIMULATED_SCENARIO: 'logistics_twin_simulated_scenario',
 };
 
 function getStoredJson(key, fallback) {
@@ -86,6 +92,16 @@ export function DataProvider({ children }) {
   const [isDemoData, setIsDemoData] = useState(() => {
     const val = localStorage.getItem(STORAGE_KEYS.IS_DEMO);
     return val !== null ? val === 'true' : true;
+  });
+
+  // Problem Simulator Disruption Scenario State (Track 3-05)
+  const [disruptionsConfig, setDisruptionsConfig] = useState(() => {
+    return getStoredJson(STORAGE_KEYS.DISRUPTIONS_CONFIG, DEFAULT_DISRUPTIONS);
+  });
+  const [scenarioResult, setScenarioResult] = useState(() => {
+    const stored = getStoredJson(STORAGE_KEYS.SIMULATED_SCENARIO, null);
+    if (stored) return stored;
+    return null;
   });
 
   // UI Modal States for adding/editing data
@@ -532,6 +548,31 @@ export function DataProvider({ children }) {
     }
   }, [showToast]);
 
+  const applyDisruptions = useCallback(
+    (config) => {
+      const res = applyDisruptionScenario(network, config);
+      setDisruptionsConfig(config);
+      setScenarioResult(res);
+      try {
+        localStorage.setItem(STORAGE_KEYS.DISRUPTIONS_CONFIG, JSON.stringify(config));
+        localStorage.setItem(STORAGE_KEYS.SIMULATED_SCENARIO, JSON.stringify(res));
+      } catch {}
+      showToast('Disruption scenario applied to network copy', 'info');
+      return res;
+    },
+    [network, showToast]
+  );
+
+  const clearDisruptions = useCallback(() => {
+    setDisruptionsConfig(DEFAULT_DISRUPTIONS);
+    setScenarioResult(null);
+    try {
+      localStorage.removeItem(STORAGE_KEYS.DISRUPTIONS_CONFIG);
+      localStorage.removeItem(STORAGE_KEYS.SIMULATED_SCENARIO);
+    } catch {}
+    showToast('Simulation cleared. Baseline network restored.', 'success');
+  }, [showToast]);
+
   const clearAllData = useCallback(() => {
     setTrucks([]);
     setShipments([]);
@@ -547,6 +588,7 @@ export function DataProvider({ children }) {
       settings: createScenarioSettings(),
     });
     setIsDemoData(false);
+    clearDisruptions();
 
     try {
       localStorage.removeItem(STORAGE_KEYS.TRUCKS);
@@ -561,7 +603,7 @@ export function DataProvider({ children }) {
     } catch {}
 
     showToast('All supply network data cleared. Starting fresh.', 'info');
-  }, [showToast]);
+  }, [clearDisruptions, showToast]);
 
   // Derived selected objects
   const selectedTruck = useMemo(() => {
@@ -603,6 +645,14 @@ export function DataProvider({ children }) {
     updateVehicle,
     deleteVehicle,
     updateScenarioSettings,
+
+    // Disruption Simulator (Track 3-05)
+    disruptionsConfig,
+    setDisruptionsConfig,
+    scenarioResult,
+    isScenarioSimulated: Boolean(scenarioResult?.isDisrupted),
+    applyDisruptions,
+    clearDisruptions,
 
     // Legacy Fleet / Consignments for continuity
     trucks,
