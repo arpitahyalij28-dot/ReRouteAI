@@ -276,7 +276,7 @@ export default function Fleet() {
                   <th className="py-3 px-4">Capacity / Load</th>
                   <th className="py-3 px-4">Driver</th>
                   <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Deadhead Risk</th>
+                  <th className="py-3 px-4">Transit Risk</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>

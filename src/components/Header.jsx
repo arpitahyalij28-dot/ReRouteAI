@@ -11,7 +11,6 @@ import {
   MoreVertical,
   ChevronDown,
 } from 'lucide-react';
-import RoleSwitcher from './RoleSwitcher';
 import ShareJudgeModal from './ShareJudgeModal';
 import { useAuth } from '../context/AuthContext';
 import { useReRoute } from '../context/ReRouteContext';
@@ -61,10 +60,7 @@ export default function Header({ onOpenDemoGuide, onResetAll }) {
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 sm:gap-2">
               <span className="text-base sm:text-lg font-bold tracking-tight text-[#0F172A] truncate">
-                ReRoute AI{' '}
-                <span className="text-blue-600 font-extrabold text-xs sm:text-base px-1 sm:px-1.5 py-0.5 rounded-md bg-blue-50 border border-blue-200">
-                  2.0
-                </span>
+                Logistics Twin
               </span>
               {isLocal ? (
                 <span
@@ -208,10 +204,7 @@ export default function Header({ onOpenDemoGuide, onResetAll }) {
             )}
           </div>
 
-          {/* Role Dropdown */}
-          <div className="pl-1 border-l border-[#E2E8F0]">
-            <RoleSwitcher />
-          </div>
+
         </div>
       </div>
 

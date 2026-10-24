@@ -227,46 +227,6 @@ export function assignmentToRow(a, orgId = 'demo-org') {
   };
 }
 
-export function rowToTruckRequest(r) {
-  if (!r) return null;
-  return {
-    id: r.id,
-    orgId: r.org_id,
-    truckId: r.truck_id,
-    shipmentId: r.shipment_id,
-    shipperId: r.shipper_id,
-    status: r.status || 'requested',
-    offeredRateInr: Number(r.offered_rate_inr || 0),
-    quoteInr: Number(r.quote_inr || 0),
-    savingsInr: Number(r.savings_inr || 0),
-    detourKm: Number(r.detour_km || 0),
-    etaBufferMinutes: Number(r.eta_buffer_minutes || 0),
-    expiresAt: r.expires_at,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-  };
-}
-
-export function truckRequestToRow(req, orgId = 'demo-org') {
-  if (!req) return null;
-  return {
-    id: req.id,
-    org_id: req.orgId || orgId,
-    truck_id: req.truckId,
-    shipment_id: req.shipmentId,
-    shipper_id: req.shipperId || null,
-    status: req.status || 'requested',
-    offered_rate_inr: Number(req.offeredRateInr || 0),
-    quote_inr: Number(req.quoteInr || 0),
-    savings_inr: Number(req.savingsInr || 0),
-    detour_km: Number(req.detourKm || 0),
-    eta_buffer_minutes: Number(req.etaBufferMinutes || 0),
-    expires_at: req.expiresAt || new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-    created_at: req.createdAt || new Date().toISOString(),
-    updated_at: req.updatedAt || new Date().toISOString(),
-  };
-}
-
 // --- Local Demo Adapter (In-Memory + LocalStorage Fallback) ---
 
 export class LocalDemoAdapter {
@@ -283,7 +243,6 @@ export class LocalDemoAdapter {
       const storedAssignments = localStorage.getItem(`${this.storageKeyPrefix}assignments`);
       const storedSettings = localStorage.getItem(`${this.storageKeyPrefix}settings`);
       const storedDisruptions = localStorage.getItem(`${this.storageKeyPrefix}disruptions`);
-      const storedRequests = localStorage.getItem(`${this.storageKeyPrefix}truck_requests`);
       const storedNetwork = localStorage.getItem(`${this.storageKeyPrefix}network`);
 
       this.trucks = storedTrucks ? JSON.parse(storedTrucks) : JSON.parse(JSON.stringify(INITIAL_TRUCKS));
@@ -291,7 +250,6 @@ export class LocalDemoAdapter {
       this.assignments = storedAssignments ? JSON.parse(storedAssignments) : [];
       this.settings = storedSettings ? JSON.parse(storedSettings) : JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
       this.disruptions = storedDisruptions ? JSON.parse(storedDisruptions) : [];
-      this.truckRequests = storedRequests ? JSON.parse(storedRequests) : [];
       this.network = storedNetwork ? JSON.parse(storedNetwork) : getDemoNetwork();
     } catch {
       this.trucks = JSON.parse(JSON.stringify(INITIAL_TRUCKS));
@@ -299,7 +257,6 @@ export class LocalDemoAdapter {
       this.assignments = [];
       this.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
       this.disruptions = [];
-      this.truckRequests = [];
       this.network = getDemoNetwork();
     }
   }
@@ -311,7 +268,6 @@ export class LocalDemoAdapter {
       localStorage.setItem(`${this.storageKeyPrefix}assignments`, JSON.stringify(this.assignments));
       localStorage.setItem(`${this.storageKeyPrefix}settings`, JSON.stringify(this.settings));
       localStorage.setItem(`${this.storageKeyPrefix}disruptions`, JSON.stringify(this.disruptions));
-      localStorage.setItem(`${this.storageKeyPrefix}truck_requests`, JSON.stringify(this.truckRequests));
       localStorage.setItem(`${this.storageKeyPrefix}network`, JSON.stringify(this.network));
     } catch {
       // Local storage quota or unavailable in certain test environments
@@ -391,21 +347,6 @@ export class LocalDemoAdapter {
     return newS;
   }
 
-  async recordTelemetry(point) {
-    this.trucks = this.trucks.map((t) => {
-      if (t.id !== point.truckId) return t;
-      return {
-        ...t,
-        currentCoords: [point.lat, point.lng],
-        currentLat: point.lat,
-        currentLng: point.lng,
-        speedKmH: point.speed ?? t.speedKmH,
-        currentLocationName: point.locationName || t.currentLocationName,
-      };
-    });
-    this._save();
-    return { success: true };
-  }
 
   async updateAssignmentStatus(assignmentId, status) {
     this.assignments = this.assignments.map((a) =>
@@ -444,81 +385,12 @@ export class LocalDemoAdapter {
     return JSON.parse(JSON.stringify(this.disruptions));
   }
 
-  async getTruckRequests() {
-    return JSON.parse(JSON.stringify(this.truckRequests));
-  }
-
-  async createTruckRequest(request) {
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    const newReq = {
-      id: request.id || `REQ-${Date.now()}`,
-      status: 'requested',
-      expiresAt,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      ...request,
-    };
-    this.truckRequests = [newReq, ...this.truckRequests];
-
-    // Hold lock on truck (10 mins)
-    this.trucks = this.trucks.map((t) =>
-      t.id === request.truckId
-        ? { ...t, requestStatus: 'requested', holdExpiresAt: expiresAt }
-        : t
-    );
-
-    this._save();
-    return newReq;
-  }
-
-  async updateTruckRequestStatus(requestId, status) {
-    const reqIndex = this.truckRequests.findIndex((r) => r.id === requestId);
-    if (reqIndex === -1) return null;
-
-    const req = this.truckRequests[reqIndex];
-    const updated = {
-      ...req,
-      status,
-      updatedAt: new Date().toISOString(),
-    };
-    this.truckRequests[reqIndex] = updated;
-
-    if (status === 'accepted') {
-      // Create confirmed assignment
-      await this.createAssignment({
-        truckId: req.truckId,
-        shipmentId: req.shipmentId,
-        matchScore: req.matchScore || 92,
-        detourKm: req.detourKm || 8,
-        costGain: req.savingsInr || req.offeredRateInr || 20000,
-        status: 'Active',
-      });
-      // Mark truck assigned
-      this.trucks = this.trucks.map((t) =>
-        t.id === req.truckId
-          ? { ...t, status: 'Assigned', requestStatus: null, holdExpiresAt: null }
-          : t
-      );
-    } else if (status === 'rejected' || status === 'expired') {
-      // Release lock
-      this.trucks = this.trucks.map((t) =>
-        t.id === req.truckId
-          ? { ...t, requestStatus: null, holdExpiresAt: null }
-          : t
-      );
-    }
-
-    this._save();
-    return updated;
-  }
-
   async resetToDemo() {
     this.trucks = JSON.parse(JSON.stringify(INITIAL_TRUCKS));
     this.shipments = JSON.parse(JSON.stringify(INITIAL_SHIPMENTS));
     this.assignments = [];
     this.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
     this.disruptions = [];
-    this.truckRequests = [];
     this.network = getDemoNetwork();
     this._save();
     return { success: true };
@@ -707,28 +579,6 @@ export class SupabaseAdapter {
     return rowToShipment(data);
   }
 
-  async recordTelemetry(point) {
-    // Aligns with schema: column is `speed` (not speed_kmh) and includes required NOT NULL `org_id`
-    const row = {
-      org_id: this.orgId,
-      truck_id: point.truckId,
-      lat: point.lat,
-      lng: point.lng,
-      speed: Number(point.speed ?? 0),
-      recorded_at: new Date().toISOString(),
-    };
-    await this.client.from('telemetry_points').insert(row);
-    await this.client
-      .from('trucks')
-      .update({
-        current_lat: point.lat,
-        current_lng: point.lng,
-        speed_kmh: Number(point.speed ?? 50),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', point.truckId);
-    return { success: true };
-  }
 
   async updateAssignmentStatus(assignmentId, status) {
     // Schema does not contain `updated_at` on assignments table
@@ -792,53 +642,6 @@ export class SupabaseAdapter {
 
     if (error) throw new Error(`Supabase getDisruptionEvents failed: ${error.message}`);
     return data || [];
-  }
-
-  async getTruckRequests() {
-    const { data, error } = await this.client
-      .from('truck_requests')
-      .select('*')
-      .eq('org_id', this.orgId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw new Error(`Supabase getTruckRequests failed: ${error.message}`);
-    return (data || []).map(rowToTruckRequest);
-  }
-
-  async createTruckRequest(request) {
-    const row = truckRequestToRow(request, this.orgId);
-    const { data, error } = await this.client
-      .from('truck_requests')
-      .insert(row)
-      .select()
-      .single();
-
-    if (error) throw new Error(`Supabase createTruckRequest failed: ${error.message}`);
-    return rowToTruckRequest(data);
-  }
-
-  async updateTruckRequestStatus(requestId, status) {
-    const { data, error } = await this.client
-      .from('truck_requests')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('id', requestId)
-      .select()
-      .single();
-
-    if (error) throw new Error(`Supabase updateTruckRequestStatus failed: ${error.message}`);
-    const req = rowToTruckRequest(data);
-
-    if (status === 'accepted') {
-      await this.createAssignment({
-        truckId: req.truckId,
-        shipmentId: req.shipmentId,
-        matchScore: 92,
-        detourKm: req.detourKm,
-        costGain: req.savingsInr,
-        status: 'Active',
-      });
-    }
-    return req;
   }
 
   async resetToDemo() {

@@ -166,7 +166,7 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
                 {editingTruck ? `Edit Vehicle ${editingTruck.id}` : 'Add Commercial Fleet Vehicle'}
               </h3>
               <p className="text-xs text-[#64748B]">
-                Configure telemetry and capacity parameters; empty-return risk will be predicted automatically
+                Configure telemetry and capacity parameters; transit risk will be predicted automatically
               </p>
             </div>
           </div>
@@ -414,14 +414,14 @@ export default function AddTruckModal({ isOpen, onClose, editingTruck = null }) 
             </div>
           </div>
 
-          {/* Predictive Empty Return Risk Notice */}
+          {/* Predictive Transit Risk Notice */}
           <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl text-xs flex items-start gap-2.5">
             <Sparkles className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
             <div className="text-slate-700 leading-snug">
-              <span className="font-bold text-blue-900 block">Predictive Deadhead Risk Engine</span>
+              <span className="font-bold text-blue-900 block">Predictive Transit Risk Engine</span>
               <span>
-                Empty-return probability is automatically computed based on freight demand deficit at{' '}
-                <strong>{formData.destination}</strong>, unassigned backhaul pool, and ETA buffer.
+                Transit re-route risk probability is automatically computed based on regional network conditions at{' '}
+                <strong>{formData.destination}</strong>, unassigned freight demand pool, and ETA buffer.
               </span>
             </div>
           </div>

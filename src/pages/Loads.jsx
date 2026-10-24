@@ -4,8 +4,6 @@ import { useReRoute } from '../context/ReRouteContext';
 import { useAuth } from '../context/AuthContext';
 import { validateShipment } from '../engine/validation';
 import { apiFetch } from '../lib/api';
-import ShipperMarketplaceModal from '../components/ShipperMarketplaceModal';
-import QuickWhatsAppIngest from '../components/QuickWhatsAppIngest';
 
 export default function Loads() {
   const {
@@ -24,7 +22,6 @@ export default function Loads() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
-  const [marketplaceShipment, setMarketplaceShipment] = useState(null);
 
   // New Load Form State
   const [formData, setFormData] = useState({
@@ -117,7 +114,7 @@ export default function Loads() {
       specialRequirements: formData.specialRequirements,
       whyWhyNot: {
         recommendedSummary: 'Fresh tender posted into corridor freight pool.',
-        reasons: [{ type: 'check', title: 'Verified Tender', description: 'Validated and ready for backhaul matching.' }],
+        reasons: [{ type: 'check', title: 'Verified Tender', description: 'Validated and ready for network matching.' }],
       },
     };
 
@@ -181,8 +178,6 @@ export default function Loads() {
         </div>
       )}
 
-      {/* Quick WhatsApp / Regional Message Ingest Dropzone */}
-      <QuickWhatsAppIngest />
 
       {/* Filter and Search Bar */}
       <div className="bg-white p-3.5 rounded-[12px] border border-[#E2E8F0] shadow-soft flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
@@ -367,7 +362,7 @@ export default function Loads() {
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#E2E8F0] space-y-4 animate-in fade-in">
             <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
-              <h3 className="text-base font-bold text-[#0F172A]">Post New Backhaul Load Tender</h3>
+              <h3 className="text-base font-bold text-[#0F172A]">Post New Freight Load Tender</h3>
               <button
                 onClick={() => setIsModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600 font-bold"
@@ -498,12 +493,7 @@ export default function Loads() {
         </div>
       )}
 
-      {/* Shipper Marketplace Reverse Match Modal */}
-      <ShipperMarketplaceModal
-        isOpen={!!marketplaceShipment}
-        onClose={() => setMarketplaceShipment(null)}
-        shipment={marketplaceShipment}
-      />
+
     </div>
   );
 }

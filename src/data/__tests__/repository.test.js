@@ -165,7 +165,7 @@ describe('Data Layer & Seed Dataset', () => {
     expect(resetS1.status).toBe('Available');
   });
 
-  it('supports createShipment, recordTelemetry, and updateAssignmentStatus in LocalDemoAdapter', async () => {
+  it('supports createShipment and updateAssignmentStatus in LocalDemoAdapter', async () => {
     // 1. Create new shipment
     const created = await adapter.createShipment({
       name: 'Test Urgent Pune Tender',
@@ -179,20 +179,7 @@ describe('Data Layer & Seed Dataset', () => {
     const allShipments = await adapter.getShipments();
     expect(allShipments.some((s) => s.id === created.id)).toBe(true);
 
-    // 2. Record telemetry
-    await adapter.recordTelemetry({
-      truckId: 'T101',
-      lat: 19.55,
-      lng: 73.35,
-      speed: 62,
-      locationName: 'Kasara Ghat Summit',
-    });
-    const trucks = await adapter.getTrucks();
-    const t101 = trucks.find((t) => t.id === 'T101');
-    expect(t101.currentLat).toBe(19.55);
-    expect(t101.currentLocationName).toBe('Kasara Ghat Summit');
-
-    // 3. Update assignment status
+    // 2. Update assignment status
     const ass = await adapter.createAssignment({
       truckId: 'T101',
       shipmentId: created.id,

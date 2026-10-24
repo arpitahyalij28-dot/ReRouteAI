@@ -485,7 +485,7 @@ export default function CorridorMap({
       // Show tooltip on hover
       marker.bindTooltip(
         `<div style="font-family: 'Inter', sans-serif; font-size: 11px;">
-          <strong>Vehicle ${t.id}</strong> • ${isSimulatingThisTruck ? `<strong style="color: #059669;">${getMilestoneName(simProgress)}</strong>` : `Deadhead Risk: <strong style="color: ${riskColor};">${riskVal}%</strong>`}<br/>
+          <strong>Vehicle ${t.id}</strong> • ${isSimulatingThisTruck ? `<strong style="color: #059669;">${getMilestoneName(simProgress)}</strong>` : `Transit Risk: <strong style="color: ${riskColor};">${riskVal}%</strong>`}<br/>
           <span style="color: #64748B;">Route: ${t.origin?.split(' ')[0]} → ${t.destination?.split(' ')[0]}</span>
         </div>`,
         { direction: 'top', offset: [0, isSelectedTruck ? -14 : -8], opacity: 0.95 }
@@ -495,7 +495,7 @@ export default function CorridorMap({
         <div style="font-family: 'Inter', sans-serif; font-size: 11px;">
           <strong style="color: #0F172A;">Vehicle ${t.id} (${t.regNumber || ''})</strong><br/>
           <span style="color: #64748B;">Route: ${t.origin} → ${t.destination}</span><br/>
-          <span style="color: ${riskColor}; font-weight: 600;">Deadhead Risk: ${riskVal}%</span><br/>
+          <span style="color: ${riskColor}; font-weight: 600;">Transit Risk: ${riskVal}%</span><br/>
           <span style="color: #2563EB; font-weight: 600;">ETA: ${t.expectedDeliveryTime || '14:30'}</span>
         </div>
       `);

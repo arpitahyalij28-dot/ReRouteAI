@@ -16,12 +16,12 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useReRoute } from '../context/ReRouteContext';
-
 const NAV_ITEMS = [
   { path: '/', label: 'Supply Network', icon: LayoutDashboard },
   { path: '/disruptions', label: 'Problem Simulator', icon: Zap },
   { path: '/assignments', label: 'Recovery Plan', icon: Layers },
   { path: '/fleet', label: 'Fleet & Dispatch', icon: Truck },
+  { path: '/loads', label: 'Loads Pool', icon: Package },
   { path: '/analytics', label: 'Resilience Analytics', icon: Leaf },
   { path: '/settings', label: 'Settings', icon: Sliders },
   { path: '/data', label: 'Data Management', icon: Database },

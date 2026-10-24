@@ -22,9 +22,9 @@ export default function BeforeVsAfterCard({
           <Sparkles className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-[#0F172A]">Fleet Performance: Before vs After ReRoute AI</h3>
+          <h3 className="text-sm font-bold text-[#0F172A]">Regional Network Performance: Before vs After Logistics Twin</h3>
           <p className="text-xs text-[#64748B] mt-1 max-w-md mx-auto">
-            Add a truck or load demo data to see your savings. Discover how much unloaded diesel, deadhead return miles, and operational expenditure you can recover with predictive backhaul matching.
+            Add a truck or load demo data to see your savings. Discover how much wasted diesel, unassigned return miles, and operational expenditure you can recover with predictive network optimization.
           </p>
         </div>
         <div className="flex items-center justify-center gap-2 pt-1">
@@ -90,11 +90,11 @@ export default function BeforeVsAfterCard({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-extrabold text-[#0F172A] tracking-tight">
-                Fleet Performance: Before vs After ReRoute AI
+                Regional Network Performance: Before vs After Logistics Twin
               </h3>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
                 <ArrowDownRight className="w-3 h-3 text-emerald-600" />
-                {pctReduction}% Empty Miles Reduced
+                {pctReduction}% Unassigned Miles Reduced
               </span>
             </div>
             <p className="text-[11px] text-[#64748B]">

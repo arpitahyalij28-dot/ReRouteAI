@@ -169,7 +169,7 @@ export default function SustainabilityDashboard({
           </div>
           <div className="text-[10px] text-[#059669] font-medium mt-1 flex items-center gap-1">
             <TrendingUp className="w-3 h-3" />
-            <span>Eliminated Deadhead Distance</span>
+            <span>Optimized Transit Distance</span>
           </div>
         </div>
 
