@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Health Check Endpoint
+// Logistics Twin - Health Check Endpoint
 // GET /api/health
 
 import { setCorsHeaders, jsonResponse, checkRateLimit, errorResponse } from './_utils.js';
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
 
   return jsonResponse(res, 200, {
     status: 'healthy',
-    service: 'ReRoute AI Serverless API',
+    service: 'Logistics Twin Serverless API',
     version: '2.0.0',
     uptimeSeconds: Math.floor((Date.now() - startTime) / 1000),
     database: {

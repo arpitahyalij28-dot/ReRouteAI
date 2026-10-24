@@ -1,5 +1,5 @@
 -- ==============================================================================
--- ReRoute AI 2.0 — Production Database Schema Migration
+-- Logistics Twin — Production Database Schema Migration
 -- Migration: 20261022000000_create_reroute_schema.sql
 -- Idempotent, re-runnable, secure Row-Level Security with role-based policies.
 -- ==============================================================================

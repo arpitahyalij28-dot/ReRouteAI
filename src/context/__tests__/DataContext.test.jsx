@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Data & Scoring Logic Unit Test Suite
+// Logistics Twin - Data & Scoring Logic Unit Test Suite
 import { describe, it, expect, beforeEach } from 'vitest';
 import { getCityCoords, calculateDistanceKm, CITIES, CITY_MAP } from '../../data/cities';
 import {

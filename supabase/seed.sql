@@ -1,5 +1,5 @@
 -- ==============================================================================
--- ReRoute AI 2.0 — Seed Data for Demo Organization
+-- Logistics Twin — Seed Data for Demo Organization
 -- Populates demo-org with 6 trucks, 15 candidate backhaul shipments, and settings
 -- ==============================================================================
 

@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Core Engine Hub (ES Module)
+// Logistics Twin - Core Engine Hub (ES Module)
 // Exporting all pure modules for browser and serverless usage
 
 export * from './distance.js';

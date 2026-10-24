@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Backhaul Matching Engine (ES Module)
+// Logistics Twin - Backhaul Matching Engine (ES Module)
 // Evaluates candidate shipments against a truck using Weighted Multi-Criteria Scoring
 
 import { calculateRouteEstimate } from './distance.js';

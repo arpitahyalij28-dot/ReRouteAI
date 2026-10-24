@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Dynamic Disruption Recovery Endpoint
+// Logistics Twin - Dynamic Disruption Recovery Endpoint
 // POST /api/recover
 // Self-healing recovery triggered when an active assignment or candidate load is cancelled or disrupted.
 

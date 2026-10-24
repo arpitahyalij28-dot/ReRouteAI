@@ -1,5 +1,5 @@
 -- ==============================================================================
--- ReRoute AI 2.0 — Legacy Schema (Archived)
+-- Logistics Twin — Legacy Schema (Archived)
 -- Archived for reference. New production migrations live in supabase/migrations/
 -- ==============================================================================
 

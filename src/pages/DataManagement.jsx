@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Data Gateway & Management Page
+// Logistics Twin - Data Gateway & Management Page
 // CSV Export, JSON system backup, Load Demo Data, and Clear All Data.
 
 import React, { useState } from 'react';
@@ -33,7 +33,7 @@ export default function DataManagement() {
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    downloadFile(csvContent, `ReRoute_Fleet_Trucks_${Date.now()}.csv`);
+    downloadFile(csvContent, `LogisticsTwin_Fleet_Trucks_${Date.now()}.csv`);
     setStatusMessage('Fleet trucks CSV exported successfully.');
   };
 
@@ -54,7 +54,7 @@ export default function DataManagement() {
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    downloadFile(csvContent, `ReRoute_Freight_Shipments_${Date.now()}.csv`);
+    downloadFile(csvContent, `LogisticsTwin_Freight_Shipments_${Date.now()}.csv`);
     setStatusMessage('Freight demand pool CSV exported successfully.');
   };
 
@@ -68,7 +68,7 @@ export default function DataManagement() {
       assignments,
     };
     const jsonString = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
-    downloadFile(jsonString, `ReRoute_Backup_${Date.now()}.json`);
+    downloadFile(jsonString, `LogisticsTwin_Backup_${Date.now()}.json`);
     setStatusMessage('Full system JSON backup downloaded.');
   };
 

@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Generic Disruption Simulator Component
+// Logistics Twin - Generic Disruption Simulator Component
 // Injects cancellations, delays, or window modifications on ANY candidate load.
 // Displays the 5 self-healing recovery stages and real measured solver latency.
 

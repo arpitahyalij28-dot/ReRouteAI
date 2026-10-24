@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Recovery Engine (ES Module)
+// Logistics Twin - Recovery Engine (ES Module)
 // Autonomous recovery simulation when a backhaul shipment is cancelled or disrupted
 
 import { evaluateShipments } from './matching.js';

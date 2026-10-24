@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Multi-Truck Fleet Optimizer Unit & Acceptance Test Suite
+// Logistics Twin - Multi-Truck Fleet Optimizer Unit & Acceptance Test Suite
 import { describe, it, expect } from 'vitest';
 import { optimizeFleetGlobal } from '../fleetOptimizer';
 import { DEMO_DATA, INITIAL_TRUCKS, INITIAL_SHIPMENTS } from '../../data/mockData';

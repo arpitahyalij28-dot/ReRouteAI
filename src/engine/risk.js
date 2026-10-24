@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Empty Return Risk Engine (ES Module)
+// Logistics Twin - Empty Return Risk Engine (ES Module)
 // Calculates Empty Return Risk for a truck dynamically based on real data
 
 import { calculateDistance, extractCoords } from './distance.js';

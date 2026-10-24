@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Hungarian Algorithm / Min-Cost Bipartite Assignment Solver
+// Logistics Twin - Hungarian Algorithm / Min-Cost Bipartite Assignment Solver
 // Solves 1-to-1 optimal conflict-free assignment between N trucks and M candidate shipments.
 // Computes exact combinatorial optimum with measured performance.now() latency.
 

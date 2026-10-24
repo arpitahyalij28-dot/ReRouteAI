@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Confirmation & Demo Option Modals
+// Logistics Twin - Confirmation & Demo Option Modals
 // Handles "Clear All Data" safety verification and "Replace vs Merge" demo data choices.
 
 import React from 'react';

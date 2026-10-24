@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Single Truck Optimization Endpoint
+// Logistics Twin - Single Truck Optimization Endpoint
 // POST /api/optimize
 // Validates payload with zod, executes pure matching engine, returns ranked candidate backhauls.
 

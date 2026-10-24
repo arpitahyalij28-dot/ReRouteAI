@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Serverless API Client
+// Logistics Twin - Serverless API Client
 // Provides a resilient wrapper around backend /api/* serverless endpoints with a 4s timeout.
 // Returns null on any failure (network error, timeout, 4xx/5xx) so all callers gracefully
 // fall back to the client-side pure mathematical engine.

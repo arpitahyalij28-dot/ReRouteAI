@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Supabase Client Instance
+// Logistics Twin - Supabase Client Instance
 // Safe client initialization: only public anon key is exposed to the browser.
 // Returns null if environment variables are missing (for offline Demo Mode).
 

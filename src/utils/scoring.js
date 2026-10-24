@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Scoring & Risk Predictive Algorithms
+// Logistics Twin - Scoring & Risk Predictive Algorithms
 // Uses weighted multi-criteria scoring (25% Route, 20% Time, 20% Capacity, 15% Detour, 10% Cost, 10% Disruption)
 // and predictive deadhead risk calculations based on real freight demand deficit.
 

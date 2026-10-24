@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Repository & Adapter Test Suite
+// Logistics Twin - Repository & Adapter Test Suite
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   LocalDemoAdapter,

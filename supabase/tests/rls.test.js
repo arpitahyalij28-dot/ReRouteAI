@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Row-Level Security (RLS) Allow/Deny Matrix Test Suite
+// Logistics Twin - Row-Level Security (RLS) Allow/Deny Matrix Test Suite
 // Verifies:
 // 1. Unauthenticated Anonymous Visitor: Read-only on 'demo-org', strictly DENIED on mutations & non-demo orgs.
 // 2. Multi-Tenant Org Isolation: Users from 'org-alpha' cannot read or write to 'org-beta'.

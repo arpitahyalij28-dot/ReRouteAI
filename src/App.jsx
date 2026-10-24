@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Core Application Hub
+// Logistics Twin - Core Application Hub
 // Multi-page routing with data-driven state provider and 100% demo continuity.
 // Integrates 7-stage guided tour autoplay with narrative controls for evaluators and judges.
 
@@ -274,9 +274,7 @@ function AppContent() {
       <footer className="bg-white border-t border-[#E2E8F0] mt-auto py-5 px-4 sm:px-6">
         <div className="max-w-[1680px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-[#64748B]">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-md bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">
-              R
-            </div>
+            <div className="w-5 h-5 rounded-md bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">LT</div>
             <span className="font-semibold text-[#0F172A]">
               Logistics Twin • Disruption-Aware Regional Supply Network
             </span>

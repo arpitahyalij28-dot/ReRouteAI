@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Serverless API Endpoints Test Suite
+// Logistics Twin - Serverless API Endpoints Test Suite
 import { describe, it, expect } from 'vitest';
 import healthHandler from '../health.js';
 import optimizeHandler from '../optimize.js';
@@ -52,7 +52,7 @@ describe('Serverless Backend Endpoints (/api/*)', () => {
     expect(res.statusCode).toBe(200);
     expect(res.responseData.status).toBe('healthy');
     expect(res.responseData.version).toBe('2.0.0');
-    expect(res.responseData.service).toContain('ReRoute AI');
+    expect(res.responseData.service).toContain('Logistics Twin');
   });
 
   it('POST /api/optimize validates body and evaluates candidate backhauls', async () => {

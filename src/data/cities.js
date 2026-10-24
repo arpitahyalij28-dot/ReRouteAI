@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Maharashtra & Western India Key Logistics Hubs & Cities
+// Logistics Twin - Maharashtra & Western India Key Logistics Hubs & Cities
 // Geocoded lookup dictionary for dynamic route plotting and distance computation.
 
 export const CITIES = [

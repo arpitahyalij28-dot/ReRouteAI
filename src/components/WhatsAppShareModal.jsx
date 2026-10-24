@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - WhatsApp Dispatch & Share Voucher Modal
+// Logistics Twin - WhatsApp Dispatch & Share Voucher Modal
 // Generates formatted backhaul dispatch vouchers for drivers and shippers.
 // Compatible with WhatsApp Web and mobile WhatsApp app via wa.me protocol.
 
@@ -51,7 +51,7 @@ export default function WhatsAppShareModal({
 🗺️ *Google Maps Link:* https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shipment.origin)}
 🌱 *Environmental Impact:* ~120 km empty running prevented (${Math.round((shipment.weightTons || 8) * 9.5)} kg CO₂ avoided)
 ---------------------------------------
-⚡ *Powered by ReRoute AI Autonomous Corridor Dispatch*`;
+⚡ *Powered by Logistics Twin Autonomous Corridor Dispatch*`;
 
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(voucherText)}`;
 

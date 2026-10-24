@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Navigation Bar
+// Logistics Twin - Navigation Bar
 // Top navigation tabs connecting all system pages
 
 import React from 'react';

@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Playwright End-to-End Suite
+// Logistics Twin - Playwright End-to-End Suite
 // Covers:
 // 1. Guided demo autoplay & navigation controls
 // 2. Disruption recovery: cancelling top load promotes next feasible candidate
@@ -7,7 +7,7 @@
 
 import { test, expect } from '@playwright/test';
 
-test.describe('ReRoute AI 2.0 - End-to-End Test Suite', () => {
+test.describe('Logistics Twin - End-to-End Test Suite', () => {
   test('1. executes guided demo and verifies stage navigation', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('[data-testid="env-badge"]')).toBeVisible();

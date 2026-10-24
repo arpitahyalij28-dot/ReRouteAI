@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Add & Edit Truck Modal
+// Logistics Twin - Add & Edit Truck Modal
 // Validates truck parameters, resolves cities to coordinates, and updates fleet state.
 
 import React, { useState, useEffect } from 'react';

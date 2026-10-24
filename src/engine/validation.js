@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Validation Module (ES Module)
+// Logistics Twin - Validation Module (ES Module)
 // Rigorous validation for trucks, shipments, settings, and CSV data inputs
 
 import { isValidCoordinate } from './distance.js';

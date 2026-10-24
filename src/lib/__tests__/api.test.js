@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - API Client Test Suite
+// Logistics Twin - API Client Test Suite
 import { describe, it, expect, vi } from 'vitest';
 import { apiFetch } from '../api.js';
 

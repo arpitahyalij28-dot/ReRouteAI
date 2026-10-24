@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Global Fleet Optimization Engine
+// Logistics Twin - Global Fleet Optimization Engine
 // Solves 1-to-1 optimal assignment across N trucks and M candidate shipments
 // using Hungarian (Kuhn-Munkres) combinatorial optimization with conflict resolution.
 

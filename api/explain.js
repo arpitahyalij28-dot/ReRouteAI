@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Explainable Decision Summary Endpoint
+// Logistics Twin - Explainable Decision Summary Endpoint
 // POST /api/explain
 // Generates a 3-sentence dispatcher-friendly explanation for an optimization decision.
 // Uses LLM if API key is present in server environment, otherwise returns a deterministic template.

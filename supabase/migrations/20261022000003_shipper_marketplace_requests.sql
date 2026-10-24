@@ -1,5 +1,5 @@
 -- ==============================================================================
--- ReRoute AI 2.0 — Shipper-to-Truck Marketplace & Reservation Schema
+-- Logistics Twin — Shipper-to-Truck Marketplace & Reservation Schema
 -- Migration: 20261022000003_shipper_marketplace_requests.sql
 -- Enables Uber-style on-demand reverse matching, soft reservation locks (10 min),
 -- and shipper backhaul request lifecycle with strict Row-Level Security.

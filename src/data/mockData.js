@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Realistic Corridor Datasets
+// Logistics Twin - Realistic Corridor Datasets
 // Mumbai - Pune - Nashik - Gujarat Golden Logistics Quadrangle
 
 export const FACTOR_WEIGHTS = {

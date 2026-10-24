@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Demo Users Seeding Script
+// Logistics Twin - Demo Users Seeding Script
 // Provisions the 3 official demo accounts in Supabase with pre-set passwords:
 // 1. dispatcher@demo.reroute (Role: dispatcher)
 // 2. shipper@demo.reroute    (Role: shipper)
@@ -51,7 +51,7 @@ export const DEMO_ACCOUNTS = [
 ];
 
 async function seedDemoUsers() {
-  console.log(`\n🚚 ReRoute AI 2.0 — Seeding 3 Demo Accounts into ${supabaseUrl}...`);
+  console.log(`\n🚚 Logistics Twin — Seeding 3 Demo Accounts into ${supabaseUrl}...`);
 
   // Ensure demo-org exists
   const { error: orgError } = await supabase.from('organizations').upsert(

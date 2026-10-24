@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Application Data Context & Realtime Provider
+// Logistics Twin - Application Data Context & Realtime Provider
 // Provides unified access to trucks, shipments, assignments, model settings and realtime sync.
 // Connects with DataContext for local persistence, dynamic user input, and on-demand demo loading.
 

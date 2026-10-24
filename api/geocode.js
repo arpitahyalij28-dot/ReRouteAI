@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Geocoding Proxy Endpoint
+// Logistics Twin - Geocoding Proxy Endpoint
 // Resolves city names into geographic coordinates with caching and regional fallbacks.
 
 import { setCorsHeaders, checkRateLimit, jsonResponse } from './_utils.js';

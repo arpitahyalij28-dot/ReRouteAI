@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Serverless API Helpers
+// Logistics Twin - Serverless API Helpers
 // Provides tight CORS, in-memory rate limiting, and typed JSON responses.
 
 const rateLimitMap = new Map();

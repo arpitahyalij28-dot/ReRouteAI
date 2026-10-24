@@ -1,4 +1,4 @@
--- ReRoute AI 2.0 Database Schema
+-- Logistics Twin Database Schema
 -- Note: Migrations are now managed in supabase/migrations/
 -- See supabase/migrations/20261022000000_create_reroute_schema.sql for the active schema.
 -- See supabase/seed.sql for seed data.

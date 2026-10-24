@@ -1,5 +1,5 @@
 -- ==============================================================================
--- ReRoute AI 2.0 — Auth Triggers & Profiles RLS Migration
+-- Logistics Twin — Auth Triggers & Profiles RLS Migration
 -- Migration: 20261022000001_handle_new_user_and_profiles.sql
 -- Adds handle_new_user() trigger on auth.users and sets up secure profiles RLS policies.
 -- ==============================================================================

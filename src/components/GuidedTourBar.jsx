@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Guided Demo Autoplay Controller Bar
+// Logistics Twin - Guided Demo Autoplay Controller Bar
 // High-impact judge-facing presentation toolbar with 7-stage autoplay, controls, and caption narration.
 
 import React from 'react';

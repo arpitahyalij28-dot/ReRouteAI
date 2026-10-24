@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Database Seeding Script
+// Logistics Twin - Database Seeding Script
 // Run via: `node scripts/seed.js`
 // Populates Supabase Postgres tables with initial demo data
 
@@ -16,7 +16,7 @@ async function runSeed() {
 
   if (!supabaseUrl || !serviceRoleKey) {
     console.log('----------------------------------------------------');
-    console.log('ReRoute AI 2.0 Seed Utility');
+    console.log('Logistics Twin Seed Utility');
     console.log('----------------------------------------------------');
     console.log('No Supabase credentials detected in environment.');
     console.log('To seed Supabase cloud:');

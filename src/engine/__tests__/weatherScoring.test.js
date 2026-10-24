@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Weather-Aware Scoring Engine Vitest Suite
+// Logistics Twin - Weather-Aware Scoring Engine Vitest Suite
 import { describe, it, expect } from 'vitest';
 import { evaluateShipments, DEFAULT_WEATHER_PENALTIES } from '../matching.js';
 import { calculateETA } from '../eta.js';

@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Road Routing Proxy Endpoint
+// Logistics Twin - Road Routing Proxy Endpoint
 // GET /api/route?from=lat,lng&to=lat,lng
 // Fetches real road polylines, distance, and duration from OSRM (or OpenRouteService).
 // Caches responses in memory; falls back to Haversine straight-line if provider fails.

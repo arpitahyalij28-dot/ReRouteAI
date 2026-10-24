@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Model Configuration & Sensitivity Analysis Page
+// Logistics Twin - Model Configuration & Sensitivity Analysis Page
 // Multi-attribute weight tuning with auto-normalization and live +/-10 pt sensitivity matrix.
 
 import React, { useState, useMemo } from 'react';

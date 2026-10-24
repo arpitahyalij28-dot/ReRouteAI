@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Core Data Context & Persistence Provider
+// Logistics Twin - Core Data Context & Persistence Provider
 // Starts completely EMPTY by default. Hydrates from localStorage.
 // Demo data is loaded ONLY on explicit user action ("Load Demo Data").
 

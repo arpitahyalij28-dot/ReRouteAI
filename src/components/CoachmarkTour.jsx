@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - First-Visit 4-Step Coach-mark Tour Component
+// Logistics Twin - First-Visit 4-Step Coach-mark Tour Component
 // Dismissible, remembers completion in localStorage, guides new evaluators on key features.
 
 import React, { useState, useEffect } from 'react';

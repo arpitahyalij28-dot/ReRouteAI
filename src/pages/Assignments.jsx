@@ -124,7 +124,7 @@ export default function Assignments() {
       `• Unmet Pending: ${totals.totalPending} units\n` +
       `• Total Network Cost: ₹${(totals.cost || 0).toLocaleString('en-IN')}\n` +
       `• Live Validation: ${validationResult?.isValid ? 'ALL 6 CONSTRAINTS VERIFIED' : 'VIOLATIONS DETECTED'}\n` +
-      `• View Live Twin: https://reroute-fleet.vercel.app/assignments`;
+      `• View Live Twin: https://logistics-twin.vercel.app/assignments`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 

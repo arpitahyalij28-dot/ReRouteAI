@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Share & Judge Mode Modal
+// Logistics Twin - Share & Judge Mode Modal
 // Renders live phone QR code and toggleable read-only Judge Mode.
 
 import React from 'react';
@@ -7,7 +7,7 @@ import { useReRoute } from '../context/ReRouteContext';
 
 export default function ShareJudgeModal({ isOpen, onClose }) {
   const { isJudgeMode, setIsJudgeMode, showToast } = useReRoute();
-  const liveUrl = 'https://reroute-fleet.vercel.app/';
+  const liveUrl = 'https://logistics-twin.vercel.app/';
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(liveUrl)}`;
 
   if (!isOpen) return null;
@@ -41,7 +41,7 @@ export default function ShareJudgeModal({ isOpen, onClose }) {
         <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center">
           <img
             src={qrUrl}
-            alt="ReRoute AI Live Deployment QR Code"
+            alt="Logistics Twin Live Deployment QR Code"
             className="w-44 h-44 rounded-lg shadow-xs bg-white p-2"
           />
           <button

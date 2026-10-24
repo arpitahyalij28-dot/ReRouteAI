@@ -1,5 +1,5 @@
 -- ==============================================================================
--- ReRoute AI 2.0 — Column & Policy Fixes + Atomic RPC Functions
+-- Logistics Twin — Column & Policy Fixes + Atomic RPC Functions
 -- Migration: 20261022000002_fix_columns_and_rpc.sql
 -- Fixes column mismatches, enforces strict RLS policies, and introduces atomic RPCs.
 -- ==============================================================================

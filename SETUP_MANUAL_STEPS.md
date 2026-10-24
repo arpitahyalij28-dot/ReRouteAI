@@ -1,7 +1,7 @@
-# ReRoute AI 2.0 - Manual Setup & Cloud Configuration Guide
+# Logistics Twin - Manual Setup & Cloud Configuration Guide
 
 > [!NOTE]
-> ReRoute AI 2.0 is designed with **Dual-Mode Architecture**. In **Offline Demo Mode**, zero environment variables or cloud setup are required—evaluators can clone and run `npm install && npm run dev` immediately. Follow this guide when provisioning the multi-tenant Supabase database and production Vercel deployment.
+> Logistics Twin is designed with **Dual-Mode Architecture**. In **Offline Demo Mode**, zero environment variables or cloud setup are required—evaluators can clone and run `npm install && npm run dev` immediately. Follow this guide when provisioning the multi-tenant Supabase database and production Vercel deployment.
 
 ---
 

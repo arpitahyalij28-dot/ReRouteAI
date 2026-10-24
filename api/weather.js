@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Weather Intelligence Endpoint
+// Logistics Twin - Weather Intelligence Endpoint
 // GET /api/weather?lat=19.64&lng=73.48
 // Queries Open-Meteo (no API key required) and converts atmospheric conditions
 // (rain, wind, visibility) into a quantitative disruption risk delta.

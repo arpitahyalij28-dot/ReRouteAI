@@ -79,7 +79,7 @@ export default function DemoGuideModal({ isOpen, onClose, onJumpStep, onStartGui
             <div>
               <h3 className="text-base font-bold text-[#0F172A]">2-Minute Live Demo Flow Guide</h3>
               <p className="text-xs text-[#64748B]">
-                Follow these 6 stages to showcase ReRoute AI 2.0's predictive backhaul capability
+                Follow these 6 stages to showcase Logistics Twin's predictive backhaul capability
               </p>
             </div>
           </div>

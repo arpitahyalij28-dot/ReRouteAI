@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Weather Intelligence Client Wrapper
+// Logistics Twin - Weather Intelligence Client Wrapper
 // Client-side cache (10-min TTL) and in-flight request deduplication.
 // Pure pure pure: Engine remains isolated without fetch.
 

@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Weather Intelligence Badge Component
+// Logistics Twin - Weather Intelligence Badge Component
 // Shows live Open-Meteo weather conditions, risk level (low/medium/high),
 // and strict truthful attribution ("Live (Open-Meteo)" vs "Fallback estimate" vs "Weather unavailable").
 // Never presents fallback data as live.

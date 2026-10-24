@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - Data Repository & Adapters
+// Logistics Twin - Data Repository & Adapters
 // Supports dual modes:
 // 1. LocalDemoAdapter (Offline in-memory & localStorage fallback, zero env vars)
 // 2. SupabaseAdapter (Cloud Postgres with Row-Level Security and Realtime sync)

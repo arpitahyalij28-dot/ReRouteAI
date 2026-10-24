@@ -1,4 +1,4 @@
-// ReRoute AI 2.0 - ETA Engine (ES Module)
+// Logistics Twin - ETA Engine (ES Module)
 // Dynamically predicts arrival at pickup, buffer margins, and delay risk
 
 function parseTimeString(timeStr, baseDateMs = Date.now()) {

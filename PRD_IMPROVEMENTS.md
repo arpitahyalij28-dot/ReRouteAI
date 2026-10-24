@@ -1,10 +1,10 @@
-# ReRoute AI 2.0 — Product Requirements Document (PRD) & Enhancement Roadmap
+# Logistics Twin — Product Requirements Document (PRD) & Enhancement Roadmap
 
 **Document Version:** 2.1.0  
 **Status:** Approved & Under Active Implementation  
-**Product:** ReRoute AI 2.0 – Predictive Backhaul & Empty-Return Elimination Platform  
+**Product:** Logistics Twin – Predictive Backhaul & Empty-Return Elimination Platform  
 **Target Market:** High-Density Freight Corridors (Mumbai – Nashik – Pune – Gujarat Golden Quadrangle)  
-**Deployment:** Vercel Production ([reroute-fleet.vercel.app](https://reroute-fleet.vercel.app)) + Localhost Development  
+**Deployment:** Vercel Production ([logistics-twin.vercel.app](https://logistics-twin.vercel.app/)) + Localhost Development  
 
 ---
 
@@ -17,8 +17,8 @@ In interstate commercial road freight across India and emerging logistics corrid
 - Unnecessary empty running generates millions of metric tons of avoidable Scope 1 CO₂ emissions.
 - Shippers publish unstandardized spot tenders over WhatsApp groups in colloquial Hindi, Hinglish, and Marathi, resulting in delayed broker matchmaking and lost load windows.
 
-### 1.2 The Solution: ReRoute AI 2.0
-ReRoute AI 2.0 is an enterprise-grade autonomous backhaul intelligence platform that:
+### 1.2 The Solution: Logistics Twin
+Logistics Twin is an enterprise-grade autonomous backhaul intelligence platform that:
 1. **Predicts** deadhead return risk 2+ hours ahead of arrival using real freight demand deficits and telemetry buffers.
 2. **Warns** dispatchers with countdown opportunity windows before trucks complete their outbound unloading.
 3. **Matches** candidate loads using honest **Weighted Multi-Criteria Decision Scoring** (Route 25%, Detour 15%, Time 20%, Capacity 20%, Cost Yield 10%, Disruption/Weather 10%).
@@ -31,7 +31,7 @@ ReRoute AI 2.0 is an enterprise-grade autonomous backhaul intelligence platform 
 
 ## 2. Key Objectives & Target Metrics
 
-| Metric | Baseline (Traditional Logistics) | ReRoute AI 2.0 Target | Current Validated State |
+| Metric | Baseline (Traditional Logistics) | Logistics Twin Target | Current Validated State |
 |---|---|---|---|
 | **Empty Return (Deadhead) Rate** | ~40% – 45% | < 12% | **8.4%** (Demo corridor test) |
 | **Backhaul Discovery Timing** | Post-unloading (reactive, 4h+ wait) | In-transit (2h prior to arrival) | **100% proactive countdown** |
@@ -89,7 +89,7 @@ ReRoute AI 2.0 is an enterprise-grade autonomous backhaul intelligence platform 
   - On the `ShipmentCard` and `ExplainabilityPanel`, add a **"Share via WhatsApp"** button.
   - Formats an executive dispatch voucher:
     ```text
-    🚛 *ReRoute AI - Backhaul Dispatch Order*
+    🚛 *Logistics Twin - Backhaul Dispatch Order*
     Vehicle: T101 (MH-15-EG-4921)
     Driver: Suresh Patil (+91 98230 45812)
     --------------------------------------
@@ -100,7 +100,7 @@ ReRoute AI 2.0 is an enterprise-grade autonomous backhaul intelligence platform 
     💰 Freight Rate: ₹28,500
     🗺️ Route Map: https://maps.google.com/?q=18.995,72.865
     --------------------------------------
-    ⚡ Optimized by ReRoute AI (Zero Deadhead)
+    ⚡ Optimized by Logistics Twin (Zero Deadhead)
     ```
   - Directly opens `https://wa.me/?text=...` on mobile or WhatsApp Web on desktop.
 
@@ -117,7 +117,7 @@ ReRoute AI 2.0 is an enterprise-grade autonomous backhaul intelligence platform 
 #### P1.2: One-Click Executive ESG Scope 1 Audit Certificate Export
 - **Rationale:** Corporate shippers require ESG auditing for Scope 1 greenhouse gas compliance under SEBI BRSR and GHG Protocol guidelines.
 - **Enhancement:**
-  - In `Analytics.jsx`, generate a clean printable PDF/HTML certificate: *"ReRoute AI Green Corridor Verification Certificate"*, certified with total diesel saved, carbon emissions avoided, and timestamped assignment hashes.
+  - In `Analytics.jsx`, generate a clean printable PDF/HTML certificate: *"Logistics Twin Green Corridor Verification Certificate"*, certified with total diesel saved, carbon emissions avoided, and timestamped assignment hashes.
 
 ---
 
