@@ -466,28 +466,6 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     } catch {}
   };
 
-  const recordTelemetry = async (point) => {
-    const patch = {
-      currentCoords: [point.lat, point.lng],
-      currentLat: point.lat,
-      currentLng: point.lng,
-      speedKmH: point.speed,
-      currentLocationName: point.locationName,
-    };
-
-    if (dataCtx?.updateTruck) {
-      dataCtx.updateTruck(point.truckId, patch);
-    } else {
-      setFallbackTrucks((prev) =>
-        prev.map((t) => (t.id === point.truckId ? { ...t, ...patch } : t))
-      );
-    }
-
-    try {
-      await repoRef.current.recordTelemetry(point);
-    } catch {}
-  };
-
   const updateAssignmentStatus = async (assignmentId, status) => {
     setAssignments((prev) =>
       prev.map((a) => (a.id === assignmentId ? { ...a, status } : a))
@@ -553,7 +531,6 @@ export function ReRouteProvider({ children, initialForceLocal = false }) {
     assignShipment,
     unassignShipment,
     updateAssignmentStatus,
-    recordTelemetry,
     cancelShipment,
     delayShipment,
     shiftShipmentWindow,

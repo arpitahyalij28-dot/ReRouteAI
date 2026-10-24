@@ -169,7 +169,7 @@ export default function FleetOverview({
               </span>
             </div>
             <p className="text-xs text-[#64748B] mt-1 flex items-center gap-1.5">
-              <span>Real-time corridor telemetry, fleet-wide best match status, and empty-return risk monitoring.</span>
+              <span>Real-time corridor telemetry, fleet-wide best match status, and transit risk monitoring.</span>
               <span className="group relative inline-flex items-center cursor-help" title="Algorithm Details">
                 <Info className="w-3 h-3 text-slate-400 hover:text-blue-600" />
                 <span className="pointer-events-none absolute left-0 bottom-full mb-1 hidden group-hover:block w-52 rounded-md bg-slate-900 px-2 py-1 text-[10px] text-white shadow-md z-30 font-normal">

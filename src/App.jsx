@@ -68,7 +68,7 @@ function AppContent() {
     {
       stage: 1,
       title: 'Predict: Telemetry Early Warning Radar',
-      caption: `Stage 1 of 7 — Vehicle telemetry radar monitors ${trucks.length || 6} corridor trucks. Empty-return risk computed 2+ hours before arrival.`,
+      caption: `Stage 1 of 7 — Vehicle telemetry radar monitors ${trucks.length || 6} corridor trucks. Transit risk computed 2+ hours before arrival.`,
       action: async () => {
         await resetDemo();
         if (primaryTruckId) setSelectedTruckId(primaryTruckId);

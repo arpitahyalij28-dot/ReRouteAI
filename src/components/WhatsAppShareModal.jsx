@@ -35,11 +35,11 @@ export default function WhatsAppShareModal({
   const scoreVal = matchScore || shipment.matchScore || 91;
   const freightRate = Number(shipment.freightOfferInr || shipment.value || 28500);
 
-  const voucherText = `🚛 *ReRoute AI 2.0 — Backhaul Dispatch Voucher*
+  const voucherText = `🚛 *Logistics Twin — Regional Dispatch Voucher*
 ---------------------------------------
 ✅ *Assigned Vehicle:* ${truckId} (${truckReg})
 👨‍✈️ *Driver:* ${driverName} (${driverPhone})
-🎯 *Match Score:* ${scoreVal}% Compatibility (Zero Deadhead)
+🎯 *Match Score:* ${scoreVal}% Compatibility (Optimized Route)
 ---------------------------------------
 📦 *Consignment ID:* ${shipment.id}
 📋 *Cargo:* ${shipment.name || shipment.cargoType || 'Industrial Freight'}
@@ -128,7 +128,7 @@ export default function WhatsAppShareModal({
         <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
           <span className="flex items-center gap-1">
             <Leaf className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Eliminates deadhead return trip</span>
+            <span>Optimizes regional transit trip</span>
           </span>
           <button
             onClick={onClose}

@@ -8,7 +8,7 @@ const TOUR_STEPS = [
   {
     step: 1,
     title: 'Autonomous Inbound Radar',
-    description: 'Monitors inbound heavy trucks in real time. Predicts empty-return probability 2+ hours before destination arrival.',
+    description: 'Monitors inbound heavy trucks in real time. Predicts transit disruption risk 2+ hours before destination arrival.',
     targetHighlight: 'Corridor Radar',
   },
   {
@@ -20,7 +20,7 @@ const TOUR_STEPS = [
   {
     step: 3,
     title: 'Resilient Disruption Recovery',
-    description: 'Simulate live cancellations, delay bottlenecks, or shipper dock shifts. Solver recalculates alternative backhauls in <400ms.',
+    description: 'Simulate live cancellations, delay bottlenecks, or shipper dock shifts. Solver recalculates alternative re-route options in <400ms.',
     targetHighlight: 'Disruption Simulator',
   },
   {

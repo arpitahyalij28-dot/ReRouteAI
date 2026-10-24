@@ -331,21 +331,6 @@ export class LocalDemoAdapter {
     return newS;
   }
 
-  async recordTelemetry(point) {
-    this.trucks = this.trucks.map((t) => {
-      if (t.id !== point.truckId) return t;
-      return {
-        ...t,
-        currentCoords: [point.lat, point.lng],
-        currentLat: point.lat,
-        currentLng: point.lng,
-        speedKmH: point.speed ?? t.speedKmH,
-        currentLocationName: point.locationName || t.currentLocationName,
-      };
-    });
-    this._save();
-    return { success: true };
-  }
 
   async updateAssignmentStatus(assignmentId, status) {
     this.assignments = this.assignments.map((a) =>
@@ -567,28 +552,6 @@ export class SupabaseAdapter {
     return rowToShipment(data);
   }
 
-  async recordTelemetry(point) {
-    // Aligns with schema: column is `speed` (not speed_kmh) and includes required NOT NULL `org_id`
-    const row = {
-      org_id: this.orgId,
-      truck_id: point.truckId,
-      lat: point.lat,
-      lng: point.lng,
-      speed: Number(point.speed ?? 0),
-      recorded_at: new Date().toISOString(),
-    };
-    await this.client.from('telemetry_points').insert(row);
-    await this.client
-      .from('trucks')
-      .update({
-        current_lat: point.lat,
-        current_lng: point.lng,
-        speed_kmh: Number(point.speed ?? 50),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', point.truckId);
-    return { success: true };
-  }
 
   async updateAssignmentStatus(assignmentId, status) {
     // Schema does not contain `updated_at` on assignments table
