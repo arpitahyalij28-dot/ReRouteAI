@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Vehicle Type Dropdown & Auto-fill Verification', () => {
   test('verifies 4 vehicle types auto-fill, creates a vehicle, and confirms plan runs', async ({ page }) => {
     // 1. Navigate to dashboard (network management page)
-    await page.goto('http://localhost:3000/');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
 
     // 2. Open Add Network Entity modal
@@ -22,8 +22,6 @@ test.describe('Vehicle Type Dropdown & Auto-fill Verification', () => {
     await expect(typeSelect).toHaveValue('Medium Commercial Truck (8T)');
 
     // Helper locators
-    const capacityInput = page.locator('input[min="1"]').filter({ has: page.locator('xpath=..') }).first(); // or find by label
-    // More precise locators using labels:
     const capInput = page.locator('label:has-text("Units Capacity per Trip") + input, div:has(> label:has-text("Units Capacity per Trip")) input').first();
     const costInput = page.locator('label:has-text("Cost per Km") + input, div:has(> label:has-text("Cost per Km")) input').first();
     const weightInput = page.locator('label:has-text("Weight (Tons)") + input, div:has(> label:has-text("Weight (Tons)")) input').first();
@@ -62,12 +60,6 @@ test.describe('Vehicle Type Dropdown & Auto-fill Verification', () => {
     const idInput = page.locator('#entity-id-input');
     await idInput.fill('veh-heavy-custom-99');
 
-    // Take screenshot of modal with vehicle dropdown and auto-filled values
-    await page.screenshot({
-      path: 'C:/Users/Omkar/.gemini/antigravity-ide/brain/1c4210cd-5605-4fa1-9aad-c5e04c169af4/vehicle_modal_dropdown.png',
-      fullPage: true,
-    });
-
     // Submit form
     const saveBtn = page.locator('button[type="submit"]:has-text("Create Entity")');
     await saveBtn.first().click();
@@ -86,17 +78,11 @@ test.describe('Vehicle Type Dropdown & Auto-fill Verification', () => {
     await expect(page.locator('text=Heavy Commercial Truck (16T)').first()).toBeVisible();
 
     // Navigate to Plan / Assignments page to verify plan still runs
-    await page.goto('http://localhost:3000/assignments');
+    await page.goto('/assignments');
     await page.waitForLoadState('networkidle');
 
     // Verify Solver / Assignments loaded
     const planHeading = page.locator('text=Recovery Plan').or(page.locator('text=Plan'));
     await expect(planHeading.first()).toBeVisible();
-
-    // Take screenshot of successful vehicle and plan integration
-    await page.screenshot({
-      path: 'C:/Users/Omkar/.gemini/antigravity-ide/brain/1c4210cd-5605-4fa1-9aad-c5e04c169af4/vehicle_dropdown_verification.png',
-      fullPage: true,
-    });
   });
 });
