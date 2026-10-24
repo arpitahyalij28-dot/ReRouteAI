@@ -29,6 +29,7 @@ graph TB
         DisruptMod["disruptions.js\n• 5 Disruption Operators\n• Cascade Evaluator\n• Delivery Impact Delta"]
         PlanMod["planner.js\n• Resilient Recovery Solver\n• Min-Cost Flow / Discretization\n• Naive Disrupted Solver\n• 3-Way Plan Comparison"]
         ResilMod["resilience.js\n• 0-100 Resilience Score\n• 5-Factor Mathematical Breakdown"]
+        TowerMod["controlTower.js\n• Executive Report Card Metrics\n• Section 1-5 Dynamic KPIs\n• Backhaul & Transfer Engine"]
         ValMod["validation.js\n• 6-Item Hard Constraint Live Validator"]
         AnaMod["analytics.js\n• 50-Run Monte Carlo Stress Test\n• SPOF Bottleneck Ranker\n• Plan B Backup Corridors"]
     end
@@ -40,7 +41,7 @@ graph TB
     end
 
     subgraph UserInterface ["Interactive Digital Twin Cockpit (src/pages/*)"]
-        P1["Supply Network Dashboard\n• Leaflet Map & Buffers\n• Node Inspector & Entity CRUD"]
+        P1["Supply Network Dashboard & Control Tower\n• Executive Verdict & Resilience Ring\n• Risk Register, Inventory & Fleet Match\n• Leaflet Map & Buffers\n• Node Inspector & Entity CRUD"]
         P2["Problem Simulator\n• Multi-Disruption Sliders\n• Quick Crisis Presets\n• Live Affected Deliveries"]
         P3["Recovery Plan & Comparison\n• 3-Way Benchmark\n• Resilience Gauge & Breakdown\n• 6-Check Validator\n• Per-Buyer Explainability"]
         P4["Resilience Analytics Hub\n• Monte Carlo Compliance\n• SPOF Risk Ranker\n• Plan B Backup Matrix\n• Scope 1 ESG Carbon Audit"]
